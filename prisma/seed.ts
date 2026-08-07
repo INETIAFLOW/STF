@@ -6,8 +6,11 @@
  * Idempotent: safe to run repeatedly (upserts keyed on stable unique keys).
  * Run with: npm run db:seed
  */
+import { config as loadEnv } from "dotenv";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../src/generated/prisma/client";
+
+loadEnv({ path: [".env.local", ".env"], quiet: true });
 import {
   DEFAULT_ENABLED_MODULES,
   FEATURES,
