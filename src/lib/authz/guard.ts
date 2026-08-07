@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import type { ModuleKey, PermissionKey } from "@/lib/catalog";
 import { getAppSession } from "@/lib/auth/session";
 import type { AppSession } from "@/lib/auth/types";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { loadEntitlements } from "./entitlements";
 import { evaluateAccess, type AccessDecision } from "./flags";
 
@@ -13,10 +14,22 @@ import { evaluateAccess, type AccessDecision } from "./flags";
  * (Product Constitution §5).
  */
 
-/** Require a signed-in, tenant-resolved session or redirect to sign-in. */
+/**
+ * Require a signed-in, tenant-resolved session.
+ * - Anonymous → /sign-in.
+ * - Authenticated but not provisioned (no user row / no active membership)
+ *   → /unauthorized. Never back to /sign-in: the proxy bounces signed-in
+ *   users off that route, which would loop.
+ */
 export async function requireSession(): Promise<AppSession> {
   const session = await getAppSession();
-  if (!session) redirect("/sign-in");
+  if (!session) {
+    const supabase = await createSupabaseServerClient();
+    const authUser = supabase
+      ? (await supabase.auth.getUser()).data.user
+      : null;
+    redirect(authUser ? "/unauthorized" : "/sign-in");
+  }
   return session;
 }
 
