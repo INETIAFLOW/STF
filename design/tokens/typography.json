@@ -1,0 +1,186 @@
+{
+  "$schema": "STF typography tokens v1.0",
+  "font": {
+    "family": {
+      "heading": {
+        "value": "\"Schibsted Grotesk\", \"Helvetica Neue\", Helvetica, Arial, sans-serif"
+      },
+      "body": {
+        "value": "\"Wix Madefor Text\", \"Helvetica Neue\", Helvetica, Arial, sans-serif"
+      },
+      "mono": {
+        "value": "\"Spline Sans Mono\", ui-monospace, \"SF Mono\", Menlo, monospace"
+      }
+    },
+    "weight": {
+      "regular": {
+        "value": 400
+      },
+      "medium": {
+        "value": 500
+      },
+      "semibold": {
+        "value": 600
+      },
+      "bold": {
+        "value": 700
+      }
+    },
+    "size": {
+      "display": {
+        "mobile": "32px",
+        "desktop": "48px",
+        "family": "heading",
+        "weight": 700,
+        "lineHeight": {
+          "mobile": "38px",
+          "desktop": "54px"
+        }
+      },
+      "h1": {
+        "mobile": "26px",
+        "desktop": "32px",
+        "family": "heading",
+        "weight": 700,
+        "lineHeight": {
+          "mobile": "32px",
+          "desktop": "40px"
+        }
+      },
+      "h2": {
+        "mobile": "20px",
+        "desktop": "22px",
+        "family": "heading",
+        "weight": 700,
+        "lineHeight": {
+          "mobile": "26px",
+          "desktop": "30px"
+        }
+      },
+      "h3": {
+        "mobile": "17px",
+        "desktop": "16px",
+        "family": "heading",
+        "weight": 600,
+        "lineHeight": {
+          "mobile": "24px",
+          "desktop": "24px"
+        }
+      },
+      "bodyLg": {
+        "mobile": "17px",
+        "desktop": "16px",
+        "family": "body",
+        "weight": 400,
+        "lineHeight": {
+          "mobile": "26px",
+          "desktop": "25px"
+        }
+      },
+      "body": {
+        "mobile": "16px",
+        "desktop": "15px",
+        "family": "body",
+        "weight": 400,
+        "lineHeight": {
+          "mobile": "24px",
+          "desktop": "23px"
+        }
+      },
+      "label": {
+        "mobile": "14px",
+        "desktop": "13px",
+        "family": "body",
+        "weight": 600,
+        "lineHeight": {
+          "mobile": "20px",
+          "desktop": "18px"
+        }
+      },
+      "secondary": {
+        "mobile": "14px",
+        "desktop": "13px",
+        "family": "body",
+        "weight": 400,
+        "lineHeight": {
+          "mobile": "20px",
+          "desktop": "19px"
+        }
+      },
+      "caption": {
+        "mobile": "13px",
+        "desktop": "12px",
+        "family": "body",
+        "weight": 400,
+        "lineHeight": {
+          "mobile": "18px",
+          "desktop": "17px"
+        }
+      },
+      "dataXl": {
+        "mobile": "32px",
+        "desktop": "36px",
+        "family": "mono",
+        "weight": 600,
+        "lineHeight": {
+          "mobile": "36px",
+          "desktop": "42px"
+        }
+      },
+      "dataLg": {
+        "mobile": "22px",
+        "desktop": "28px",
+        "family": "mono",
+        "weight": 600,
+        "lineHeight": {
+          "mobile": "28px",
+          "desktop": "34px"
+        }
+      },
+      "data": {
+        "mobile": "15px",
+        "desktop": "14px",
+        "family": "mono",
+        "weight": 500,
+        "lineHeight": {
+          "mobile": "22px",
+          "desktop": "20px"
+        }
+      },
+      "mono": {
+        "mobile": "12px",
+        "desktop": "12px",
+        "family": "mono",
+        "weight": 500,
+        "lineHeight": {
+          "mobile": "18px",
+          "desktop": "17px"
+        },
+        "letterSpacing": "0.08em",
+        "case": "upper-allowed"
+      }
+    },
+    "letterSpacing": {
+      "tight": {
+        "value": "-0.3px",
+        "appliesTo": "heading >= 26px"
+      },
+      "normal": {
+        "value": "0"
+      },
+      "micro": {
+        "value": "0.08em",
+        "appliesTo": "12px uppercase micro-labels"
+      }
+    },
+    "numeric": {
+      "value": "tabular-nums",
+      "appliesTo": "all mono sizes and numerals inside tables"
+    },
+    "minimum": {
+      "mobileBody": "14px",
+      "desktopBody": "13px",
+      "statusText": "12px"
+    }
+  }
+}

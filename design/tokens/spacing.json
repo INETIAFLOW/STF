@@ -1,0 +1,46 @@
+{
+  "$schema": "STF spacing tokens v1.0 — 4px base",
+  "space": {
+    "0": "0px",
+    "1": "4px",
+    "2": "8px",
+    "3": "12px",
+    "4": "16px",
+    "5": "20px",
+    "6": "24px",
+    "7": "28px",
+    "8": "32px",
+    "10": "40px",
+    "12": "48px",
+    "14": "56px",
+    "16": "64px",
+    "20": "80px",
+    "24": "96px"
+  },
+  "layout": {
+    "screenPaddingMobile": "space.5",
+    "screenPaddingTablet": "space.6",
+    "screenPaddingDesktop": "space.8",
+    "cardPaddingMobile": "space.5",
+    "cardPaddingDesktop": "space.5",
+    "sectionGapMobile": "space.4",
+    "sectionGapDesktop": "space.5",
+    "fieldGap": "space.4",
+    "inlineGap": "space.2",
+    "bottomNavHeight": "64px",
+    "bottomNavSafeArea": "env(safe-area-inset-bottom)",
+    "topBarHeightMobile": "56px",
+    "topBarHeightDesktop": "64px",
+    "sidebarWidth": "240px",
+    "sidebarWidthCollapsed": "72px",
+    "contentMaxWidth": "1440px",
+    "readingMaxWidth": "72ch",
+    "thumbZoneBottom": "160px"
+  },
+  "touchTarget": {
+    "employeeMin": "48px",
+    "adminMin": "40px",
+    "primaryMobileAction": "56px",
+    "iconButtonMobile": "48px"
+  }
+}

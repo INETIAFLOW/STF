@@ -1,0 +1,314 @@
+// STF — multi-tenant data foundation (Phase 1).
+//
+// Boundaries follow SYSTEM-ARCHITECTURE.md: a modular monolith with clear
+// domains. Phase 1 ships only the Platform + Shared foundation: identity,
+// tenancy, roles/permissions, module & feature entitlement, audit.
+// Business-module tables (attendance, leave, payroll, tasks, reporting)
+// arrive with their approved detailed rules in later phases.
+//
+// Tenant isolation (Product Constitution §2): every tenant-owned row carries
+// tenantId, and every query must be scoped through the helpers in
+// src/lib — never query tenant data without a tenant context.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ---------------------------------------------------------------- identity
+
+enum UserStatus {
+  ACTIVE
+  INVITED
+  SUSPENDED
+  DEACTIVATED
+}
+
+/// A platform login identity. Authentication lives in Supabase Auth;
+/// `authUserId` links to auth.users. Workforce/employee profiles are a
+/// Phase 2 concern and will link to memberships, not replace them.
+model User {
+  id             String     @id @default(uuid()) @db.Uuid
+  /// Supabase auth.users id. Null until the invite is accepted.
+  authUserId     String?    @unique @db.Uuid
+  email          String?    @unique
+  phone          String?    @unique
+  displayName    String
+  status         UserStatus @default(ACTIVE)
+  /// Platform Super Admin (operates the SaaS across tenants; USER-ROLES.md).
+  isPlatformAdmin Boolean   @default(false)
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  memberships        TenantMembership[]
+  featureExceptions  UserFeatureException[] @relation("exceptionUser")
+  auditEvents        AuditEvent[]           @relation("auditActor")
+
+  @@map("users")
+}
+
+// ----------------------------------------------------------------- tenancy
+
+enum TenantStatus {
+  ACTIVE
+  SUSPENDED
+  ARCHIVED
+}
+
+model Tenant {
+  id        String       @id @default(uuid()) @db.Uuid
+  slug      String       @unique
+  name      String
+  status    TenantStatus @default(ACTIVE)
+  /// Display timezone; storage is UTC (implementation guide §8).
+  timezone  String       @default("Asia/Kolkata")
+  /// Tenant logo in private storage (V1 theming = logo only).
+  logoPath  String?
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  memberships       TenantMembership[]
+  roles             Role[]
+  moduleSettings    TenantModuleSetting[]
+  featureSettings   TenantFeatureSetting[]
+  featureExceptions UserFeatureException[]
+  auditEvents       AuditEvent[]
+
+  @@map("tenants")
+}
+
+enum MembershipStatus {
+  ACTIVE
+  INVITED
+  SUSPENDED
+  DEACTIVATED
+}
+
+/// A user's place inside one tenant. A user may belong to several tenants;
+/// every session resolves exactly one active membership.
+model TenantMembership {
+  id           String           @id @default(uuid()) @db.Uuid
+  tenantId     String           @db.Uuid
+  userId       String           @db.Uuid
+  roleId       String           @db.Uuid
+  status       MembershipStatus @default(ACTIVE)
+  employeeCode String?
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+  user   User   @relation(fields: [userId], references: [id])
+  role   Role   @relation(fields: [roleId], references: [id])
+
+  @@unique([tenantId, userId])
+  @@index([tenantId, status])
+  @@index([userId])
+  @@map("tenant_memberships")
+}
+
+// -------------------------------------------------------- roles & permissions
+
+/// Role templates per tenant (USER-ROLES.md): roles are templates,
+/// granular permissions are the enforcement unit.
+model Role {
+  id          String  @id @default(uuid()) @db.Uuid
+  tenantId    String  @db.Uuid
+  /// Stable key: OWNER, SUPER_ADMIN, ADMIN, HR, MANAGER, TEAM_LEADER,
+  /// EMPLOYEE, VIEWER.
+  key         String
+  name        String
+  description String?
+  /// System templates are seeded and cannot be deleted, only re-permissioned.
+  isSystem    Boolean @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tenant      Tenant           @relation(fields: [tenantId], references: [id])
+  permissions RolePermission[]
+  memberships TenantMembership[]
+
+  @@unique([tenantId, key])
+  @@map("roles")
+}
+
+/// Global permission catalog. `isSensitive` marks the separately-permissioned
+/// set from USER-ROLES.md (salary, bank, documents, location, export, audit).
+model Permission {
+  id          String  @id @default(uuid()) @db.Uuid
+  key         String  @unique
+  name        String
+  description String?
+  isSensitive Boolean @default(false)
+
+  roles RolePermission[]
+
+  @@map("permissions")
+}
+
+model RolePermission {
+  roleId       String @db.Uuid
+  permissionId String @db.Uuid
+
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+// ------------------------------------------------------- modules & features
+
+enum ModuleCategory {
+  /// Always-on platform capability (identity, audit, notifications plumbing).
+  CORE
+  /// V1 business module, toggleable per tenant.
+  STANDARD
+  /// Optional module: enabled per tenant only after its rules are approved.
+  OPTIONAL
+}
+
+/// Platform module catalog (MODULES.md).
+model Module {
+  id          String         @id @default(uuid()) @db.Uuid
+  key         String         @unique
+  name        String
+  description String?
+  category    ModuleCategory @default(STANDARD)
+  sortOrder   Int            @default(0)
+
+  features       Feature[]
+  tenantSettings TenantModuleSetting[]
+  /// Modules this module requires.
+  requires   ModuleDependency[] @relation("dependent")
+  /// Modules that require this module.
+  requiredBy ModuleDependency[] @relation("requirement")
+
+  @@map("modules")
+}
+
+/// Dependency rules (MODULES.md). Rows sharing a non-null `anyOfGroup`
+/// are satisfied when ANY one of the group is enabled (e.g. Performance
+/// requires Attendance OR Tasks); rows with a null group are ALL required.
+model ModuleDependency {
+  id                String  @id @default(uuid()) @db.Uuid
+  moduleId          String  @db.Uuid
+  requiresModuleId  String  @db.Uuid
+  anyOfGroup        String?
+
+  module   Module @relation("dependent", fields: [moduleId], references: [id], onDelete: Cascade)
+  requires Module @relation("requirement", fields: [requiresModuleId], references: [id], onDelete: Cascade)
+
+  @@unique([moduleId, requiresModuleId])
+  @@map("module_dependencies")
+}
+
+/// A controlled capability inside a module (FEATURE-FLAGS.md initial flags).
+model Feature {
+  id             String  @id @default(uuid()) @db.Uuid
+  moduleId       String  @db.Uuid
+  key            String
+  name           String
+  description    String?
+  defaultEnabled Boolean @default(false)
+
+  module         Module                 @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  tenantSettings TenantFeatureSetting[]
+  userExceptions UserFeatureException[]
+
+  @@unique([moduleId, key])
+  @@map("features")
+}
+
+/// Tenant-scope module entitlement. Absence of a row = disabled.
+model TenantModuleSetting {
+  tenantId  String   @db.Uuid
+  moduleId  String   @db.Uuid
+  enabled   Boolean  @default(false)
+  updatedAt DateTime @updatedAt
+  updatedById String? @db.Uuid
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+  module Module @relation(fields: [moduleId], references: [id])
+
+  @@id([tenantId, moduleId])
+  @@map("tenant_module_settings")
+}
+
+/// Tenant-scope feature setting. `policy` holds the tenant's business
+/// choice for policy-scope flags (grace minutes, geofence radius, …) —
+/// versioned policy documents arrive with the business modules.
+model TenantFeatureSetting {
+  tenantId  String   @db.Uuid
+  featureId String   @db.Uuid
+  enabled   Boolean  @default(false)
+  policy    Json?
+  updatedAt DateTime @updatedAt
+  updatedById String? @db.Uuid
+
+  tenant  Tenant  @relation(fields: [tenantId], references: [id])
+  feature Feature @relation(fields: [featureId], references: [id])
+
+  @@id([tenantId, featureId])
+  @@map("tenant_feature_settings")
+}
+
+/// User-scope exception (FEATURE-FLAGS.md flag scopes): an approved
+/// per-person override, time-bound where possible, always audited.
+model UserFeatureException {
+  id          String    @id @default(uuid()) @db.Uuid
+  tenantId    String    @db.Uuid
+  userId      String    @db.Uuid
+  featureId   String    @db.Uuid
+  enabled     Boolean
+  reason      String?
+  expiresAt   DateTime?
+  createdAt   DateTime  @default(now())
+  createdById String?   @db.Uuid
+
+  tenant  Tenant  @relation(fields: [tenantId], references: [id])
+  user    User    @relation("exceptionUser", fields: [userId], references: [id])
+  feature Feature @relation(fields: [featureId], references: [id])
+
+  @@unique([tenantId, userId, featureId])
+  @@map("user_feature_exceptions")
+}
+
+// -------------------------------------------------------------------- audit
+
+enum AuditActorType {
+  USER
+  PLATFORM
+  SYSTEM
+}
+
+/// Immutable who/what/when record (Product Constitution §3).
+/// Append-only by convention: no update path exists in application code,
+/// and there is no updatedAt on purpose.
+model AuditEvent {
+  id          String         @id @default(uuid()) @db.Uuid
+  /// Null only for platform-level events with no tenant context.
+  tenantId    String?        @db.Uuid
+  actorUserId String?        @db.Uuid
+  actorType   AuditActorType @default(USER)
+  /// Dotted action key, e.g. "module.disabled", "role.permissions_changed".
+  action      String
+  entityType  String
+  entityId    String?
+  reason      String?
+  /// Before/after values for changes (Constitution §3).
+  before      Json?
+  after       Json?
+  metadata    Json?
+  createdAt   DateTime       @default(now())
+
+  tenant Tenant? @relation(fields: [tenantId], references: [id])
+  actor  User?   @relation("auditActor", fields: [actorUserId], references: [id])
+
+  @@index([tenantId, createdAt])
+  @@index([tenantId, entityType, entityId])
+  @@map("audit_events")
+}

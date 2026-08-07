@@ -1,0 +1,37 @@
+{
+  "$schema": "STF motion tokens v1.0",
+  "motion": {
+    "duration": {
+      "instant": "80ms",
+      "fast": "120ms",
+      "base": "180ms",
+      "slow": "260ms",
+      "sheet": "320ms",
+      "skeleton": "1400ms"
+    },
+    "easing": {
+      "standard": "cubic-bezier(0.2, 0, 0, 1)",
+      "decelerate": "cubic-bezier(0, 0, 0.2, 1)",
+      "accelerate": "cubic-bezier(0.4, 0, 1, 1)",
+      "springSubtle": "cubic-bezier(0.34, 1.4, 0.64, 1)"
+    },
+    "usage": {
+      "hover": "duration.fast + easing.standard",
+      "press": "duration.instant, scale 0.98 max",
+      "toast": "duration.base slide-up 8px + fade",
+      "modal": "duration.base fade + scale 0.98→1",
+      "drawerSheet": "duration.sheet + easing.decelerate",
+      "tabSwitch": "duration.base",
+      "toggleSwitch": "duration.fast knob travel",
+      "checkInSuccess": "duration.slow + easing.springSubtle, single scale pulse 1→1.03→1, no confetti",
+      "skeleton": "duration.skeleton shimmer, linear, infinite"
+    },
+    "rules": [
+      "No animation longer than 320ms in product UI.",
+      "No parallax, no auto-playing carousels, no bouncing attention-seekers.",
+      "Respect prefers-reduced-motion: replace all transforms with opacity-only changes and disable skeleton shimmer (use a static tint).",
+      "Never animate a number counting up in payroll or attendance — figures appear at final value.",
+      "Loading spinners only after 400ms of waiting; below that, no indicator."
+    ]
+  }
+}

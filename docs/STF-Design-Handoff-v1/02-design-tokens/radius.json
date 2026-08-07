@@ -1,0 +1,25 @@
+{
+  "$schema": "STF radius tokens v1.0",
+  "radius": {
+    "none": "0px",
+    "xs": "4px",
+    "sm": "6px",
+    "md": "8px",
+    "input": "10px",
+    "button": "10px",
+    "buttonMobilePrimary": "14px",
+    "chip": "999px",
+    "card": "12px",
+    "cardEmployee": "16px",
+    "modal": "16px",
+    "sheet": "20px",
+    "avatar": "999px",
+    "pill": "999px",
+    "appIcon": "25%"
+  },
+  "usage": {
+    "card": "admin and desktop surfaces",
+    "cardEmployee": "employee mobile surfaces — softer per approved Sahay warmth",
+    "sheet": "mobile bottom sheets, top corners only"
+  }
+}

@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700&family=Albert+Sans:wght@400;500;600;700&family=Archivo:wght@400;500;600;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Schibsted+Grotesk:wght@400;500;600;700&family=Wix+Madefor+Text:wght@400;500;600;700&family=Spline+Sans+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+body { margin: 0; background: #ECEAE6; font-family: 'Albert Sans', sans-serif; }
+a { color: #2F45C4; text-decoration: none; }
+a:hover { color: #1B2A8F; text-decoration: underline; }
+</style>
+</helmet>
+<section data-screen-label="Turn 1 — Three STF brand directions" style="padding:56px 64px;display:flex;flex-direction:column;gap:40px">
+  <div style="max-width:900px;display:flex;flex-direction:column;gap:10px">
+    <div style="font-family:'IBM Plex Mono',monospace;font-size:13px;letter-spacing:2px;color:#8A8177">SUDARSHAN TASK FORCE · BRAND DIRECTIONS · STAGE 1</div>
+    <div style="font-family:'Bricolage Grotesque',sans-serif;font-size:40px;font-weight:700;color:#22201C">Three visual directions for STF</div>
+    <div style="font-size:16px;line-height:1.55;color:#5C5750;text-wrap:pretty">Each direction covers brand concept, logo system, color tokens (with dark-mode suggestions), typography, a mini UI kit, and two key screens: the mobile employee check-in and the admin attendance dashboard. Built from STF Pack 01 — practical, calm, accountable; no surveillance styling. Options: <a href="#1a">1a Sahay</a> · <a href="#1b">1b Dhruv</a> · <a href="#1c">1c Disha</a> · <a href="#cmp">comparison</a>.</div>
+  </div>
+
+  <div style="display:flex;gap:72px;align-items:flex-start">
+
+  <!-- ============ 1a SAHAY — WARM & HUMAN ============ -->
+  <div id="1a" style="width:1560px;display:flex;flex-direction:column;gap:20px;flex-shrink:0">
+    <div style="display:flex;align-items:center;gap:14px">
+      <div style="background:#8C3B22;color:#FFF;font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:14px;padding:6px 12px;border-radius:8px">1a</div>
+      <div style="font-family:'Bricolage Grotesque',sans-serif;font-size:28px;font-weight:700;color:#2B2018">Sahay — Warm &amp; Human</div>
+    </div>
+    <div style="background:#FFFFFF;border:1px solid #E7DFD4;border-radius:16px;padding:28px 32px;display:flex;gap:40px">
+      <div style="flex:1;display:flex;flex-direction:column;gap:8px">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:1.5px;color:#8A8177">CONCEPT</div>
+        <div style="font-family:'Bricolage Grotesque',sans-serif;font-size:20px;font-weight:600;color:#2B2018;line-height:1.4;text-wrap:pretty">Work runs on trust between owner and worker — STF as a steady, supportive hand, not a monitor.</div>
+        <div style="font-size:14px;color:#6E6257;line-height:1.6;text-wrap:pretty">Warm surfaces, generous rounding, and a terracotta–green pairing rooted in Indian workplaces (brick, counters, ledgers). It reads as approachable for first-time app users while the deep green keeps admin views serious. Best where employee adoption is the main risk.</div>
+      </div>
+      <div style="width:300px;display:flex;flex-direction:column;gap:8px">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:1.5px;color:#8A8177">PERSONALITY</div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px">
+          <div style="border:1px solid #E7DFD4;border-radius:999px;padding:6px 14px;font-size:13px;color:#2B2018">Supportive</div>
+          <div style="border:1px solid #E7DFD4;border-radius:999px;padding:6px 14px;font-size:13px;color:#2B2018">Respectful</div>
+          <div style="border:1px solid #E7DFD4;border-radius:999px;padding:6px 14px;font-size:13px;color:#2B2018">Grounded</div>
+          <div style="border:1px solid #E7DFD4;border-radius:999px;padding:6px 14px;font-size:13px;color:#2B2018">Everyday</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:20px">
+      <!-- logo -->
+      <div style="flex:1;background:#FFFFFF;border:1px solid #E7DFD4;border-radius:16px;padding:24px 28px;display:flex;flex-direction:column;gap:16px">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:1.5px;color:#8A8177">LOGO SYSTEM — two arcs meeting to complete one circle: owner and worker closing the loop of a day's work. A center point marks the record. Reads clearly at 16px.</div>
+        <div style="display:flex;gap:14px;align-items:stretch">
+          <div style="flex:1.4;background:#FAF6F0;border:1px solid #E7DFD4;border-radius:12px;display:flex;align-items:center;justify-content:center;gap:14px;padding:24px">
+            <svg width="44" height="44" viewBox="0 0 44 44"><path d="M 22 5 A 17 17 0 0 1 22 39" fill="none" stroke="#8C3B22" stroke-width="6" stroke-linecap="round"></path><path d="M 22 39 A 17 17 0 0 1 22 5" fill="none" stroke="#1F5C50" stroke-width="6" stroke-linecap="round" transform="rotate(28 22 22)"></path><circle cx="22" cy="22" r="4.5" fill="#2B2018"></circle></svg>
+            <div><div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:700;font-size:24px;color:#2B2018;line-height:1">Sudarshan</div><div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:3px;color:#8C3B22;margin-top:4px">TASK FORCE</div></div>
+          </div>
+          <div style="flex:1;background:#2B2018;border-radius:12px;display:flex;align-items:center;justify-content:center;gap:12px;padding:24px">
+            <svg width="36" height="36" viewBox="0 0 44 44"><path d="M 22 5 A 17 17 0 0 1 22 39" fill="none" stroke="#E08A64" stroke-width="6" stroke-linecap="round"></path><path d="M 22 39 A 17 17 0 0 1 22 5" fill="none" stroke="#7FBFAF" stroke-width="6" stroke-linecap="round" transform="rotate(28 22 22)"></path><circle cx="22" cy="22" r="4.5" fill="#FAF6F0"></circle></svg>
+            <div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:700;font-size:20px;color:#FAF6F0">Sudarshan</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:14px;align-items:center">
+          <div style="width:72px;height:72px;border-radius:18px;background:#8C3B22;display:flex;align-items:center;justify-content:center"><svg width="40" height="40" viewBox="0 0 44 44"><path d="M 22 5 A 17 17 0 0 1 22 39" fill="none" stroke="#FFFFFF" stroke-width="6" stroke-linecap="round"></path><path d="M 22 39 A 17 17 0 0 1 22 5" fill="none" stroke="#F2C7A8" stroke-width="6" stroke-linecap="round" transform="rotate(28 22 22)"></path><circle cx="22" cy="22" r="4.5" fill="#FFFFFF"></circle></svg></div>
+          <div style="width:32px;height:32px;border-radius:8px;background:#8C3B22;display:flex;align-items:center;justify-content:center"><svg width="20" height="20" viewBox="0 0 44 44"><path d="M 22 5 A 17 17 0 0 1 22 39" fill="none" stroke="#FFFFFF" stroke-width="7" stroke-linecap="round"></path><path d="M 22 39 A 17 17 0 0 1 22 5" fill="none" stroke="#F2C7A8" stroke-width="7" stroke-linecap="round" transform="rotate(28 22 22)"></path></svg></div>
+          <svg width="28" height="28" viewBox="0 0 44 44"><path d="M 22 5 A 17 17 0 0 1 22 39" fill="none" stroke="#2B2018" stroke-width="6" stroke-linecap="round"></path><path d="M 22 39 A 17 17 0 0 1 22 5" fill="none" stroke="#2B2018" stroke-width="6" stroke-linecap="round" transform="rotate(28 22 22)"></path><circle cx="22" cy="22" r="4.5" fill="#2B2018"></circle></svg>
+          <div style="font-size:12px;color:#6E6257">App icon 72 / 32 px · monochrome print version</div>
+        </div>
+      </div>
+      <!-- palette -->
+      <div style="flex:1.2;background:#FFFFFF;border:1px solid #E7DFD4;border-radius:16px;padding:24px 28px;display:flex;flex-direction:column;gap:14px">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:1.5px;color:#8A8177">COLOR SYSTEM</div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">
+          <div style="border:1px solid #E7DFD4;border-radius:10px;overflow:hidden"><div style="height:52px;background:#8C3B22"></div><div style="padding:8px 10px"><div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#2B2018">#8C3B22</div><div style="font-size:11px;color:#6E6257">Primary · actions</div></div></div>
+          <div style="border:1px solid #E7DFD4;border-radius:10px;overflow:hidden"><div style="height:52px;background:#1F5C50"></div><div style="padding:8px 10px"><div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#2B2018">#1F5C50</div><div style="font-size:11px;color:#6E6257">Secondary · admin</div></div></div>
+          <div style="border:1px solid #E7DFD4;border-radius:10px;overflow:hidden"><div style="height:52px;background:#FAF6F0"></div><div style="padding:8px 10px"><div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#2B2018">#FAF6F0</div><div style="font-size:11px;color:#6E6257">Background</div></div></div>
+          <div style="border:1px solid #E7DFD4;border-radius:10px;overflow:hidden"><div style="height:52px;background:#FFFFFF;border-bottom:1px solid #E7DFD4"></div><div style="padding:8px 10px"><div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#2B2018">#FFFFFF</div><div style="font-size:11px;color:#6E6257">Surface / cards</div></div></div>
+          <div style="border:1px solid #E7DFD4;border-radius:10px;overflow:hidden"><div style="height:52px;background:#2B2018"></div><div style="padding:8px 10px"><div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#2B2018">#2B2018</div><div style="font-size:11px;color:#6E6257">Text primary</div></div></div>
+          <div style="border:1px solid #E7DFD4;border-radius:10px;overflow:hidden"><div style="height:52px;background:#6E6257"></div><div style="padding:8px 10px"><div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#2B2018">#6E6257</div><div style="font-size:11px;color:#6E6257">Text secondary</div></div></div>
+          <div style="border:1px solid #E7DFD4;border-radius:10px;overflow:hidden"><div style="height:52px;background:#E7DFD4"></div><div style="padding:8px 10px"><div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#2B2018">#E7DFD4</div><div style="font-size:11px;color:#6E6257">Borders</div></div></div>
+          <div style="border:1px solid #E7DFD4;border-radius:10px;overflow:hidden"><div style="height:52px;background:#F2E5D5"></div><div style="padding:8px 10px"><div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#2B2018">#F2E5D5</div><div style="font-size:11px;color:#6E6257">Tint / highlight</div></div></div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <div style="background:#E7F2E9;color:#22633C;border:1px solid #BBDCC5;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600">Success #2E7D4F</div>
+          <div style="background:#FBF0DC;color:#8A5B0B;border:1px solid #EBD3A6;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600">Warning #B97A0F</div>
+          <div style="background:#FAE4E0;color:#96291C;border:1px solid #EFC0B8;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600">Error #C0392B</div>
+          <div style="background:#E2EEF6;color:#215579;border:1px solid #BDD8EA;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600">Info #2C6E9E</div>
+          <div style="background:#EFECE7;color:#5C554C;border:1px solid #DCD6CC;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600">Neutral #8A8177</div>
+        </div>
+        <div style="background:#2B2018;border-radius:10px;padding:12px 16px;font-family:'IBM Plex Mono',monospace;font-size:11.5px;line-height:1.9;color:#CFC6BA">DARK MODE · bg #201A15 · surface #2A231D · border #3D342B · text #F3EDE6 / #B5A998 · primary #E08A64 · secondary #7FBFAF · status colors lightened one step</div>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:20px">
+      <!-- typography -->
+      <div style="flex:1;background:#FFFFFF;border:1px solid #E7DFD4;border-radius:16px;padding:24px 28px;display:flex;flex-direction:column;gap:12px">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:1.5px;color:#8A8177">TYPOGRAPHY</div>
+        <div style="font-family:'Bricolage Grotesque',sans-serif;font-size:30px;font-weight:700;color:#2B2018">Bricolage Grotesque — headings</div>
+        <div style="font-family:'Albert Sans',sans-serif;font-size:16px;color:#2B2018;line-height:1.6">Albert Sans — body and UI. Friendly proportions, very legible at small sizes on low-end phones. Numerals use Albert Sans with tabular figures for tables and payslips.</div>
+        <div style="border-top:1px solid #E7DFD4;padding-top:12px;font-size:13px;color:#6E6257;line-height:2">Mobile scale: 26 page title · 20 section · 16 body · 14 secondary · 13 caption (floor)<br>Desktop scale: 32 / 24 / 16 / 14 · Weights: 700 headings, 600 buttons/labels, 400 body<br>Rules: sentence case everywhere; no light weights below 16px; min body 14px.</div>
+      </div>
+      <!-- ui kit -->
+      <div style="flex:1.2;background:#FFFFFF;border:1px solid #E7DFD4;border-radius:16px;padding:24px 28px;display:flex;flex-direction:column;gap:16px">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:1.5px;color:#8A8177">MINI UI KIT — 12–16px radius · soft shadows · outlined icons, 2px rounded strokes · 48px min touch targets</div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center">
+          <div style="background:#8C3B22;color:#FFF;border-radius:12px;padding:13px 24px;font-weight:600;font-size:15px;box-shadow:0 2px 6px rgba(140,59,34,.25)">Check In</div>
+          <div style="background:#FFF;color:#8C3B22;border:1.5px solid #8C3B22;border-radius:12px;padding:12px 24px;font-weight:600;font-size:15px">Request Leave</div>
+          <div style="background:#C0392B;color:#FFF;border-radius:12px;padding:13px 24px;font-weight:600;font-size:15px">Reject</div>
+          <div style="background:#EFECE7;color:#A39A8D;border-radius:12px;padding:13px 24px;font-weight:600;font-size:15px">Disabled</div>
+        </div>
+        <div style="display:flex;gap:12px">
+          <div style="flex:1"><div style="font-size:13px;font-weight:600;color:#2B2018;margin-bottom:6px">Employee name</div><div style="border:1.5px solid #E7DFD4;border-radius:12px;padding:13px 16px;font-size:15px;color:#8A8177;background:#FFF">Search employee…</div></div>
+          <div style="flex:1"><div style="font-size:13px;font-weight:600;color:#2B2018;margin-bottom:6px">Branch</div><div style="border:1.5px solid #E7DFD4;border-radius:12px;padding:13px 16px;font-size:15px;color:#2B2018;background:#FFF;display:flex;justify-content:space-between;align-items:center">Shivaji Market<span style="color:#8A8177">▾</span></div></div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <div style="background:#E7F2E9;color:#22633C;border-radius:999px;padding:7px 14px;font-size:13px;font-weight:600">● Present</div>
+          <div style="background:#FBF0DC;color:#8A5B0B;border-radius:999px;padding:7px 14px;font-size:13px;font-weight:600">● Late 18 min</div>
+          <div style="background:#FAE4E0;color:#96291C;border-radius:999px;padding:7px 14px;font-size:13px;font-weight:600">● Absent</div>
+          <div style="background:#E2EEF6;color:#215579;border-radius:999px;padding:7px 14px;font-size:13px;font-weight:600">● On Leave</div>
+          <div style="background:#EFECE7;color:#5C554C;border-radius:999px;padding:7px 14px;font-size:13px;font-weight:600">● Pending review</div>
+        </div>
+        <div style="background:#FBF0DC;border:1px solid #EBD3A6;border-radius:12px;padding:14px 18px;display:flex;gap:12px;align-items:flex-start"><div style="width:20px;height:20px;border-radius:50%;background:#B97A0F;color:#FFF;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">!</div><div style="font-size:14px;color:#5C4408;line-height:1.5"><b>Checking in now will record a late arrival of 18 minutes.</b><br>Your manager will see this in today's attendance review.</div></div>
+      </div>
+    </div>
+
+    <!-- screens -->
+    <div style="display:flex;gap:20px;align-items:flex-start">
+      <div data-screen-label="1a Mobile check-in" style="width:360px;flex-shrink:0;background:#FAF6F0;border:1px solid #E7DFD4;border-radius:28px;overflow:hidden;display:flex;flex-direction:column;font-family:'Albert Sans',sans-serif">
+        <div style="padding:22px 22px 0;display:flex;justify-content:space-between;align-items:center">
+          <div><div style="font-family:'Bricolage Grotesque',sans-serif;font-size:20px;font-weight:700;color:#2B2018">Good morning, Ravi</div><div style="font-size:13px;color:#6E6257;margin-top:2px">Friday, 7 August 2026</div></div>
+          <div style="width:42px;height:42px;border-radius:50%;background:#1F5C50;color:#FFF;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:15px">RK</div>
+        </div>
+        <div style="padding:20px 22px;display:flex;flex-direction:column;gap:14px;flex:1">
+          <div style="background:#FFF;border:1px solid #E7DFD4;border-radius:18px;padding:22px;display:flex;flex-direction:column;align-items:center;gap:14px">
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:30px;font-weight:600;color:#2B2018">09 : 42 AM</div>
+            <div style="background:#E7F2E9;color:#22633C;border-radius:999px;padding:7px 14px;font-size:13px;font-weight:600">✓ Inside Shivaji Market branch area</div>
+            <div style="width:176px;height:176px;border-radius:50%;background:#8C3B22;box-shadow:0 6px 20px rgba(140,59,34,.35);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px">
+              <div style="color:#FFF;font-family:'Bricolage Grotesque',sans-serif;font-size:24px;font-weight:700">Check In</div>
+              <div style="color:#F2C7A8;font-size:12px">Shift 9:30 AM – 6:30 PM</div>
+            </div>
+            <div style="background:#FBF0DC;border-radius:10px;padding:10px 14px;font-size:13px;color:#8A5B0B;font-weight:600;text-align:center">Checking in now records a late arrival of 12 min</div>
+          </div>
+          <div style="display:flex;gap:12px">
+            <div style="flex:1;background:#FFF;border:1px solid #E7DFD4;border-radius:14px;padding:14px"><div style="font-size:12px;color:#6E6257">Today's hours</div><div style="font-family:'IBM Plex Mono',monospace;font-size:19px;font-weight:600;color:#2B2018;margin-top:3px">0 h 00 m</div></div>
+            <div style="flex:1;background:#FFF;border:1px solid #E7DFD4;border-radius:14px;padding:14px"><div style="font-size:12px;color:#6E6257">This week</div><div style="font-family:'IBM Plex Mono',monospace;font-size:19px;font-weight:600;color:#2B2018;margin-top:3px">32 h 10 m</div></div>
+          </div>
+          <div style="background:#FFF;border:1px solid #E7DFD4;border-radius:14px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-size:14px;font-weight:600;color:#2B2018">Tue late arrival — approval requested</div><div style="font-size:12px;color:#6E6257;margin-top:2px">Waiting for Suresh (Manager)</div></div><div style="background:#EFECE7;color:#5C554C;border-radius:999px;padding:6px 12px;font-size:12px;font-weight:600">Pending</div></div>
+        </div>
+        <div style="background:#FFF;border-top:1px solid #E7DFD4;display:flex;padding:10px 8px 16px">
+          <div style="flex:1;text-align:center"><div style="font-size:18px">⌂</div><div style="font-size:11px;font-weight:600;color:#8C3B22">Home</div></div>
+          <div style="flex:1;text-align:center;color:#8A8177"><div style="font-size:18px">☰</div><div style="font-size:11px;font-weight:600">Tasks</div></div>
+          <div style="flex:1;text-align:center;color:#8A8177"><div style="font-size:18px">◷</div><div style="font-size:11px;font-weight:600">Attendance</div></div>
+          <div style="flex:1;text-align:center;color:#8A8177"><div style="font-size:18px">◉</div><div style="font-size:11px;font-weight:600">Profile</div></div>
+        </div>
+      </div>
+      <div data-screen-label="1a Admin dashboard" style="flex:1;background:#FAF6F0;border:1px solid #E7DFD4;border-radius:20px;overflow:hidden;display:flex;font-family:'Albert Sans',sans-serif;min-height:640px">
+        <div style="width:210px;background:#2B2018;padding:20px 14px;display:flex;flex-direction:column;gap:2px;flex-shrink:0">
+          <div style="display:flex;align-items:center;gap:10px;padding:6px 10px 18px"><svg width="26" height="26" viewBox="0 0 44 44"><path d="M 22 5 A 17 17 0 0 1 22 39" fill="none" stroke="#E08A64" stroke-width="6" stroke-linecap="round"></path><path d="M 22 39 A 17 17 0 0 1 22 5" fill="none" stroke="#7FBFAF" stroke-width="6" stroke-linecap="round" transform="rotate(28 22 22)"></path></svg><div style="color:#FAF6F0;font-family:'Bricolage Grotesque',sans-serif;font-weight:700;font-size:17px">Sudarshan</div></div>
+          <div style="color:#B5A998;font-size:14px;padding:11px 12px;border-radius:10px">Dashboard</div>
+          <div style="background:#4A3A2B;color:#FFF;font-size:14px;font-weight:600;padding:11px 12px;border-radius:10px">Attendance</div>
+          <div style="color:#B5A998;font-size:14px;padding:11px 12px;border-radius:10px">Employees</div>
+          <div style="color:#B5A998;font-size:14px;padding:11px 12px;border-radius:10px">Leave</div>
+          <div style="color:#B5A998;font-size:14px;padding:11px 12px;border-radius:10px">Tasks</div>
+          <div style="color:#B5A998;font-size:14px;padding:11px 12px;border-radius:10px">Payroll</div>
+          <div style="color:#B5A998;font-size:14px;padding:11px 12px;border-radius:10px">Reports</div>
+          <div style="color:#B5A998;font-size:14px;padding:11px 12px;border-radius:10px">Modules</div>
+        </div>
+        <div style="flex:1;padding:24px 28px;display:flex;flex-direction:column;gap:18px">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:16px">
+            <div><div style="font-family:'Bricolage Grotesque',sans-serif;font-size:22px;font-weight:700;color:#2B2018">Attendance — Friday, 7 Aug</div><div style="font-size:13px;color:#6E6257;margin-top:2px">55 employees · Shivaji Market + Warehouse</div></div>
+            <div style="border:1.5px solid #E7DFD4;border-radius:12px;padding:11px 16px;font-size:14px;color:#8A8177;background:#FFF;width:230px">🔍 Search employee…</div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px">
+            <div style="background:#FFF;border:1px solid #E7DFD4;border-radius:14px;padding:16px"><div style="font-size:13px;color:#6E6257">Present</div><div style="font-family:'IBM Plex Mono',monospace;font-size:28px;font-weight:600;color:#22633C;margin-top:4px">42</div></div>
+            <div style="background:#FFF;border:1px solid #E7DFD4;border-radius:14px;padding:16px"><div style="font-size:13px;color:#6E6257">Late</div><div style="font-family:'IBM Plex Mono',monospace;font-size:28px;font-weight:600;color:#8A5B0B;margin-top:4px">6</div></div>
+            <div style="background:#FFF;border:1px solid #E7DFD4;border-radius:14px;padding:16px"><div style="font-size:13px;color:#6E6257">Absent</div><div style="font-family:'IBM Plex Mono',monospace;font-size:28px;font-weight:600;color:#96291C;margin-top:4px">3</div></div>
+            <div style="background:#FFF;border:1px solid #E7DFD4;border-radius:14px;padding:16px"><div style="font-size:13px;color:#6E6257">On Leave</div><div style="font-family:'IBM Plex Mono',monospace;font-size:28px;font-weight:600;color:#215579;margin-top:4px">4</div></div>
+          </div>
+          <div style="background:#FFF;border:1px solid #E7DFD4;border-radius:14px;padding:18px 20px;display:flex;flex-direction:column;gap:12px">
+            <div style="display:flex;justify-content:space-between;align-items:center"><div style="font-size:15px;font-weight:700;color:#2B2018">Exceptions needing review (3)</div><div style="font-size:13px;color:#8C3B22;font-weight:600">View all</div></div>
+            <div style="display:flex;justify-content:space-between;align-items:center;border:1px solid #E7DFD4;border-radius:12px;padding:12px 16px"><div style="display:flex;gap:12px;align-items:center"><div style="width:36px;height:36px;border-radius:50%;background:#F2E5D5;color:#8C3B22;font-weight:600;font-size:13px;display:flex;align-items:center;justify-content:center">MJ</div><div><div style="font-size:14px;font-weight:600;color:#2B2018">Meena Joshi — checked in outside branch area</div><div style="font-size:12px;color:#6E6257">Delivery run · 9:12 AM · 1.4 km from geofence</div></div></div><div style="display:flex;gap:8px"><div style="background:#1F5C50;color:#FFF;border-radius:10px;padding:9px 16px;font-size:13px;font-weight:600">Approve</div><div style="border:1.5px solid #E7DFD4;color:#2B2018;border-radius:10px;padding:8px 16px;font-size:13px;font-weight:600">Review</div></div></div>
+            <div style="display:flex;justify-content:space-between;align-items:center;border:1px solid #E7DFD4;border-radius:12px;padding:12px 16px"><div style="display:flex;gap:12px;align-items:center"><div style="width:36px;height:36px;border-radius:50%;background:#F2E5D5;color:#8C3B22;font-weight:600;font-size:13px;display:flex;align-items:center;justify-content:center">AP</div><div><div style="font-size:14px;font-weight:600;color:#2B2018">Arun Patil — missed check-out yesterday</div><div style="font-size:12px;color:#6E6257">Warehouse · correction requested, reason given</div></div></div><div style="display:flex;gap:8px"><div style="background:#1F5C50;color:#FFF;border-radius:10px;padding:9px 16px;font-size:13px;font-weight:600">Approve</div><div style="border:1.5px solid #E7DFD4;color:#2B2018;border-radius:10px;padding:8px 16px;font-size:13px;font-weight:600">Review</div></div></div>
+          </div>
+          <div style="background:#FFF;border:1px solid #E7DFD4;border-radius:14px;overflow:hidden">
+            <div style="display:grid;grid-template-columns:2.2fr 1fr 1fr 1fr 1.2fr;padding:12px 20px;background:#FAF6F0;border-bottom:1px solid #E7DFD4;font-size:12px;font-weight:600;color:#6E6257;letter-spacing:.5px">EMPLOYEE<span>IN</span><span>OUT</span><span>HOURS</span><span>STATUS</span></div>
+            <div style="display:grid;grid-template-columns:2.2fr 1fr 1fr 1fr 1.2fr;padding:13px 20px;border-bottom:1px solid #F1EBE1;font-size:14px;color:#2B2018;align-items:center"><span style="font-weight:600">Ravi Kumar</span><span style="font-family:'IBM Plex Mono',monospace;font-size:13px">9:42</span><span style="font-family:'IBM Plex Mono',monospace;font-size:13px">—</span><span style="font-family:'IBM Plex Mono',monospace;font-size:13px">2:06</span><div style="background:#FBF0DC;color:#8A5B0B;border-radius:999px;padding:4px 12px;font-size:12px;font-weight:600;justify-self:start">● Late 12 min</div></div>
+            <div style="display:grid;grid-template-columns:2.2fr 1fr 1fr 1fr 1.2fr;padding:13px 20px;border-bottom:1px solid #F1EBE1;font-size:14px;color:#2B2018;align-items:center"><span style="font-weight:600">Meena Joshi</span><span style="font-family:'IBM Plex Mono',monospace;font-size:13px">9:12</span><span style="font-family:'IBM Plex Mono',monospace;font-size:13px">—</span><span style="font-family:'IBM Plex Mono',monospace;font-size:13px">2:36</span><div style="background:#EFECE7;color:#5C554C;border-radius:999px;padding:4px 12px;font-size:12px;font-weight:600;justify-self:start">● Pending review</div></div>
+            <div style="display:grid;grid-template-columns:2.2fr 1fr 1fr 1fr 1.2fr;padding:13px 20px;font-size:14px;color:#2B2018;align-items:center"><span style="font-weight:600">Sunita Devi</span><span style="font-family:'IBM Plex Mono',monospace;font-size:13px">9:26</span><span style="font-family:'IBM Plex Mono',monospace;font-size:13px">—</span><span style="font-family:'IBM Plex Mono',monospace;font-size:13px">2:22</span><div style="background:#E7F2E9;color:#22633C;border-radius:999px;padding:4px 12px;font-size:12px;font-weight:600;justify-self:start">● Present</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 1b DHRUV — UTILITARIAN / INDUSTRIAL ============ -->
+  <div id="1b" style="width:1560px;display:flex;flex-direction:column;gap:20px;flex-shrink:0">
+    <div style="display:flex;align-items:center;gap:14px">
+      <div style="background:#F2A516;color:#16191D;font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:14px;padding:6px 12px;border-radius:4px">1b</div>
+      <div style="font-family:'Archivo',sans-serif;font-size:28px;font-weight:800;color:#16191D;letter-spacing:-.5px">DHRUV — Utilitarian / Industrial</div>
+    </div>
+    <div style="background:#FFFFFF;border:1px solid #D5D9DE;border-radius:6px;padding:28px 32px;display:flex;gap:40px">
+      <div style="flex:1;display:flex;flex-direction:column;gap:8px">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:1.5px;color:#737B84">CONCEPT</div>
+        <div style="font-family:'Archivo',sans-serif;font-size:20px;font-weight:700;color:#16191D;line-height:1.4;text-wrap:pretty">A dependable tool for the shop floor — signage-clear, glove-friendly, built like good equipment.</div>
+        <div style="font-size:14px;color:#5C646E;line-height:1.6;font-family:'IBM Plex Sans',sans-serif;text-wrap:pretty">Charcoal ink, one safety-amber accent, square corners, and monospaced data. Borrows from warehouse signage and instrument panels: everything labeled, nothing decorative. Strongest where the workforce is warehouse, dispatch, and delivery heavy.</div>
+      </div>
+      <div style="width:300px;display:flex;flex-direction:column;gap:8px">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:1.5px;color:#737B84">PERSONALITY</div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px">
+          <div style="border:1px solid #D5D9DE;border-radius:4px;padding:6px 14px;font-size:13px;color:#16191D;font-family:'IBM Plex Sans',sans-serif">Dependable</div>
+          <div style="border:1px solid #D5D9DE;border-radius:4px;padding:6px 14px;font-size:13px;color:#16191D;font-family:'IBM Plex Sans',sans-serif">Direct</div>
+          <div style="border:1px solid #D5D9DE;border-radius:4px;padding:6px 14px;font-size:13px;color:#16191D;font-family:'IBM Plex Sans',sans-serif">Rugged</div>
+          <div style="border:1px solid #D5D9DE;border-radius:4px;padding:6px 14px;font-size:13px;color:#16191D;font-family:'IBM Plex Sans',sans-serif">Precise</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:20px">
+      <div style="flex:1;background:#FFFFFF;border:1px solid #D5D9DE;border-radius:6px;padding:24px 28px;display:flex;flex-direction:column;gap:16px">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:1.5px;color:#737B84">LOGO SYSTEM — a hexagonal plate (machine fastener / badge of duty) holding a north-pointing needle: Dhruv, the fixed star. Solid shapes survive 16px and one-color print.</div>
+        <div style="display:flex;gap:14px;align-items:stretch">
+          <div style="flex:1.4;background:#F2F3F4;border:1px solid #D5D9DE;border-radius:4px;display:flex;align-items:center;justify-content:center;gap:14px;padding:24px">
+            <svg width="44" height="44" viewBox="0 0 44 44"><polygon points="22,2 39,12 39,32 22,42 5,32 5,12" fill="#22272E"></polygon><polygon points="22,9 29,30 22,25 15,30" fill="#F2A516"></polygon></svg>
+            <div><div style="font-family:'Archivo',sans-serif;font-weight:800;font-size:24px;color:#16191D;letter-spacing:-.5px;line-height:1">STF</div><div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:2.5px;color:#5C646E;margin-top:4px">SUDARSHAN TASK FORCE</div></div>
+          </div>
+          <div style="flex:1;background:#16191D;border-radius:4px;display:flex;align-items:center;justify-content:center;gap:12px;padding:24px">
+            <svg width="36" height="36" viewBox="0 0 44 44"><polygon points="22,2 39,12 39,32 22,42 5,32 5,12" fill="#FFFFFF"></polygon><polygon points="22,9 29,30 22,25 15,30" fill="#F2A516"></polygon></svg>
+            <div style="font-family:'Archivo',sans-serif;font-weight:800;font-size:20px;color:#FFF;letter-spacing:-.5px">STF</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:14px;align-items:center">
+          <div style="width:72px;height:72px;border-radius:14px;background:#22272E;display:flex;align-items:center;justify-content:center"><svg width="42" height="42" viewBox="0 0 44 44"><polygon points="22,2 39,12 39,32 22,42 5,32 5,12" fill="none" stroke="#F2A516" stroke-width="3"></polygon><polygon points="22,9 29,30 22,25 15,30" fill="#FFFFFF"></polygon></svg></div>
+          <div style="width:32px;height:32px;border-radius:6px;background:#22272E;display:flex;align-items:center;justify-content:center"><svg width="22" height="22" viewBox="0 0 44 44"><polygon points="22,9 29,30 22,25 15,30" fill="#F2A516" transform="scale(1.4) translate(-6.3,-6.3)"></polygon></svg></div>
+          <svg width="28" height="28" viewBox="0 0 44 44"><polygon points="22,2 39,12 39,32 22,42 5,32 5,12" fill="#16191D"></polygon><polygon points="22,9 29,30 22,25 15,30" fill="#FFFFFF"></polygon></svg>
+          <div style="font-size:12px;color:#5C646E;font-family:'IBM Plex Sans',sans-serif">App icon 72 / 32 px · monochrome version</div>
+        </div>
+      </div>
+      <div style="flex:1.2;background:#FFFFFF;border:1px solid #D5D9DE;border-radius:6px;padding:24px 28px;display:flex;flex-direction:column;gap:14px">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:1.5px;color:#737B84">COLOR SYSTEM</div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;font-family:'IBM Plex Sans',sans-serif">
+          <div style="border:1px solid #D5D9DE;border-radius:4px;overflow:hidden"><div style="height:52px;background:#22272E"></div><div style="padding:8px 10px"><div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#16191D">#22272E</div><div style="font-size:11px;color:#5C646E">Primary · ink</div></div></div>
+          <div style="border:1px solid #D5D9DE;border-radius:4px;overflow:hidden"><div style="height:52px;background:#F2A516"></div><div style="padding:8px 10px"><div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#16191D">#F2A516</div><div style="font-size:11px;color:#5C646E">Accent · action</div></div></div>
+          <div style="border:1px solid #D5D9DE;border-radius:4px;overflow:hidden"><div style="height:52px;background:#F2F3F4"></div><div style="padding:8px 10px"><div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#16191D">#F2F3F4</div><div style="font-size:11px;color:#5C646E">Background</div></div></div>
+          <div style="border:1px solid #D5D9DE;border-radius:4px;overflow:hidden"><div style="height:52px;background:#FFFFFF;border-bottom:1px solid #D5D9DE"></div><div style="padding:8px 10px"><div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#16191D">#FFFFFF</div><div style="font-size:11px;color:#5C646E">Surface / cards</div></div></div>
+          <div style="border:1px solid #D5D9DE;border-radius:4px;overflow:hidden"><div style="height:52px;background:#16191D"></div><div style="padding:8px 10px"><div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#16191D">#16191D</div><div style="font-size:11px;color:#5C646E">Text primary</div></div></div>
+          <div style="border:1px solid #D5D9DE;border-radius:4px;overflow:hidden"><div style="height:52px;background:#5C646E"></div><div style="padding:8px 10px"><div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#16191D">#5C646E</div><div style="font-size:11px;color:#5C646E">Text secondary</div></div></div>
+          <div style="border:1px solid #D5D9DE;border-radius:4px;overflow:hidden"><div style="height:52px;background:#D5D9DE"></div><div style="padding:8px 10px"><div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#16191D">#D5D9DE</div><div style="font-size:11px;color:#5C646E">Borders</div></div></div>
+          <div style="border:1px solid #D5D9DE;border-radius:4px;overflow:hidden"><div style="height:52px;background:#FDEBC8"></div><div style="padding:8px 10px"><div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#16191D">#FDEBC8</div><div style="font-size:11px;color:#5C646E">Amber tint</div></div></div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;font-family:'IBM Plex Sans',sans-serif">
+          <div style="background:#E3F1E7;color:#175E2E;border:1px solid #B9DCC4;border-radius:4px;padding:6px 12px;font-size:12px;font-weight:600">Success #1E7A3C</div>
+          <div style="background:#FBEFD9;color:#8A5700;border:1px solid #EBD3A0;border-radius:4px;padding:6px 12px;font-size:12px;font-weight:600">Warning #B87400</div>
+          <div style="background:#F9E2E0;color:#8C1D17;border:1px solid #EFBDB8;border-radius:4px;padding:6px 12px;font-size:12px;font-weight:600">Error #B3261E</div>
+          <div style="background:#E1ECF7;color:#1A4C7C;border:1px solid #BAD4EC;border-radius:4px;padding:6px 12px;font-size:12px;font-weight:600">Info #21619C</div>
+          <div style="background:#ECEEF0;color:#4A525C;border:1px solid #D5D9DE;border-radius:4px;padding:6px 12px;font-size:12px;font-weight:600">Neutral #737B84</div>
+        </div>
+        <div style="background:#16191D;border-radius:4px;padding:12px 16px;font-family:'IBM Plex Mono',monospace;font-size:11.5px;line-height:1.9;color:#9AA2AC">DARK MODE · bg #16191D · surface #1F242A · border #333A42 · text #F2F3F4 / #9AA2AC · accent #FFB224 · status colors lightened one step</div>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:20px">
+      <div style="flex:1;background:#FFFFFF;border:1px solid #D5D9DE;border-radius:6px;padding:24px 28px;display:flex;flex-direction:column;gap:12px">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:1.5px;color:#737B84">TYPOGRAPHY</div>
+        <div style="font-family:'Archivo',sans-serif;font-size:30px;font-weight:800;color:#16191D;letter-spacing:-.5px">Archivo — headings &amp; labels</div>
+        <div style="font-family:'IBM Plex Sans',sans-serif;font-size:16px;color:#16191D;line-height:1.6">IBM Plex Sans — body and UI. Engineered, neutral, excellent on cheap Android screens. <span style="font-family:'IBM Plex Mono',monospace">IBM Plex Mono — all times, counts, hours, and IDs.</span></div>
+        <div style="border-top:1px solid #D5D9DE;padding-top:12px;font-size:13px;color:#5C646E;line-height:2;font-family:'IBM Plex Sans',sans-serif">Mobile scale: 26 page title · 19 section · 16 body · 14 secondary · 13 caption (floor)<br>Desktop scale: 30 / 22 / 15 / 13 · Weights: 800 headings, 700 buttons, 400/500 body<br>Rules: UPPERCASE only for micro-labels with letter-spacing; data always monospaced.</div>
+      </div>
+      <div style="flex:1.2;background:#FFFFFF;border:1px solid #D5D9DE;border-radius:6px;padding:24px 28px;display:flex;flex-direction:column;gap:16px;font-family:'IBM Plex Sans',sans-serif">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:1.5px;color:#737B84">MINI UI KIT — 4px radius · flat, 1px borders · solid geometric icons · 48px min touch targets · left status bars</div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center">
+          <div style="background:#F2A516;color:#16191D;border-radius:4px;padding:13px 24px;font-weight:700;font-size:15px;font-family:'Archivo',sans-serif">CHECK IN</div>
+          <div style="background:#FFF;color:#16191D;border:1.5px solid #22272E;border-radius:4px;padding:12px 24px;font-weight:700;font-size:15px;font-family:'Archivo',sans-serif">REQUEST LEAVE</div>
+          <div style="background:#B3261E;color:#FFF;border-radius:4px;padding:13px 24px;font-weight:700;font-size:15px;font-family:'Archivo',sans-serif">REJECT</div>
+          <div style="background:#ECEEF0;color:#9AA2AC;border-radius:4px;padding:13px 24px;font-weight:700;font-size:15px;font-family:'Archivo',sans-serif">DISABLED</div>
+        </div>
+        <div style="display:flex;gap:12px">
+          <div style="flex:1"><div style="font-size:12px;font-weight:700;color:#16191D;margin-bottom:6px;letter-spacing:1px">EMPLOYEE</div><div style="border:1.5px solid #B9BFC7;border-radius:4px;padding:13px 16px;font-size:15px;color:#737B84;background:#FFF">Search employee…</div></div>
+          <div style="flex:1"><div style="font-size:12px;font-weight:700;color:#16191D;margin-bottom:6px;letter-spacing:1px">BRANCH</div><div style="border:1.5px solid #B9BFC7;border-radius:4px;padding:13px 16px;font-size:15px;color:#16191D;background:#FFF;display:flex;justify-content:space-between;align-items:center">Warehouse 2<span style="color:#737B84">▾</span></div></div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <div style="background:#E3F1E7;color:#175E2E;border-left:3px solid #1E7A3C;padding:7px 12px;font-size:13px;font-weight:600">PRESENT</div>
+          <div style="background:#FBEFD9;color:#8A5700;border-left:3px solid #B87400;padding:7px 12px;font-size:13px;font-weight:600">LATE 18 MIN</div>
+          <div style="background:#F9E2E0;color:#8C1D17;border-left:3px solid #B3261E;padding:7px 12px;font-size:13px;font-weight:600">ABSENT</div>
+          <div style="background:#E1ECF7;color:#1A4C7C;border-left:3px solid #21619C;padding:7px 12px;font-size:13px;font-weight:600">ON LEAVE</div>
+          <div style="background:#ECEEF0;color:#4A525C;border-left:3px solid #737B84;padding:7px 12px;font-size:13px;font-weight:600">PENDING</div>
+        </div>
+        <div style="background:#FBEFD9;border:1px solid #EBD3A0;border-left:4px solid #B87400;padding:14px 18px;display:flex;gap:12px;align-items:flex-start"><div style="font-family:'IBM Plex Mono',monospace;font-weight:600;color:#8A5700;flex-shrink:0">[!]</div><div style="font-size:14px;color:#6B4400;line-height:1.5"><b>Checking in now will record a late arrival of 18 minutes.</b><br>Your manager will see this in today's attendance review.</div></div>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:20px;align-items:flex-start">
+      <div data-screen-label="1b Mobile check-in" style="width:360px;flex-shrink:0;background:#F2F3F4;border:1px solid #D5D9DE;border-radius:16px;overflow:hidden;display:flex;flex-direction:column;font-family:'IBM Plex Sans',sans-serif">
+        <div style="background:#22272E;padding:20px 22px;display:flex;justify-content:space-between;align-items:center">
+          <div><div style="font-family:'Archivo',sans-serif;font-size:19px;font-weight:800;color:#FFF">Ravi Kumar</div><div style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#9AA2AC;margin-top:2px">FRI 07 AUG 2026 · WAREHOUSE 2</div></div>
+          <svg width="30" height="30" viewBox="0 0 44 44"><polygon points="22,2 39,12 39,32 22,42 5,32 5,12" fill="none" stroke="#F2A516" stroke-width="3"></polygon><polygon points="22,9 29,30 22,25 15,30" fill="#FFF"></polygon></svg>
+        </div>
+        <div style="padding:18px 20px;display:flex;flex-direction:column;gap:12px;flex:1">
+          <div style="background:#FFF;border:1px solid #D5D9DE;border-radius:6px;padding:20px;display:flex;flex-direction:column;align-items:center;gap:12px">
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:34px;font-weight:600;color:#16191D">09:42</div>
+            <div style="background:#E3F1E7;color:#175E2E;border-left:3px solid #1E7A3C;padding:6px 12px;font-size:12.5px;font-weight:600">INSIDE WAREHOUSE 2 AREA ✓</div>
+            <div style="width:100%;background:#F2A516;border-radius:6px;padding:22px;display:flex;flex-direction:column;align-items:center;gap:2px;box-shadow:inset 0 -3px 0 rgba(0,0,0,.15)">
+              <div style="font-family:'Archivo',sans-serif;font-size:24px;font-weight:800;color:#16191D;letter-spacing:.5px">CHECK IN</div>
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:#6B4400">SHIFT 09:30 – 18:30</div>
+            </div>
+            <div style="width:100%;background:#FBEFD9;border-left:4px solid #B87400;padding:10px 12px;font-size:13px;color:#6B4400;font-weight:600">Late arrival of 12 min will be recorded</div>
+          </div>
+          <div style="display:flex;gap:12px">
+            <div style="flex:1;background:#FFF;border:1px solid #D5D9DE;border-radius:6px;padding:12px 14px"><div style="font-size:11px;color:#737B84;letter-spacing:1px;font-weight:700">TODAY</div><div style="font-family:'IBM Plex Mono',monospace;font-size:20px;font-weight:600;color:#16191D;margin-top:3px">00:00</div></div>
+            <div style="flex:1;background:#FFF;border:1px solid #D5D9DE;border-radius:6px;padding:12px 14px"><div style="font-size:11px;color:#737B84;letter-spacing:1px;font-weight:700">THIS WEEK</div><div style="font-family:'IBM Plex Mono',monospace;font-size:20px;font-weight:600;color:#16191D;margin-top:3px">32:10</div></div>
+          </div>
+          <div style="background:#FFF;border:1px solid #D5D9DE;border-radius:6px;padding:13px 16px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-size:14px;font-weight:600;color:#16191D">Tue late arrival — approval requested</div><div style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:#737B84;margin-top:2px">WAITING: SURESH (MANAGER)</div></div><div style="background:#ECEEF0;color:#4A525C;border-left:3px solid #737B84;padding:5px 10px;font-size:11.5px;font-weight:700">PENDING</div></div>
+        </div>
+        <div style="background:#22272E;display:flex;padding:10px 8px 16px">
+          <div style="flex:1;text-align:center;color:#F2A516"><div style="font-size:17px">⌂</div><div style="font-size:10.5px;font-weight:700;letter-spacing:.5px">HOME</div></div>
+          <div style="flex:1;text-align:center;color:#9AA2AC"><div style="font-size:17px">☰</div><div style="font-size:10.5px;font-weight:700;letter-spacing:.5px">TASKS</div></div>
+          <div style="flex:1;text-align:center;color:#9AA2AC"><div style="font-size:17px">◷</div><div style="font-size:10.5px;font-weight:700;letter-spacing:.5px">TIME</div></div>
+          <div style="flex:1;text-align:center;color:#9AA2AC"><div style="font-size:17px">◉</div><div style="font-size:10.5px;font-weight:700;letter-spacing:.5px">PROFILE</div></div>
+        </div>
+      </div>
+      <div data-screen-label="1b Admin dashboard" style="flex:1;background:#F2F3F4;border:1px solid #D5D9DE;border-radius:10px;overflow:hidden;display:flex;font-family:'IBM Plex Sans',sans-serif;min-height:640px">
+        <div style="width:210px;background:#16191D;padding:20px 14px;display:flex;flex-direction:column;gap:2px;flex-shrink:0">
+          <div style="display:flex;align-items:center;gap:10px;padding:6px 10px 18px"><svg width="24" height="24" viewBox="0 0 44 44"><polygon points="22,2 39,12 39,32 22,42 5,32 5,12" fill="none" stroke="#F2A516" stroke-width="3"></polygon><polygon points="22,9 29,30 22,25 15,30" fill="#FFF"></polygon></svg><div style="color:#FFF;font-family:'Archivo',sans-serif;font-weight:800;font-size:17px">STF</div></div>
+          <div style="color:#9AA2AC;font-size:13.5px;font-weight:600;padding:11px 12px;letter-spacing:.3px">Dashboard</div>
+          <div style="background:#F2A516;color:#16191D;font-size:13.5px;font-weight:700;padding:11px 12px;letter-spacing:.3px">Attendance</div>
+          <div style="color:#9AA2AC;font-size:13.5px;font-weight:600;padding:11px 12px">Employees</div>
+          <div style="color:#9AA2AC;font-size:13.5px;font-weight:600;padding:11px 12px">Leave</div>
+          <div style="color:#9AA2AC;font-size:13.5px;font-weight:600;padding:11px 12px">Tasks</div>
+          <div style="color:#9AA2AC;font-size:13.5px;font-weight:600;padding:11px 12px">Payroll</div>
+          <div style="color:#9AA2AC;font-size:13.5px;font-weight:600;padding:11px 12px">Reports</div>
+          <div style="color:#9AA2AC;font-size:13.5px;font-weight:600;padding:11px 12px">Modules</div>
+        </div>
+        <div style="flex:1;padding:24px 28px;display:flex;flex-direction:column;gap:16px">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:16px">
+            <div><div style="font-family:'Archivo',sans-serif;font-size:22px;font-weight:800;color:#16191D">ATTENDANCE — FRI 07 AUG</div><div style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#5C646E;margin-top:2px">55 EMPLOYEES · SHIVAJI MARKET + WAREHOUSE 2</div></div>
+            <div style="border:1.5px solid #B9BFC7;border-radius:4px;padding:11px 16px;font-size:14px;color:#737B84;background:#FFF;width:230px">🔍 Search employee…</div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px">
+            <div style="background:#FFF;border:1px solid #D5D9DE;border-top:3px solid #1E7A3C;border-radius:4px;padding:14px 16px"><div style="font-size:11px;color:#5C646E;font-weight:700;letter-spacing:1px">PRESENT</div><div style="font-family:'IBM Plex Mono',monospace;font-size:30px;font-weight:600;color:#16191D;margin-top:2px">42</div></div>
+            <div style="background:#FFF;border:1px solid #D5D9DE;border-top:3px solid #B87400;border-radius:4px;padding:14px 16px"><div style="font-size:11px;color:#5C646E;font-weight:700;letter-spacing:1px">LATE</div><div style="font-family:'IBM Plex Mono',monospace;font-size:30px;font-weight:600;color:#16191D;margin-top:2px">6</div></div>
+            <div style="background:#FFF;border:1px solid #D5D9DE;border-top:3px solid #B3261E;border-radius:4px;padding:14px 16px"><div style="font-size:11px;color:#5C646E;font-weight:700;letter-spacing:1px">ABSENT</div><div style="font-family:'IBM Plex Mono',monospace;font-size:30px;font-weight:600;color:#16191D;margin-top:2px">3</div></div>
+            <div style="background:#FFF;border:1px solid #D5D9DE;border-top:3px solid #21619C;border-radius:4px;padding:14px 16px"><div style="font-size:11px;color:#5C646E;font-weight:700;letter-spacing:1px">ON LEAVE</div><div style="font-family:'IBM Plex Mono',monospace;font-size:30px;font-weight:600;color:#16191D;margin-top:2px">4</div></div>
+          </div>
+          <div style="background:#FFF;border:1px solid #D5D9DE;border-radius:4px;padding:16px 20px;display:flex;flex-direction:column;gap:10px">
+            <div style="display:flex;justify-content:space-between;align-items:center"><div style="font-family:'Archivo',sans-serif;font-size:14px;font-weight:800;color:#16191D;letter-spacing:.5px">EXCEPTIONS NEEDING REVIEW (3)</div><div style="font-size:13px;color:#16191D;font-weight:700;border-bottom:2px solid #F2A516">View all</div></div>
+            <div style="display:flex;justify-content:space-between;align-items:center;border:1px solid #D5D9DE;border-left:4px solid #B87400;padding:12px 16px"><div><div style="font-size:14px;font-weight:600;color:#16191D">Meena Joshi — checked in outside geofence</div><div style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:#5C646E;margin-top:2px">DELIVERY RUN · 09:12 · 1.4 KM FROM AREA</div></div><div style="display:flex;gap:8px"><div style="background:#22272E;color:#FFF;border-radius:4px;padding:9px 16px;font-size:12.5px;font-weight:700;font-family:'Archivo',sans-serif">APPROVE</div><div style="border:1.5px solid #B9BFC7;color:#16191D;border-radius:4px;padding:8px 16px;font-size:12.5px;font-weight:700;font-family:'Archivo',sans-serif">REVIEW</div></div></div>
+            <div style="display:flex;justify-content:space-between;align-items:center;border:1px solid #D5D9DE;border-left:4px solid #737B84;padding:12px 16px"><div><div style="font-size:14px;font-weight:600;color:#16191D">Arun Patil — missed check-out yesterday</div><div style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:#5C646E;margin-top:2px">WAREHOUSE · CORRECTION REQUESTED · REASON GIVEN</div></div><div style="display:flex;gap:8px"><div style="background:#22272E;color:#FFF;border-radius:4px;padding:9px 16px;font-size:12.5px;font-weight:700;font-family:'Archivo',sans-serif">APPROVE</div><div style="border:1.5px solid #B9BFC7;color:#16191D;border-radius:4px;padding:8px 16px;font-size:12.5px;font-weight:700;font-family:'Archivo',sans-serif">REVIEW</div></div></div>
+          </div>
+          <div style="background:#FFF;border:1px solid #D5D9DE;border-radius:4px;overflow:hidden">
+            <div style="display:grid;grid-template-columns:2.2fr 1fr 1fr 1fr 1.2fr;padding:11px 20px;background:#22272E;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;color:#9AA2AC;letter-spacing:1px">EMPLOYEE<span>IN</span><span>OUT</span><span>HOURS</span><span>STATUS</span></div>
+            <div style="display:grid;grid-template-columns:2.2fr 1fr 1fr 1fr 1.2fr;padding:13px 20px;border-bottom:1px solid #ECEEF0;font-size:14px;color:#16191D;align-items:center"><span style="font-weight:600">Ravi Kumar</span><span style="font-family:'IBM Plex Mono',monospace;font-size:13px">09:42</span><span style="font-family:'IBM Plex Mono',monospace;font-size:13px">—</span><span style="font-family:'IBM Plex Mono',monospace;font-size:13px">02:06</span><div style="background:#FBEFD9;color:#8A5700;border-left:3px solid #B87400;padding:4px 10px;font-size:11.5px;font-weight:700;justify-self:start">LATE 12 MIN</div></div>
+            <div style="display:grid;grid-template-columns:2.2fr 1fr 1fr 1fr 1.2fr;padding:13px 20px;border-bottom:1px solid #ECEEF0;font-size:14px;color:#16191D;align-items:center"><span style="font-weight:600">Meena Joshi</span><span style="font-family:'IBM Plex Mono',monospace;font-size:13px">09:12</span><span style="font-family:'IBM Plex Mono',monospace;font-size:13px">—</span><span style="font-family:'IBM Plex Mono',monospace;font-size:13px">02:36</span><div style="background:#ECEEF0;color:#4A525C;border-left:3px solid #737B84;padding:4px 10px;font-size:11.5px;font-weight:700;justify-self:start">PENDING</div></div>
+            <div style="display:grid;grid-template-columns:2.2fr 1fr 1fr 1fr 1.2fr;padding:13px 20px;font-size:14px;color:#16191D;align-items:center"><span style="font-weight:600">Sunita Devi</span><span style="font-family:'IBM Plex Mono',monospace;font-size:13px">09:26</span><span style="font-family:'IBM Plex Mono',monospace;font-size:13px">—</span><span style="font-family:'IBM Plex Mono',monospace;font-size:13px">02:22</span><div style="background:#E3F1E7;color:#175E2E;border-left:3px solid #1E7A3C;padding:4px 10px;font-size:11.5px;font-weight:700;justify-self:start">PRESENT</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 1c DISHA — MODERN FINTECH-CLEAN ============ -->
+  <div id="1c" style="width:1560px;display:flex;flex-direction:column;gap:20px;flex-shrink:0">
+    <div style="display:flex;align-items:center;gap:14px">
+      <div style="background:#2F45C4;color:#FFF;font-family:'Spline Sans Mono',monospace;font-weight:600;font-size:14px;padding:6px 12px;border-radius:8px">1c</div>
+      <div style="font-family:'Schibsted Grotesk',sans-serif;font-size:28px;font-weight:700;color:#12172E">Disha — Modern Fintech-Clean</div>
+    </div>
+    <div style="background:#FFFFFF;border:1px solid #E3E6F0;border-radius:12px;padding:28px 32px;display:flex;gap:40px;font-family:'Wix Madefor Text',sans-serif">
+      <div style="flex:1;display:flex;flex-direction:column;gap:8px">
+        <div style="font-family:'Spline Sans Mono',monospace;font-size:12px;letter-spacing:1.5px;color:#7A81A0">CONCEPT</div>
+        <div style="font-family:'Schibsted Grotesk',sans-serif;font-size:20px;font-weight:600;color:#12172E;line-height:1.4;text-wrap:pretty">Attendance and payroll are money — STF with the calm precision of a good banking app.</div>
+        <div style="font-size:14px;color:#5A6076;line-height:1.6;text-wrap:pretty">Indigo foundation (as the Brand Guidelines suggest), airy white surfaces, crisp type, and restrained color reserved for status. Feels premium and credible to owners evaluating a paid SaaS, and familiar to anyone who uses UPI or net-banking apps. The most scalable direction across modules.</div>
+      </div>
+      <div style="width:300px;display:flex;flex-direction:column;gap:8px">
+        <div style="font-family:'Spline Sans Mono',monospace;font-size:12px;letter-spacing:1.5px;color:#7A81A0">PERSONALITY</div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px">
+          <div style="border:1px solid #E3E6F0;border-radius:999px;padding:6px 14px;font-size:13px;color:#12172E">Precise</div>
+          <div style="border:1px solid #E3E6F0;border-radius:999px;padding:6px 14px;font-size:13px;color:#12172E">Credible</div>
+          <div style="border:1px solid #E3E6F0;border-radius:999px;padding:6px 14px;font-size:13px;color:#12172E">Calm</div>
+          <div style="border:1px solid #E3E6F0;border-radius:999px;padding:6px 14px;font-size:13px;color:#12172E">Modern</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:20px">
+      <div style="flex:1;background:#FFFFFF;border:1px solid #E3E6F0;border-radius:12px;padding:24px 28px;display:flex;flex-direction:column;gap:16px;font-family:'Wix Madefor Text',sans-serif">
+        <div style="font-family:'Spline Sans Mono',monospace;font-size:12px;letter-spacing:1.5px;color:#7A81A0">LOGO SYSTEM — three bars stepping forward into a direction: tasks moving from assigned → in progress → done. Reads as an abstract "S" of motion; solid geometry holds at 16px.</div>
+        <div style="display:flex;gap:14px;align-items:stretch">
+          <div style="flex:1.4;background:#F7F8FC;border:1px solid #E3E6F0;border-radius:10px;display:flex;align-items:center;justify-content:center;gap:14px;padding:24px">
+            <svg width="44" height="44" viewBox="0 0 44 44"><rect x="6" y="8" width="18" height="7" rx="3.5" fill="#8B97E8"></rect><rect x="13" y="18.5" width="22" height="7" rx="3.5" fill="#5265D6"></rect><rect x="20" y="29" width="18" height="7" rx="3.5" fill="#2F45C4"></rect></svg>
+            <div><div style="font-family:'Schibsted Grotesk',sans-serif;font-weight:700;font-size:24px;color:#12172E;letter-spacing:-.3px;line-height:1">sudarshan</div><div style="font-family:'Spline Sans Mono',monospace;font-size:11px;letter-spacing:3px;color:#2F45C4;margin-top:4px">TASK FORCE</div></div>
+          </div>
+          <div style="flex:1;background:#0E1230;border-radius:10px;display:flex;align-items:center;justify-content:center;gap:12px;padding:24px">
+            <svg width="36" height="36" viewBox="0 0 44 44"><rect x="6" y="8" width="18" height="7" rx="3.5" fill="#8B97E8"></rect><rect x="13" y="18.5" width="22" height="7" rx="3.5" fill="#B9C2F2"></rect><rect x="20" y="29" width="18" height="7" rx="3.5" fill="#FFFFFF"></rect></svg>
+            <div style="font-family:'Schibsted Grotesk',sans-serif;font-weight:700;font-size:20px;color:#FFF">sudarshan</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:14px;align-items:center">
+          <div style="width:72px;height:72px;border-radius:20px;background:#2F45C4;display:flex;align-items:center;justify-content:center"><svg width="42" height="42" viewBox="0 0 44 44"><rect x="6" y="8" width="18" height="7" rx="3.5" fill="#8B97E8"></rect><rect x="13" y="18.5" width="22" height="7" rx="3.5" fill="#C7CEF5"></rect><rect x="20" y="29" width="18" height="7" rx="3.5" fill="#FFFFFF"></rect></svg></div>
+          <div style="width:32px;height:32px;border-radius:9px;background:#2F45C4;display:flex;align-items:center;justify-content:center"><svg width="22" height="22" viewBox="0 0 44 44"><rect x="6" y="8" width="18" height="8" rx="4" fill="#8B97E8"></rect><rect x="13" y="18.5" width="22" height="8" rx="4" fill="#C7CEF5"></rect><rect x="20" y="29" width="18" height="8" rx="4" fill="#FFF"></rect></svg></div>
+          <svg width="28" height="28" viewBox="0 0 44 44"><rect x="6" y="8" width="18" height="7" rx="3.5" fill="#12172E"></rect><rect x="13" y="18.5" width="22" height="7" rx="3.5" fill="#12172E"></rect><rect x="20" y="29" width="18" height="7" rx="3.5" fill="#12172E"></rect></svg>
+          <div style="font-size:12px;color:#5A6076">App icon 72 / 32 px · monochrome version</div>
+        </div>
+      </div>
+      <div style="flex:1.2;background:#FFFFFF;border:1px solid #E3E6F0;border-radius:12px;padding:24px 28px;display:flex;flex-direction:column;gap:14px;font-family:'Wix Madefor Text',sans-serif">
+        <div style="font-family:'Spline Sans Mono',monospace;font-size:12px;letter-spacing:1.5px;color:#7A81A0">COLOR SYSTEM</div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">
+          <div style="border:1px solid #E3E6F0;border-radius:8px;overflow:hidden"><div style="height:52px;background:#2F45C4"></div><div style="padding:8px 10px"><div style="font-family:'Spline Sans Mono',monospace;font-size:11px;color:#12172E">#2F45C4</div><div style="font-size:11px;color:#5A6076">Primary · actions</div></div></div>
+          <div style="border:1px solid #E3E6F0;border-radius:8px;overflow:hidden"><div style="height:52px;background:#0FA57E"></div><div style="padding:8px 10px"><div style="font-family:'Spline Sans Mono',monospace;font-size:11px;color:#12172E">#0FA57E</div><div style="font-size:11px;color:#5A6076">Accent · positive</div></div></div>
+          <div style="border:1px solid #E3E6F0;border-radius:8px;overflow:hidden"><div style="height:52px;background:#F7F8FC"></div><div style="padding:8px 10px"><div style="font-family:'Spline Sans Mono',monospace;font-size:11px;color:#12172E">#F7F8FC</div><div style="font-size:11px;color:#5A6076">Background</div></div></div>
+          <div style="border:1px solid #E3E6F0;border-radius:8px;overflow:hidden"><div style="height:52px;background:#FFFFFF;border-bottom:1px solid #E3E6F0"></div><div style="padding:8px 10px"><div style="font-family:'Spline Sans Mono',monospace;font-size:11px;color:#12172E">#FFFFFF</div><div style="font-size:11px;color:#5A6076">Surface / cards</div></div></div>
+          <div style="border:1px solid #E3E6F0;border-radius:8px;overflow:hidden"><div style="height:52px;background:#12172E"></div><div style="padding:8px 10px"><div style="font-family:'Spline Sans Mono',monospace;font-size:11px;color:#12172E">#12172E</div><div style="font-size:11px;color:#5A6076">Text primary</div></div></div>
+          <div style="border:1px solid #E3E6F0;border-radius:8px;overflow:hidden"><div style="height:52px;background:#5A6076"></div><div style="padding:8px 10px"><div style="font-family:'Spline Sans Mono',monospace;font-size:11px;color:#12172E">#5A6076</div><div style="font-size:11px;color:#5A6076">Text secondary</div></div></div>
+          <div style="border:1px solid #E3E6F0;border-radius:8px;overflow:hidden"><div style="height:52px;background:#E3E6F0"></div><div style="padding:8px 10px"><div style="font-family:'Spline Sans Mono',monospace;font-size:11px;color:#12172E">#E3E6F0</div><div style="font-size:11px;color:#5A6076">Borders</div></div></div>
+          <div style="border:1px solid #E3E6F0;border-radius:8px;overflow:hidden"><div style="height:52px;background:#E9EDFB"></div><div style="padding:8px 10px"><div style="font-family:'Spline Sans Mono',monospace;font-size:11px;color:#12172E">#E9EDFB</div><div style="font-size:11px;color:#5A6076">Indigo tint</div></div></div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <div style="background:#E2F4ED;color:#0E6647;border:1px solid #B8E2D2;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600">Success #148A5E</div>
+          <div style="background:#FAF0DA;color:#7A4E06;border:1px solid #EAD6A3;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600">Warning #A16207</div>
+          <div style="background:#FBE4E7;color:#9A1F2E;border:1px solid #F1BEC5;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600">Error #C6293C</div>
+          <div style="background:#E5EDFB;color:#22509E;border:1px solid #C0D3F2;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600">Info #2F6FD8</div>
+          <div style="background:#EDEEF4;color:#525878;border:1px solid #DCDEE9;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600">Neutral #7A81A0</div>
+        </div>
+        <div style="background:#0E1230;border-radius:8px;padding:12px 16px;font-family:'Spline Sans Mono',monospace;font-size:11.5px;line-height:1.9;color:#9BA3C7">DARK MODE · bg #0E1230 · surface #171C3E · border #2A3057 · text #F1F2F8 / #9BA3C7 · primary #8B97E8 · accent #35C79D · status colors lightened one step</div>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:20px">
+      <div style="flex:1;background:#FFFFFF;border:1px solid #E3E6F0;border-radius:12px;padding:24px 28px;display:flex;flex-direction:column;gap:12px;font-family:'Wix Madefor Text',sans-serif">
+        <div style="font-family:'Spline Sans Mono',monospace;font-size:12px;letter-spacing:1.5px;color:#7A81A0">TYPOGRAPHY</div>
+        <div style="font-family:'Schibsted Grotesk',sans-serif;font-size:30px;font-weight:700;color:#12172E;letter-spacing:-.3px">Schibsted Grotesk — headings</div>
+        <div style="font-size:16px;color:#12172E;line-height:1.6">Wix Madefor Text — body and UI. Open, contemporary, screen-optimized. <span style="font-family:'Spline Sans Mono',monospace">Spline Sans Mono — times, hours, amounts, and payroll figures.</span></div>
+        <div style="border-top:1px solid #E3E6F0;padding-top:12px;font-size:13px;color:#5A6076;line-height:2">Mobile scale: 26 page title · 20 section · 16 body · 14 secondary · 13 caption (floor)<br>Desktop scale: 32 / 22 / 15 / 13 · Weights: 700 headings, 600 buttons, 400 body<br>Rules: sentence case; money and time always monospaced; no thin weights.</div>
+      </div>
+      <div style="flex:1.2;background:#FFFFFF;border:1px solid #E3E6F0;border-radius:12px;padding:24px 28px;display:flex;flex-direction:column;gap:16px;font-family:'Wix Madefor Text',sans-serif">
+        <div style="font-family:'Spline Sans Mono',monospace;font-size:12px;letter-spacing:1.5px;color:#7A81A0">MINI UI KIT — 8–10px radius · hairline borders · subtle elevation · 1.5px line icons · 48px min touch targets</div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center">
+          <div style="background:#2F45C4;color:#FFF;border-radius:10px;padding:13px 24px;font-weight:600;font-size:15px;box-shadow:0 1px 3px rgba(47,69,196,.3)">Check In</div>
+          <div style="background:#E9EDFB;color:#2F45C4;border-radius:10px;padding:13px 24px;font-weight:600;font-size:15px">Request Leave</div>
+          <div style="background:#C6293C;color:#FFF;border-radius:10px;padding:13px 24px;font-weight:600;font-size:15px">Reject</div>
+          <div style="background:#EDEEF4;color:#A6ABC4;border-radius:10px;padding:13px 24px;font-weight:600;font-size:15px">Disabled</div>
+        </div>
+        <div style="display:flex;gap:12px">
+          <div style="flex:1"><div style="font-size:13px;font-weight:600;color:#12172E;margin-bottom:6px">Employee name</div><div style="border:1.5px solid #E3E6F0;border-radius:10px;padding:13px 16px;font-size:15px;color:#7A81A0;background:#FFF">Search employee…</div></div>
+          <div style="flex:1"><div style="font-size:13px;font-weight:600;color:#12172E;margin-bottom:6px">Branch</div><div style="border:1.5px solid #E3E6F0;border-radius:10px;padding:13px 16px;font-size:15px;color:#12172E;background:#FFF;display:flex;justify-content:space-between;align-items:center">Shivaji Market<span style="color:#7A81A0">▾</span></div></div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <div style="background:#E2F4ED;color:#0E6647;border-radius:999px;padding:7px 14px;font-size:13px;font-weight:600">● Present</div>
+          <div style="background:#FAF0DA;color:#7A4E06;border-radius:999px;padding:7px 14px;font-size:13px;font-weight:600">● Late 18 min</div>
+          <div style="background:#FBE4E7;color:#9A1F2E;border-radius:999px;padding:7px 14px;font-size:13px;font-weight:600">● Absent</div>
+          <div style="background:#E5EDFB;color:#22509E;border-radius:999px;padding:7px 14px;font-size:13px;font-weight:600">● On Leave</div>
+          <div style="background:#EDEEF4;color:#525878;border-radius:999px;padding:7px 14px;font-size:13px;font-weight:600">● Pending review</div>
+        </div>
+        <div style="background:#FAF0DA;border:1px solid #EAD6A3;border-radius:10px;padding:14px 18px;display:flex;gap:12px;align-items:flex-start"><div style="width:20px;height:20px;border-radius:6px;background:#A16207;color:#FFF;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">!</div><div style="font-size:14px;color:#5F3D05;line-height:1.5"><b>Checking in now will record a late arrival of 18 minutes.</b><br>Your manager will see this in today's attendance review.</div></div>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:20px;align-items:flex-start">
+      <div data-screen-label="1c Mobile check-in" style="width:360px;flex-shrink:0;background:#F7F8FC;border:1px solid #E3E6F0;border-radius:24px;overflow:hidden;display:flex;flex-direction:column;font-family:'Wix Madefor Text',sans-serif">
+        <div style="padding:22px 22px 0;display:flex;justify-content:space-between;align-items:center">
+          <div><div style="font-family:'Schibsted Grotesk',sans-serif;font-size:20px;font-weight:700;color:#12172E">Good morning, Ravi</div><div style="font-size:13px;color:#5A6076;margin-top:2px">Friday, 7 August 2026</div></div>
+          <div style="width:42px;height:42px;border-radius:14px;background:#E9EDFB;color:#2F45C4;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px">RK</div>
+        </div>
+        <div style="padding:20px 22px;display:flex;flex-direction:column;gap:14px;flex:1">
+          <div style="background:#FFF;border:1px solid #E3E6F0;border-radius:18px;padding:22px;display:flex;flex-direction:column;align-items:center;gap:14px;box-shadow:0 1px 3px rgba(18,23,46,.05)">
+            <div style="font-family:'Spline Sans Mono',monospace;font-size:32px;font-weight:600;color:#12172E">09:42<span style="font-size:16px;color:#7A81A0"> AM</span></div>
+            <div style="background:#E2F4ED;color:#0E6647;border-radius:999px;padding:7px 14px;font-size:13px;font-weight:600">✓ Inside Shivaji Market branch area</div>
+            <div style="width:100%;background:#2F45C4;border-radius:16px;padding:22px;display:flex;flex-direction:column;align-items:center;gap:3px;box-shadow:0 4px 14px rgba(47,69,196,.3)">
+              <div style="color:#FFF;font-family:'Schibsted Grotesk',sans-serif;font-size:23px;font-weight:700">Check In</div>
+              <div style="color:#B9C2F2;font-size:12.5px;font-family:'Spline Sans Mono',monospace">Shift 09:30 – 18:30</div>
+            </div>
+            <div style="width:100%;background:#FAF0DA;border-radius:12px;padding:11px 14px;font-size:13px;color:#7A4E06;font-weight:600;text-align:center">Late arrival of 12 min will be recorded</div>
+          </div>
+          <div style="display:flex;gap:12px">
+            <div style="flex:1;background:#FFF;border:1px solid #E3E6F0;border-radius:14px;padding:14px"><div style="font-size:12px;color:#5A6076">Today's hours</div><div style="font-family:'Spline Sans Mono',monospace;font-size:19px;font-weight:600;color:#12172E;margin-top:3px">0:00</div></div>
+            <div style="flex:1;background:#FFF;border:1px solid #E3E6F0;border-radius:14px;padding:14px"><div style="font-size:12px;color:#5A6076">This week</div><div style="font-family:'Spline Sans Mono',monospace;font-size:19px;font-weight:600;color:#12172E;margin-top:3px">32:10</div></div>
+          </div>
+          <div style="background:#FFF;border:1px solid #E3E6F0;border-radius:14px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-size:14px;font-weight:600;color:#12172E">Tue late arrival — approval requested</div><div style="font-size:12px;color:#5A6076;margin-top:2px">Waiting for Suresh (Manager)</div></div><div style="background:#EDEEF4;color:#525878;border-radius:999px;padding:6px 12px;font-size:12px;font-weight:600">Pending</div></div>
+        </div>
+        <div style="background:#FFF;border-top:1px solid #E3E6F0;display:flex;padding:10px 8px 16px">
+          <div style="flex:1;text-align:center;color:#2F45C4"><div style="font-size:18px">⌂</div><div style="font-size:11px;font-weight:600">Home</div></div>
+          <div style="flex:1;text-align:center;color:#7A81A0"><div style="font-size:18px">☰</div><div style="font-size:11px;font-weight:600">Tasks</div></div>
+          <div style="flex:1;text-align:center;color:#7A81A0"><div style="font-size:18px">◷</div><div style="font-size:11px;font-weight:600">Attendance</div></div>
+          <div style="flex:1;text-align:center;color:#7A81A0"><div style="font-size:18px">◉</div><div style="font-size:11px;font-weight:600">Profile</div></div>
+        </div>
+      </div>
+      <div data-screen-label="1c Admin dashboard" style="flex:1;background:#F7F8FC;border:1px solid #E3E6F0;border-radius:18px;overflow:hidden;display:flex;font-family:'Wix Madefor Text',sans-serif;min-height:640px">
+        <div style="width:210px;background:#FFFFFF;border-right:1px solid #E3E6F0;padding:20px 14px;display:flex;flex-direction:column;gap:2px;flex-shrink:0">
+          <div style="display:flex;align-items:center;gap:10px;padding:6px 10px 18px"><svg width="26" height="26" viewBox="0 0 44 44"><rect x="6" y="8" width="18" height="7" rx="3.5" fill="#8B97E8"></rect><rect x="13" y="18.5" width="22" height="7" rx="3.5" fill="#5265D6"></rect><rect x="20" y="29" width="18" height="7" rx="3.5" fill="#2F45C4"></rect></svg><div style="color:#12172E;font-family:'Schibsted Grotesk',sans-serif;font-weight:700;font-size:17px">sudarshan</div></div>
+          <div style="color:#5A6076;font-size:14px;padding:11px 12px;border-radius:10px">Dashboard</div>
+          <div style="background:#E9EDFB;color:#2F45C4;font-size:14px;font-weight:600;padding:11px 12px;border-radius:10px">Attendance</div>
+          <div style="color:#5A6076;font-size:14px;padding:11px 12px;border-radius:10px">Employees</div>
+          <div style="color:#5A6076;font-size:14px;padding:11px 12px;border-radius:10px">Leave</div>
+          <div style="color:#5A6076;font-size:14px;padding:11px 12px;border-radius:10px">Tasks</div>
+          <div style="color:#5A6076;font-size:14px;padding:11px 12px;border-radius:10px">Payroll</div>
+          <div style="color:#5A6076;font-size:14px;padding:11px 12px;border-radius:10px">Reports</div>
+          <div style="color:#5A6076;font-size:14px;padding:11px 12px;border-radius:10px">Modules</div>
+        </div>
+        <div style="flex:1;padding:24px 28px;display:flex;flex-direction:column;gap:18px">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:16px">
+            <div><div style="font-family:'Schibsted Grotesk',sans-serif;font-size:22px;font-weight:700;color:#12172E">Attendance — Friday, 7 Aug</div><div style="font-size:13px;color:#5A6076;margin-top:2px">55 employees · Shivaji Market + Warehouse</div></div>
+            <div style="border:1.5px solid #E3E6F0;border-radius:10px;padding:11px 16px;font-size:14px;color:#7A81A0;background:#FFF;width:230px">🔍 Search employee…</div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px">
+            <div style="background:#FFF;border:1px solid #E3E6F0;border-radius:14px;padding:16px"><div style="display:flex;align-items:center;gap:8px"><div style="width:8px;height:8px;border-radius:50%;background:#148A5E"></div><div style="font-size:13px;color:#5A6076">Present</div></div><div style="font-family:'Spline Sans Mono',monospace;font-size:28px;font-weight:600;color:#12172E;margin-top:6px">42</div></div>
+            <div style="background:#FFF;border:1px solid #E3E6F0;border-radius:14px;padding:16px"><div style="display:flex;align-items:center;gap:8px"><div style="width:8px;height:8px;border-radius:50%;background:#A16207"></div><div style="font-size:13px;color:#5A6076">Late</div></div><div style="font-family:'Spline Sans Mono',monospace;font-size:28px;font-weight:600;color:#12172E;margin-top:6px">6</div></div>
+            <div style="background:#FFF;border:1px solid #E3E6F0;border-radius:14px;padding:16px"><div style="display:flex;align-items:center;gap:8px"><div style="width:8px;height:8px;border-radius:50%;background:#C6293C"></div><div style="font-size:13px;color:#5A6076">Absent</div></div><div style="font-family:'Spline Sans Mono',monospace;font-size:28px;font-weight:600;color:#12172E;margin-top:6px">3</div></div>
+            <div style="background:#FFF;border:1px solid #E3E6F0;border-radius:14px;padding:16px"><div style="display:flex;align-items:center;gap:8px"><div style="width:8px;height:8px;border-radius:50%;background:#2F6FD8"></div><div style="font-size:13px;color:#5A6076">On Leave</div></div><div style="font-family:'Spline Sans Mono',monospace;font-size:28px;font-weight:600;color:#12172E;margin-top:6px">4</div></div>
+          </div>
+          <div style="background:#FFF;border:1px solid #E3E6F0;border-radius:14px;padding:18px 20px;display:flex;flex-direction:column;gap:12px">
+            <div style="display:flex;justify-content:space-between;align-items:center"><div style="font-size:15px;font-weight:700;color:#12172E;font-family:'Schibsted Grotesk',sans-serif">Exceptions needing review (3)</div><div style="font-size:13px;color:#2F45C4;font-weight:600">View all</div></div>
+            <div style="display:flex;justify-content:space-between;align-items:center;border:1px solid #E3E6F0;border-radius:12px;padding:12px 16px"><div style="display:flex;gap:12px;align-items:center"><div style="width:36px;height:36px;border-radius:12px;background:#E9EDFB;color:#2F45C4;font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center">MJ</div><div><div style="font-size:14px;font-weight:600;color:#12172E">Meena Joshi — checked in outside branch area</div><div style="font-size:12px;color:#5A6076">Delivery run · 9:12 AM · 1.4 km from geofence</div></div></div><div style="display:flex;gap:8px"><div style="background:#2F45C4;color:#FFF;border-radius:9px;padding:9px 16px;font-size:13px;font-weight:600">Approve</div><div style="background:#E9EDFB;color:#2F45C4;border-radius:9px;padding:9px 16px;font-size:13px;font-weight:600">Review</div></div></div>
+            <div style="display:flex;justify-content:space-between;align-items:center;border:1px solid #E3E6F0;border-radius:12px;padding:12px 16px"><div style="display:flex;gap:12px;align-items:center"><div style="width:36px;height:36px;border-radius:12px;background:#E9EDFB;color:#2F45C4;font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center">AP</div><div><div style="font-size:14px;font-weight:600;color:#12172E">Arun Patil — missed check-out yesterday</div><div style="font-size:12px;color:#5A6076">Warehouse · correction requested, reason given</div></div></div><div style="display:flex;gap:8px"><div style="background:#2F45C4;color:#FFF;border-radius:9px;padding:9px 16px;font-size:13px;font-weight:600">Approve</div><div style="background:#E9EDFB;color:#2F45C4;border-radius:9px;padding:9px 16px;font-size:13px;font-weight:600">Review</div></div></div>
+          </div>
+          <div style="background:#FFF;border:1px solid #E3E6F0;border-radius:14px;overflow:hidden">
+            <div style="display:grid;grid-template-columns:2.2fr 1fr 1fr 1fr 1.2fr;padding:12px 20px;background:#F7F8FC;border-bottom:1px solid #E3E6F0;font-size:12px;font-weight:600;color:#7A81A0;letter-spacing:.5px">EMPLOYEE<span>IN</span><span>OUT</span><span>HOURS</span><span>STATUS</span></div>
+            <div style="display:grid;grid-template-columns:2.2fr 1fr 1fr 1fr 1.2fr;padding:13px 20px;border-bottom:1px solid #EDEEF4;font-size:14px;color:#12172E;align-items:center"><span style="font-weight:600">Ravi Kumar</span><span style="font-family:'Spline Sans Mono',monospace;font-size:13px">09:42</span><span style="font-family:'Spline Sans Mono',monospace;font-size:13px">—</span><span style="font-family:'Spline Sans Mono',monospace;font-size:13px">2:06</span><div style="background:#FAF0DA;color:#7A4E06;border-radius:999px;padding:4px 12px;font-size:12px;font-weight:600;justify-self:start">● Late 12 min</div></div>
+            <div style="display:grid;grid-template-columns:2.2fr 1fr 1fr 1fr 1.2fr;padding:13px 20px;border-bottom:1px solid #EDEEF4;font-size:14px;color:#12172E;align-items:center"><span style="font-weight:600">Meena Joshi</span><span style="font-family:'Spline Sans Mono',monospace;font-size:13px">09:12</span><span style="font-family:'Spline Sans Mono',monospace;font-size:13px">—</span><span style="font-family:'Spline Sans Mono',monospace;font-size:13px">2:36</span><div style="background:#EDEEF4;color:#525878;border-radius:999px;padding:4px 12px;font-size:12px;font-weight:600;justify-self:start">● Pending review</div></div>
+            <div style="display:grid;grid-template-columns:2.2fr 1fr 1fr 1fr 1.2fr;padding:13px 20px;font-size:14px;color:#12172E;align-items:center"><span style="font-weight:600">Sunita Devi</span><span style="font-family:'Spline Sans Mono',monospace;font-size:13px">09:26</span><span style="font-family:'Spline Sans Mono',monospace;font-size:13px">—</span><span style="font-family:'Spline Sans Mono',monospace;font-size:13px">2:22</span><div style="background:#E2F4ED;color:#0E6647;border-radius:999px;padding:4px 12px;font-size:12px;font-weight:600;justify-self:start">● Present</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  </div>
+
+  <!-- ============ COMPARISON ============ -->
+  <div id="cmp" style="width:1560px;background:#FFFFFF;border:1px solid #DDD9D2;border-radius:16px;padding:32px 36px;display:flex;flex-direction:column;gap:20px">
+    <div style="font-family:'Bricolage Grotesque',sans-serif;font-size:26px;font-weight:700;color:#22201C">Comparison &amp; recommendation</div>
+    <div style="display:grid;grid-template-columns:150px 1fr 1fr 1fr;border:1px solid #E5E1DA;border-radius:12px;overflow:hidden;font-size:14px;line-height:1.5">
+      <div style="background:#F5F2ED;padding:14px 18px;font-weight:600;color:#8A8177;font-size:12px;letter-spacing:1px">DIRECTION</div>
+      <div style="background:#F5F2ED;padding:14px 18px;font-weight:700;color:#22201C"><a href="#1a">1a</a> Sahay — Warm &amp; Human</div>
+      <div style="background:#F5F2ED;padding:14px 18px;font-weight:700;color:#22201C"><a href="#1b">1b</a> Dhruv — Utilitarian</div>
+      <div style="background:#F5F2ED;padding:14px 18px;font-weight:700;color:#22201C"><a href="#1c">1c</a> Disha — Fintech-Clean</div>
+      <div style="padding:14px 18px;font-weight:600;color:#8A8177;font-size:12px;letter-spacing:1px;border-top:1px solid #EFEBE4">FEELING</div>
+      <div style="padding:14px 18px;border-top:1px solid #EFEBE4;color:#3E3A33">Supportive, familiar, human — like a helpful colleague</div>
+      <div style="padding:14px 18px;border-top:1px solid #EFEBE4;color:#3E3A33">Tough, direct, signage-clear — like good equipment</div>
+      <div style="padding:14px 18px;border-top:1px solid #EFEBE4;color:#3E3A33">Precise, credible, premium — like a banking app</div>
+      <div style="padding:14px 18px;font-weight:600;color:#8A8177;font-size:12px;letter-spacing:1px;border-top:1px solid #EFEBE4">BEST AUDIENCE</div>
+      <div style="padding:14px 18px;border-top:1px solid #EFEBE4;color:#3E3A33">Shops, service teams, first-time app users; adoption-risk workforces</div>
+      <div style="padding:14px 18px;border-top:1px solid #EFEBE4;color:#3E3A33">Warehouse, dispatch, delivery, field crews; outdoor screens</div>
+      <div style="padding:14px 18px;border-top:1px solid #EFEBE4;color:#3E3A33">Owners and admins comparing SaaS; payroll-sensitive buyers</div>
+      <div style="padding:14px 18px;font-weight:600;color:#8A8177;font-size:12px;letter-spacing:1px;border-top:1px solid #EFEBE4">STRENGTH</div>
+      <div style="padding:14px 18px;border-top:1px solid #EFEBE4;color:#3E3A33">Least surveillance-like; strongest employee dignity signal</div>
+      <div style="padding:14px 18px;border-top:1px solid #EFEBE4;color:#3E3A33">Best glare/low-end-device legibility; unmistakable statuses</div>
+      <div style="padding:14px 18px;border-top:1px solid #EFEBE4;color:#3E3A33">Scales cleanly to payroll, reports, and module admin; matches Brand Guidelines' indigo foundation</div>
+      <div style="padding:14px 18px;font-weight:600;color:#8A8177;font-size:12px;letter-spacing:1px;border-top:1px solid #EFEBE4">RISK</div>
+      <div style="padding:14px 18px;border-top:1px solid #EFEBE4;color:#3E3A33">Can read as soft/consumer; weaker authority in payroll views</div>
+      <div style="padding:14px 18px;border-top:1px solid #EFEBE4;color:#3E3A33">Uppercase + amber can feel stern; borderline "industrial HR"</div>
+      <div style="padding:14px 18px;border-top:1px solid #EFEBE4;color:#3E3A33">Risks feeling generic-fintech if the logo and voice aren't kept distinctive</div>
+      <div style="padding:14px 18px;font-weight:600;color:#8A8177;font-size:12px;letter-spacing:1px;border-top:1px solid #EFEBE4">USE WHEN</div>
+      <div style="padding:14px 18px;border-top:1px solid #EFEBE4;color:#3E3A33">Employee adoption is the #1 launch metric</div>
+      <div style="padding:14px 18px;border-top:1px solid #EFEBE4;color:#3E3A33">Workforce is mostly field/warehouse operations</div>
+      <div style="padding:14px 18px;border-top:1px solid #EFEBE4;color:#3E3A33">One system must serve workers and owner-buyers equally</div>
+    </div>
+    <div style="background:#F5F2ED;border-radius:12px;padding:20px 24px;font-size:14.5px;line-height:1.65;color:#3E3A33;text-wrap:pretty"><b style="color:#22201C">Recommendation: <a href="#1c">1c Disha</a></b> is the strongest foundation. It follows the Brand Guidelines' suggested indigo base, carries authority in payroll and module-management views (where trust matters most), stays calm and non-surveillance-like on the employee side, and has the widest headroom as modules grow. Sahay's warmth and Dhruv's status-labeling discipline are worth borrowing later — but per your instruction, no directions are combined until you select one.</div>
+  </div>
+</section>
+</x-dc>
+</body>
+</html>

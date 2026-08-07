@@ -1,0 +1,147 @@
+@import "tailwindcss";
+@import "../styles/tokens.css";
+
+/* Class scanning: application code only — never the approved documents,
+   design mockups or markdown, which contain class-like example text. */
+@source not "../../docs";
+@source not "../../**/*.md";
+
+/* ------------------------------------------------------------------------
+ * STF base layer.
+ * Light is the primary theme; [data-theme="dark"] swaps the colour block
+ * only (see tokens.css). The two surface families are a layout-level
+ * attribute — data-surface="employee" | "admin" — never a component prop
+ * (design handoff README §1, design-tokens.md §4).
+ * --------------------------------------------------------------------- */
+
+@layer base {
+  html {
+    font-family: var(--stf-font-family-body);
+    color: var(--stf-color-text-primary);
+    background: var(--stf-color-surface-canvas);
+    text-size-adjust: 100%;
+  }
+
+  body {
+    font-size: var(--stf-font-size-body);
+    line-height: var(--stf-line-height-body);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Surface families: canvas + contextual card radius. */
+  :root,
+  [data-surface="admin"] {
+    --stf-card-radius: var(--stf-radius-card);
+  }
+  [data-surface="admin"] {
+    background: var(--stf-color-surface-canvas);
+  }
+  [data-surface="employee"] {
+    --stf-card-radius: var(--stf-radius-card-employee);
+    background: var(--stf-color-surface-canvas-warm);
+  }
+
+  /* Focus is always visible: 2px border.focus outline + focus ring shadow,
+     2px offset, on every interactive element (accessibility.md §1.5). */
+  :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+    outline: 2px solid var(--stf-color-border-focus);
+    outline-offset: 2px;
+    box-shadow: var(--stf-shadow-focus-ring);
+  }
+
+  /* Numerals: Spline Sans Mono always tabular; numerals in tables too
+     (01-brand/typography.md §2, §5). */
+  :where(.font-mono, table) {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Headings and paragraphs wrap gracefully (typography.md §5.8). */
+  :where(h1, h2, h3, h4, p) {
+    text-wrap: pretty;
+  }
+
+  /* Reduced motion: opacity-only, no transforms, static skeletons
+     (component-states.md §3, motion.json rules). */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+/* Card radius follows the active surface family. */
+@utility rounded-surface-card {
+  border-radius: var(--stf-card-radius);
+}
+
+/* Uppercase micro-label (12px, +0.08em) — table headers, audit stamps only. */
+@utility micro-label {
+  font-family: var(--stf-font-family-mono);
+  font-size: var(--stf-font-size-mono);
+  line-height: var(--stf-line-height-mono);
+  font-weight: 500;
+  letter-spacing: var(--stf-tracking-micro);
+  text-transform: uppercase;
+}
+
+/* Skeleton shimmer (duration.skeleton); static tint under reduced motion. */
+@utility skeleton {
+  background: var(--stf-color-surface-sunken);
+  position: relative;
+  overflow: hidden;
+
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.55),
+      transparent
+    );
+    animation: stf-shimmer var(--stf-motion-duration-skeleton) linear infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    &::after {
+      animation: none;
+      display: none;
+    }
+  }
+}
+
+/* Spinner appears only after 400ms of waiting (motion.json rules). */
+@keyframes stf-spinner-appear {
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes stf-shimmer {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+
+/* Check-in confirmation pulse: single 1 → 1.03 → 1, no confetti
+   (motion.json usage.checkInSuccess). Defined now for Phase 2 use. */
+@keyframes stf-confirm-pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.03);
+  }
+  100% {
+    transform: scale(1);
+  }
+}

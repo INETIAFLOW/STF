@@ -1,0 +1,25 @@
+{
+  "$schema": "STF breakpoint tokens v1.0 — mobile-first, min-width queries only",
+  "breakpoint": {
+    "xs": "360px",
+    "sm": "480px",
+    "md": "768px",
+    "lg": "1024px",
+    "xl": "1280px",
+    "2xl": "1536px"
+  },
+  "intent": {
+    "xs": "Employee baseline. All employee flows must work fully at 360px.",
+    "sm": "Larger phones. Two-up metric cards.",
+    "md": "Tablet. Admin becomes usable: collapsed 72px sidebar, cards two-up, tables become scrollable with sticky first column.",
+    "lg": "Desktop admin baseline. Full 240px sidebar, full tables.",
+    "xl": "Wide admin. Three/four-up metrics, side detail panel instead of drawer.",
+    "2xl": "Content capped at layout.contentMaxWidth and centred."
+  },
+  "rules": [
+    "Never use max-width queries as the primary mechanism.",
+    "Bottom navigation is shown below md and hidden at md and above.",
+    "Sidebar is hidden below md (drawer on demand), collapsed at md, expanded at lg+.",
+    "Data tables must switch to the stacked employee-row card pattern below md."
+  ]
+}
