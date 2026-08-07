@@ -2,30 +2,31 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { checkAccess } from "@/lib/authz/guard";
 import { loadEntitlements } from "@/lib/authz/entitlements";
+import { getDb } from "@/lib/db";
+import { devFixtureOffline } from "@/lib/auth/fixture";
 import {
   FEATURES,
   MODULES,
   MODULE_DEPENDENCIES,
   type ModuleKey,
 } from "@/lib/catalog";
+import { disableImpact, missingRequirements, type EnabledMap } from "@/lib/modules/impact";
 import { STATUS } from "@/lib/status";
 import { Alert } from "@/components/ui/Alert";
 import { Card } from "@/components/ui/Card";
 import { StatusChip } from "@/components/ui/StatusChip";
-import { ModuleSwitch } from "./ModuleSwitch";
+import { FeatureSwitch, ModuleSwitch } from "./ModuleSwitch";
 
 export const metadata: Metadata = { title: "Module Management" };
 
 /**
- * Module Management shell (screen A20/A21). Cards, feature controls,
- * dependency lines and switch states are real and driven by the tenant's
- * entitlements. Toggling is deliberately read-only in Phase 1 — governed
- * switches must never flip without the full impact-confirm flow, which
- * ships with the module toggle actions in a later phase.
+ * Module Management (screens A20/A21/A22). Cards, feature controls,
+ * dependency warnings and affected counts are live; toggles are governed
+ * switches backed by server actions with impact confirmation and audit.
  */
 export default async function ModuleManagementPage() {
   const { session, decision } = await checkAccess({
-    module: "EMPLOYEES", // module mgmt itself is platform UI; gate on permission
+    module: "EMPLOYEES",
     permission: "modules.manage",
   });
   if (!decision.allowed) redirect("/unauthorized");
@@ -34,6 +35,26 @@ export default async function ModuleManagementPage() {
     session.tenant.id,
     session.user.id,
   );
+  const enabledMap = entitlements.modules as EnabledMap;
+
+  const [employees, admins] = devFixtureOffline()
+    ? [0, 0]
+    : await Promise.all([
+        getDb().tenantMembership.count({
+          where: { tenantId: session.tenant.id, status: "ACTIVE" },
+        }),
+        getDb().tenantMembership.count({
+          where: {
+            tenantId: session.tenant.id,
+            status: "ACTIVE",
+            role: {
+              permissions: {
+                some: { permission: { key: "admin.access" } },
+              },
+            },
+          },
+        }),
+      ]);
 
   const dependencyLine = (key: ModuleKey): string | null => {
     const deps = MODULE_DEPENDENCIES.filter((d) => d.module === key);
@@ -47,7 +68,7 @@ export default async function ModuleManagementPage() {
   };
 
   const isEnabled = (key: ModuleKey) =>
-    MODULES[key].category === "CORE" || entitlements.modules[key] === true;
+    MODULES[key].category === "CORE" || enabledMap[key] === true;
 
   const groups = [
     {
@@ -82,10 +103,13 @@ export default async function ModuleManagementPage() {
               const enabled = isEnabled(moduleDef.key);
               const optionalUnavailable =
                 moduleDef.category === "OPTIONAL" && !enabled;
-              const features = FEATURES.filter(
-                (f) => f.module === moduleDef.key,
-              );
+              const features = FEATURES.filter((f) => f.module === moduleDef.key);
               const deps = dependencyLine(moduleDef.key);
+              const missing = missingRequirements(enabledMap, moduleDef.key);
+              const impact = disableImpact(enabledMap, moduleDef.key, {
+                employees,
+                adminUsers: admins,
+              });
 
               return (
                 <Card key={moduleDef.key} className="flex flex-col gap-3">
@@ -121,9 +145,19 @@ export default async function ModuleManagementPage() {
                     </p>
                   ) : (
                     <ModuleSwitch
-                      label={`${moduleDef.name} module`}
+                      moduleKey={moduleDef.key}
+                      moduleName={moduleDef.name}
                       enabled={enabled}
                       core={moduleDef.category === "CORE"}
+                      locked={!enabled && missing.length > 0}
+                      lockedReason={
+                        !enabled && missing.length > 0
+                          ? `Requires ${missing.map((m) => MODULES[m].name).join(" or ")} to be on.`
+                          : undefined
+                      }
+                      impact={impact}
+                      affectedEmployees={employees}
+                      affectedAdmins={admins}
                     />
                   )}
 
@@ -143,10 +177,11 @@ export default async function ModuleManagementPage() {
                             : feature.defaultEnabled;
                           return (
                             <li key={feature.key}>
-                              <ModuleSwitch
-                                label={feature.name}
+                              <FeatureSwitch
+                                moduleKey={moduleDef.key}
+                                featureKey={feature.key}
+                                featureName={feature.name}
                                 enabled={featureOn}
-                                compact
                               />
                             </li>
                           );

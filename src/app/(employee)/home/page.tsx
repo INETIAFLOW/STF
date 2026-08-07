@@ -1,11 +1,15 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { requireSession } from "@/lib/authz/guard";
-import { STATUS } from "@/lib/status";
-import { Alert } from "@/components/ui/Alert";
-import { Button } from "@/components/ui/Button";
-import { Card, CardHeader } from "@/components/ui/Card";
+import { loadEntitlements } from "@/lib/authz/entitlements";
+import { evaluateAccess } from "@/lib/authz/flags";
+import { loadAttendanceContext } from "@/lib/attendance/service";
+import { getDb } from "@/lib/db";
+import { devFixtureOffline } from "@/lib/auth/fixture";
+import { AttendanceActionCard } from "@/components/attendance/AttendanceActionCard";
+import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { StatusChip } from "@/components/ui/StatusChip";
+import { TaskCard } from "@/components/tasks/TaskCard";
 
 export const metadata: Metadata = { title: "Home" };
 
@@ -23,14 +27,42 @@ function greeting(timezone: string): string {
   return "Good evening";
 }
 
-/**
- * Employee home shell (screen E3). Layout, navigation and components are
- * real; attendance/task data arrives with Phase 2 — placeholders are
- * labelled and disabled controls state their reason.
- */
+/** Employee home (screen E3): attendance action + today's tasks. */
 export default async function EmployeeHomePage() {
   const session = await requireSession();
   const firstName = session.user.displayName.split(/\s+/)[0];
+  const entitlements = await loadEntitlements(
+    session.tenant.id,
+    session.user.id,
+  );
+
+  const attendanceOn = evaluateAccess({
+    session,
+    entitlements,
+    module: "ATTENDANCE",
+  }).allowed;
+  const tasksOn = evaluateAccess({
+    session,
+    entitlements,
+    module: "TASKS",
+  }).allowed;
+
+  const attendance = attendanceOn
+    ? await loadAttendanceContext(session)
+    : null;
+
+  const tasks =
+    tasksOn && !devFixtureOffline()
+      ? await getDb().task.findMany({
+          where: {
+            tenantId: session.tenant.id,
+            assigneeId: session.membership.id,
+            status: { in: ["NOT_STARTED", "IN_PROGRESS"] },
+          },
+          orderBy: [{ dueDate: "asc" }, { createdAt: "desc" }],
+          take: 3,
+        })
+      : [];
 
   return (
     <div className="flex flex-col gap-4">
@@ -38,43 +70,60 @@ export default async function EmployeeHomePage() {
         {greeting(session.tenant.timezone)}, {firstName}
       </h1>
 
-      <Card>
-        <CardHeader
-          title="Attendance today"
-          meta="Check-in opens in the next build phase."
-        />
-        <div className="flex flex-col gap-4">
-          <StatusChip status={STATUS.notRecorded} size="lg" />
-          <Button
-            size="xl"
-            disabled
-            disabledReason="Attendance actions arrive with the next build phase."
-          >
-            Check In
-          </Button>
-        </div>
-      </Card>
+      {attendance && (
+        <section aria-label="Attendance today">
+          <AttendanceActionCard context={attendance} firstName={firstName} />
+        </section>
+      )}
 
-      <section aria-labelledby="today-tasks">
-        <h2
-          id="today-tasks"
-          className="mb-2 font-heading text-h2 text-text-primary"
-        >
-          Today&apos;s tasks
-        </h2>
-        <Card flush>
-          <EmptyState
-            warm
-            title="No tasks today."
-            body="New tasks from your manager will appear here."
-          />
-        </Card>
-      </section>
+      {tasksOn && (
+        <section aria-labelledby="today-tasks">
+          <div className="mb-2 flex items-baseline justify-between">
+            <h2
+              id="today-tasks"
+              className="font-heading text-h2 text-text-primary"
+            >
+              Today&apos;s tasks
+            </h2>
+            {tasks.length > 0 && (
+              <Link
+                href="/tasks"
+                className="text-label text-brand-primary underline-offset-2 hover:underline"
+              >
+                View all
+              </Link>
+            )}
+          </div>
 
-      <Alert variant="info" title="Early build">
-        This is the Phase 1 shell. Attendance, tasks and leave open here once
-        their modules are built and approved.
-      </Alert>
+          {tasks.length === 0 ? (
+            <Card flush>
+              <EmptyState
+                warm
+                title="No tasks today."
+                body="New tasks from your manager will appear here."
+              />
+            </Card>
+          ) : (
+            <ul className="flex flex-col gap-3">
+              {tasks.map((task) => (
+                <li key={task.id}>
+                  <TaskCard
+                    task={{
+                      id: task.id,
+                      title: task.title,
+                      priority: task.priority,
+                      status: task.status,
+                      dueDate: task.dueDate,
+                      proofRequirement: task.proofRequirement,
+                    }}
+                    timezone={session.tenant.timezone}
+                  />
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      )}
     </div>
   );
 }

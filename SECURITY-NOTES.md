@@ -61,6 +61,20 @@ explicit invite flow with tokens.
 location) must write an audit event when those features are built —
 the helper (`lib/audit.ts`) exists and is the only sanctioned writer.
 
+## File storage (task proof)
+
+Proof files upload to the Supabase Storage bucket `task-proof`. Before use:
+
+1. Create the bucket and set it **private** (never public).
+2. Add an RLS policy allowing authenticated users to INSERT, and reads only
+   through server-generated signed URLs — the app never links a raw
+   storage path.
+3. Paths are `{taskId}/{timestamp}-{filename}`; the owning tenant is
+   resolved server-side from the task row, never from the path.
+
+Until the bucket exists, submitting proof reports "File storage isn't
+configured yet" rather than failing silently.
+
 ## Deferred to later phases (tracked, not forgotten)
 
 - Supabase RLS policies on all tenant tables.

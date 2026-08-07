@@ -178,6 +178,40 @@ async function main() {
     });
   }
 
+  // A default branch and shift so attendance has policy to evaluate.
+  // Coordinates are a placeholder location, not a real address.
+  const existingBranch = await prisma.branch.findFirst({
+    where: { tenantId: tenant.id, name: "Main branch (placeholder)" },
+  });
+  const branch =
+    existingBranch ??
+    (await prisma.branch.create({
+      data: {
+        tenantId: tenant.id,
+        name: "Main branch (placeholder)",
+        address: "Placeholder address",
+        lat: 19.076,
+        lng: 72.8777,
+        radiusM: 300,
+      },
+    }));
+
+  const existingShift = await prisma.shift.findFirst({
+    where: { tenantId: tenant.id, isDefault: true },
+  });
+  const shift =
+    existingShift ??
+    (await prisma.shift.create({
+      data: {
+        tenantId: tenant.id,
+        name: "General shift",
+        startMinutes: 9 * 60 + 30, // 09:30
+        endMinutes: 18 * 60 + 30, // 18:30
+        graceMinutes: 10,
+        isDefault: true,
+      },
+    }));
+
   // Placeholder people. authUserId stays null until a Supabase account is
   // linked (see SECURITY-NOTES.md — linking policy).
   const people: Array<{
@@ -207,15 +241,28 @@ async function main() {
       where: {
         tenantId_userId: { tenantId: tenant.id, userId: user.id },
       },
-      update: { roleId: roleIdByKey.get(person.role)! },
+      update: {
+        roleId: roleIdByKey.get(person.role)!,
+        branchId: branch.id,
+        shiftId: shift.id,
+      },
       create: {
         tenantId: tenant.id,
         userId: user.id,
         roleId: roleIdByKey.get(person.role)!,
         employeeCode: person.employeeCode,
+        branchId: branch.id,
+        shiftId: shift.id,
       },
     });
   }
+
+  // Any membership created outside the seed (e.g. provision-user.ts) also
+  // needs a branch and shift so attendance policy resolves.
+  await prisma.tenantMembership.updateMany({
+    where: { tenantId: tenant.id, branchId: null },
+    data: { branchId: branch.id, shiftId: shift.id },
+  });
 
   await prisma.auditEvent.create({
     data: {

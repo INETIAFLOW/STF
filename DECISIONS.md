@@ -70,3 +70,53 @@ capabilities; their pages gate on their permissions (`modules.manage`,
 `roles.manage`, `settings.manage`) with the EMPLOYEES module as the
 carrier module in `checkAccess`. Revisit if a dedicated "platform"
 pseudo-module is added to the catalog.
+
+---
+
+## Phase 2 — Daily Operations
+
+**D-P2-01 · 2026-08-08 · Unprovisioned accounts land on /unauthorized** —
+An authenticated Supabase user with no active membership was redirected to
+`/sign-in`, which the proxy bounces back for signed-in users — an infinite
+loop. `requireSession` now distinguishes "anonymous" from "authenticated
+but not provisioned" and sends the latter to the no-access screen, which
+gained a Sign out action.
+
+**D-P2-02 · 2026-08-08 · Leave is unpaid by default, paid by decision** —
+V1 has no earned-leave balances and no holiday calendar, so a request is
+computed as unpaid days and the approver makes an explicit
+"Approve as unpaid" / "Approve as paid" choice, recorded with a reason.
+No silent default (user-flows.md §4). Actual salary maths is NOT computed
+— the consequence line states the payroll effect in words only.
+
+**D-P2-03 · 2026-08-08 · Location is assessed once per screen load, not
+continuously** — The consequence must be visible BEFORE the tap, so the
+browser position is resolved when the check-in card mounts. Nothing is
+tracked between check-in and check-out (decision D-016, Constitution §7).
+Accuracy worse than 200 m is treated as "cannot confirm" and routed to the
+approval path, never a silent pass.
+
+**D-P2-04 · 2026-08-08 · Dev preview session reads the real database** —
+`STF_DEV_FAKE_SESSION` now resolves the demo tenant's real membership when
+`DATABASE_URL` is set, falling back to static placeholders otherwise. Page
+code guards on `devFixtureOffline()` ("is there a database?") rather than
+"is this a preview session?". Still development-only and double-guarded.
+
+**D-P2-05 · 2026-08-08 · Task proof storage uses a private Supabase
+bucket** — Files upload to the `task-proof` bucket under a task-id prefix;
+photos are downscaled client-side to a 2000 px long edge. The bucket must
+be created as PRIVATE and read back only through signed URLs — see
+SECURITY-NOTES.md. Until it exists, proof submission reports a plain
+"storage isn't configured" error rather than failing silently.
+
+**D-P2-06 · 2026-08-08 · Payroll remains gated** — Attendance, leave and
+task inputs are now recorded, but no payroll calculation exists. The
+roadmap requires approved payroll rule documents plus local compliance
+review before that code is written (ROADMAP.md decision gates,
+Product Bible boundaries). The payroll screen stays an explained shell.
+
+**D-P2-07 · 2026-08-08 · Notifications ship in-app only** — The
+Notifications module is CORE, so in-app delivery is always available.
+Push, email, WhatsApp and SMS remain behind their feature flags until
+providers are configured; the daily report shows each channel's true state
+as Enabled/Disabled rather than failing silently (user-flows.md §6).

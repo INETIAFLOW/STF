@@ -17,7 +17,7 @@ import type { AppSession } from "./types";
  */
 export const getAppSession = cache(async (): Promise<AppSession | null> => {
   const fixtureRole = devFixtureRole();
-  if (fixtureRole) return fixtureSession(fixtureRole);
+  if (fixtureRole) return await fixtureSession(fixtureRole);
 
   const supabase = await createSupabaseServerClient();
   if (!supabase) return null;

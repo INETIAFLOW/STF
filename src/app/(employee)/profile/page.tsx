@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { requireSession } from "@/lib/authz/guard";
 import { Button } from "@/components/ui/Button";
 import { Card, CardHeader } from "@/components/ui/Card";
@@ -60,6 +61,36 @@ export default async function EmployeeProfilePage() {
             </dd>
           </div>
         </dl>
+      </Card>
+
+      <Card>
+        <CardHeader title="Your records" />
+        <ul className="flex flex-col gap-2">
+          <li>
+            <Link
+              href="/leave"
+              className="text-body text-brand-primary underline-offset-2 hover:underline"
+            >
+              Leave requests
+            </Link>
+          </li>
+          <li>
+            <Link
+              href="/attendance"
+              className="text-body text-brand-primary underline-offset-2 hover:underline"
+            >
+              Attendance history
+            </Link>
+          </li>
+          <li>
+            <Link
+              href="/notifications"
+              className="text-body text-brand-primary underline-offset-2 hover:underline"
+            >
+              Notifications
+            </Link>
+          </li>
+        </ul>
       </Card>
 
       <p className="text-caption text-text-secondary">

@@ -44,10 +44,20 @@ src/generated/prisma/   Generated Prisma client (gitignored)
 
 ## Domain boundaries (from Pack 01)
 
-Phase 1 implements **Platform** (tenants, module catalog) and **Shared**
-(identity, permissions, feature flags, audit). Workforce, Attendance/Leave,
-Payroll and Work get their own Prisma models and `src/lib/<domain>`
-modules in later phases — nothing in Phase 1 presumes their internals.
+- **Platform / Shared** (Phase 1): tenants, module catalog, identity,
+  permissions, feature flags, audit — `src/lib/{catalog,auth,authz,audit}`.
+- **Attendance & Leave** (Phase 2): `src/lib/attendance/*`,
+  `src/lib/leave/*`. Each has a pure `policy.ts` (no I/O — the rules), a
+  `service.ts` for reads, and `actions.ts` for server actions.
+- **Work** (Phase 2): `src/lib/tasks/*` — tasks, proof, review.
+- **Notifications** (Phase 2): `src/lib/notifications/*` — in-app channel;
+  provider adapters arrive with their flags.
+- **Payroll**: not implemented. Its inputs (approved leave, attendance
+  with `policySnapshot`, late minutes) are already recorded so a future
+  run can be traced to them.
+
+Each domain keeps its rules in a pure module so the same logic serves the
+UI, server actions and future jobs identically.
 
 ## Security boundary (order is fixed)
 

@@ -3,7 +3,7 @@ import "server-only";
 import { cache } from "react";
 import { getDb } from "@/lib/db";
 import type { ModuleKey } from "@/lib/catalog";
-import { devFixtureRole, fixtureEntitlements } from "@/lib/auth/fixture";
+import { devFixtureOffline, fixtureEntitlements } from "@/lib/auth/fixture";
 import type { TenantEntitlements } from "@/lib/auth/types";
 
 /**
@@ -13,7 +13,7 @@ import type { TenantEntitlements } from "@/lib/auth/types";
  */
 export const loadEntitlements = cache(
   async (tenantId: string, userId: string): Promise<TenantEntitlements> => {
-    if (devFixtureRole()) return fixtureEntitlements();
+    if (devFixtureOffline()) return fixtureEntitlements();
 
     const db = getDb();
     const [moduleSettings, featureSettings, exceptions] = await Promise.all([

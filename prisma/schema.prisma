@@ -47,6 +47,7 @@ model User {
   memberships        TenantMembership[]
   featureExceptions  UserFeatureException[] @relation("exceptionUser")
   auditEvents        AuditEvent[]           @relation("auditActor")
+  notifications      Notification[]         @relation("notificationUser")
 
   @@map("users")
 }
@@ -77,6 +78,13 @@ model Tenant {
   featureSettings   TenantFeatureSetting[]
   featureExceptions UserFeatureException[]
   auditEvents       AuditEvent[]
+  branches          Branch[]
+  shifts            Shift[]
+  attendanceRecords AttendanceRecord[]
+  leaveRequests     LeaveRequest[]
+  tasks             Task[]
+  taskProofs        TaskProof[]
+  notifications     Notification[]
 
   @@map("tenants")
 }
@@ -97,17 +105,316 @@ model TenantMembership {
   roleId       String           @db.Uuid
   status       MembershipStatus @default(ACTIVE)
   employeeCode String?
+  /// Permitted attendance location; null = location not required by policy.
+  branchId     String?          @db.Uuid
+  /// Working shift; null = tenant default shift.
+  shiftId      String?          @db.Uuid
+  /// Reporting manager (approval routing arrives with the employee module).
+  reportingToId String?         @db.Uuid
   createdAt    DateTime         @default(now())
   updatedAt    DateTime         @updatedAt
 
-  tenant Tenant @relation(fields: [tenantId], references: [id])
-  user   User   @relation(fields: [userId], references: [id])
-  role   Role   @relation(fields: [roleId], references: [id])
+  tenant Tenant  @relation(fields: [tenantId], references: [id])
+  user   User    @relation(fields: [userId], references: [id])
+  role   Role    @relation(fields: [roleId], references: [id])
+  branch Branch? @relation(fields: [branchId], references: [id])
+  shift  Shift?  @relation(fields: [shiftId], references: [id])
+  reportingTo TenantMembership?  @relation("reporting", fields: [reportingToId], references: [id])
+  reports     TenantMembership[] @relation("reporting")
+
+  attendanceRecords AttendanceRecord[]
+  leaveRequests     LeaveRequest[]     @relation("leaveRequester")
+  tasksAssigned     Task[]             @relation("taskAssignee")
+  tasksCreated      Task[]             @relation("taskCreator")
 
   @@unique([tenantId, userId])
   @@index([tenantId, status])
   @@index([userId])
   @@map("tenant_memberships")
+}
+
+// ------------------------------------------------------- workforce basics
+
+/// A permitted place of work (MODULES.md: branches under tenant settings).
+/// "Geofence" is admin vocabulary only — employees see "permitted area".
+model Branch {
+  id       String  @id @default(uuid()) @db.Uuid
+  tenantId String  @db.Uuid
+  name     String
+  address  String?
+  lat      Float?
+  lng      Float?
+  /// Permitted-area radius in metres (tenant policy, Constitution §1).
+  radiusM  Int     @default(300)
+  isActive Boolean @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant            Tenant             @relation(fields: [tenantId], references: [id])
+  memberships       TenantMembership[]
+  attendanceRecords AttendanceRecord[]
+
+  @@index([tenantId, isActive])
+  @@map("branches")
+}
+
+/// A working shift. Times are minutes from midnight in the tenant timezone.
+model Shift {
+  id           String  @id @default(uuid()) @db.Uuid
+  tenantId     String  @db.Uuid
+  name         String
+  startMinutes Int
+  endMinutes   Int
+  /// Grace is INCLUSIVE: exactly graceMinutes late is not late (edge-cases).
+  graceMinutes Int     @default(10)
+  isDefault    Boolean @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  tenant      Tenant             @relation(fields: [tenantId], references: [id])
+  memberships TenantMembership[]
+
+  @@index([tenantId])
+  @@map("shifts")
+}
+
+// ------------------------------------------------------------- attendance
+
+enum LocationOutcome {
+  /// Inside the permitted area.
+  INSIDE
+  /// Outside the permitted area — needs approval (exception).
+  OUTSIDE
+  /// Location could not be confirmed (off, or accuracy worse than 200 m).
+  UNCONFIRMED
+  /// Policy does not require location for this person.
+  NOT_REQUIRED
+}
+
+enum ReviewStatus {
+  NONE
+  PENDING
+  APPROVED
+  REJECTED
+  DETAILS_REQUESTED
+}
+
+enum ExemptionStatus {
+  NONE
+  REQUESTED
+  EXEMPTED
+  DECLINED
+}
+
+/// One membership-day of attendance evidence. V1 is single punch per day
+/// unless the multiple_punch feature is enabled (not in this phase).
+/// Server time is authoritative; the client capture time is preserved for
+/// offline records (edge-cases.md).
+model AttendanceRecord {
+  id           String   @id @default(uuid()) @db.Uuid
+  tenantId     String   @db.Uuid
+  membershipId String   @db.Uuid
+  /// Work date in the tenant's timezone (date only).
+  workDate     DateTime @db.Date
+
+  checkInAt         DateTime?
+  /// Original device capture time (offline records keep it; server wins).
+  checkInClientAt   DateTime?
+  checkInLat        Float?
+  checkInLng        Float?
+  checkInAccuracyM  Float?
+  checkInDistanceM  Float?
+  checkInOutcome    LocationOutcome?
+  /// Employee's reason — required for outside-area check-ins.
+  checkInReason     String?
+  offlineCaptured   Boolean @default(false)
+
+  lateMinutes     Int             @default(0)
+  exemptionStatus ExemptionStatus @default(NONE)
+  exemptionReason String?
+
+  checkOutAt       DateTime?
+  checkOutClientAt DateTime?
+  checkOutLat      Float?
+  checkOutLng      Float?
+  checkOutOutcome  LocationOutcome?
+
+  /// Exception review (Approval card contract; Constitution §3).
+  reviewStatus  ReviewStatus @default(NONE)
+  reviewedById  String?      @db.Uuid
+  reviewedAt    DateTime?
+  reviewReason  String?
+
+  branchId String? @db.Uuid
+  /// Policy values in force when recorded (never retroactively rewritten).
+  policySnapshot Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant     Tenant           @relation(fields: [tenantId], references: [id])
+  membership TenantMembership @relation(fields: [membershipId], references: [id])
+  branch     Branch?          @relation(fields: [branchId], references: [id])
+
+  @@unique([tenantId, membershipId, workDate])
+  @@index([tenantId, workDate])
+  @@index([tenantId, reviewStatus])
+  @@map("attendance_records")
+}
+
+// ------------------------------------------------------------------ leave
+
+enum LeaveType {
+  FULL_DAY
+  HALF_DAY
+  EMERGENCY
+}
+
+enum HalfDayPart {
+  FIRST_HALF
+  SECOND_HALF
+}
+
+enum LeaveStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+  DETAILS_REQUESTED
+}
+
+model LeaveRequest {
+  id           String      @id @default(uuid()) @db.Uuid
+  tenantId     String      @db.Uuid
+  membershipId String      @db.Uuid
+  type         LeaveType
+  startDate    DateTime    @db.Date
+  endDate      DateTime    @db.Date
+  halfDayPart  HalfDayPart?
+  reason       String
+  /// Computed at request time from policy; the approver can change it.
+  unpaidDays   Float       @default(0)
+  status       LeaveStatus @default(PENDING)
+  /// Decision (Constitution §3): approved as paid or unpaid, with reason.
+  paid          Boolean?
+  decidedById   String?   @db.Uuid
+  decidedAt     DateTime?
+  decisionReason String?
+  cancelledAt   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  tenant     Tenant           @relation(fields: [tenantId], references: [id])
+  membership TenantMembership @relation("leaveRequester", fields: [membershipId], references: [id])
+
+  @@index([tenantId, status])
+  @@index([tenantId, membershipId, startDate])
+  @@map("leave_requests")
+}
+
+// ------------------------------------------------------------------ tasks
+
+enum TaskPriority {
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum ProofRequirement {
+  NONE
+  PHOTO
+  FILE
+}
+
+enum TaskStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  SUBMITTED_FOR_REVIEW
+  COMPLETED
+}
+
+model Task {
+  id           String           @id @default(uuid()) @db.Uuid
+  tenantId     String           @db.Uuid
+  createdById  String           @db.Uuid
+  assigneeId   String           @db.Uuid
+  title        String
+  description  String?
+  priority     TaskPriority     @default(MEDIUM)
+  dueDate      DateTime?        @db.Date
+  /// Optional time-of-day deadline (minutes from midnight, tenant tz).
+  dueMinutes   Int?
+  proofRequirement ProofRequirement @default(NONE)
+  status       TaskStatus       @default(NOT_STARTED)
+  startedAt    DateTime?
+  completedAt  DateTime?
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  tenant    Tenant           @relation(fields: [tenantId], references: [id])
+  createdBy TenantMembership @relation("taskCreator", fields: [createdById], references: [id])
+  assignee  TenantMembership @relation("taskAssignee", fields: [assigneeId], references: [id])
+  proofs    TaskProof[]
+
+  @@index([tenantId, assigneeId, status])
+  @@index([tenantId, status])
+  @@map("tasks")
+}
+
+model TaskProof {
+  id            String       @id @default(uuid()) @db.Uuid
+  tenantId      String       @db.Uuid
+  taskId        String       @db.Uuid
+  submittedById String       @db.Uuid
+  note          String?
+  submittedAt   DateTime     @default(now())
+  decision      ReviewStatus @default(PENDING)
+  decidedById   String?      @db.Uuid
+  decidedAt     DateTime?
+  decisionReason String?
+
+  tenant Tenant      @relation(fields: [tenantId], references: [id])
+  task   Task        @relation(fields: [taskId], references: [id])
+  files  ProofFile[]
+
+  @@index([tenantId, taskId])
+  @@map("task_proofs")
+}
+
+/// Stored in the private Supabase bucket; paths are tenant-prefixed and
+/// only ever served through signed URLs (SYSTEM-ARCHITECTURE security).
+model ProofFile {
+  id        String @id @default(uuid()) @db.Uuid
+  tenantId  String @db.Uuid
+  proofId   String @db.Uuid
+  path      String
+  name      String
+  mime      String
+  sizeBytes Int
+
+  proof TaskProof @relation(fields: [proofId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@map("proof_files")
+}
+
+// ---------------------------------------------------------- notifications
+
+model Notification {
+  id        String    @id @default(uuid()) @db.Uuid
+  tenantId  String    @db.Uuid
+  userId    String    @db.Uuid
+  title     String
+  body      String?
+  href      String?
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+  user   User   @relation("notificationUser", fields: [userId], references: [id])
+
+  @@index([tenantId, userId, readAt])
+  @@map("notifications")
 }
 
 // -------------------------------------------------------- roles & permissions

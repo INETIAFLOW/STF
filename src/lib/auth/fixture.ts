@@ -5,23 +5,34 @@ import {
   FEATURES,
   MODULES,
   ROLE_TEMPLATES,
+  type PermissionKey,
 } from "@/lib/catalog";
+import { getDb, hasDatabaseConfig } from "@/lib/db";
 import type { AppSession, TenantEntitlements } from "./types";
 
 /**
  * Dev preview session ("fixture mode").
  *
- * Lets the application shell render with clearly-labelled placeholder data
- * when no Supabase session or database is configured — local preview and
- * UI review only. Guarded twice: the env flag AND NODE_ENV=development.
- * See SECURITY-NOTES.md. Never enable outside a developer machine.
+ * Lets the application shell render without a Supabase sign-in — local
+ * preview and UI review only. Guarded twice: the env flag AND
+ * NODE_ENV=development. See SECURITY-NOTES.md. Never enable outside a
+ * developer machine.
+ *
+ * When a database IS configured it resolves the real demo tenant and a
+ * real membership, so preview shows true data; otherwise it falls back to
+ * static placeholders.
  */
 export function devFixtureRole(): string | null {
   if (process.env.NODE_ENV !== "development") return null;
   const value = process.env.STF_DEV_FAKE_SESSION?.trim().toUpperCase();
   if (!value) return null;
-  const allowed = ["EMPLOYEE", "OWNER", "ADMIN", "HR", "MANAGER"];
+  const allowed = ROLE_TEMPLATES.map((r) => r.key);
   return allowed.includes(value) ? value : "EMPLOYEE";
+}
+
+/** True when fixture mode must serve placeholder data (no database). */
+export function devFixtureOffline(): boolean {
+  return devFixtureRole() !== null && !hasDatabaseConfig();
 }
 
 const FIXTURE_TENANT = {
@@ -31,10 +42,63 @@ const FIXTURE_TENANT = {
   timezone: "Asia/Kolkata",
 } as const;
 
-export function fixtureSession(roleKey: string): AppSession {
+/** Resolve a preview session, preferring real database records. */
+export async function fixtureSession(
+  roleKey: string,
+): Promise<AppSession> {
   const template =
     ROLE_TEMPLATES.find((r) => r.key === roleKey) ??
     ROLE_TEMPLATES.find((r) => r.key === "EMPLOYEE")!;
+
+  if (hasDatabaseConfig()) {
+    try {
+      const db = getDb();
+      const membership = await db.tenantMembership.findFirst({
+        where: {
+          status: "ACTIVE",
+          role: { key: template.key },
+          tenant: { slug: FIXTURE_TENANT.slug, status: "ACTIVE" },
+        },
+        orderBy: { createdAt: "asc" },
+        include: {
+          user: true,
+          tenant: true,
+          role: { include: { permissions: { include: { permission: true } } } },
+        },
+      });
+
+      if (membership) {
+        return {
+          user: {
+            id: membership.user.id,
+            displayName: membership.user.displayName,
+            email: membership.user.email,
+            isPlatformAdmin: membership.user.isPlatformAdmin,
+          },
+          tenant: {
+            id: membership.tenant.id,
+            slug: membership.tenant.slug,
+            name: membership.tenant.name,
+            timezone: membership.tenant.timezone,
+          },
+          membership: {
+            id: membership.id,
+            roleKey: membership.role.key,
+            roleName: membership.role.name,
+            employeeCode: membership.employeeCode,
+          },
+          permissions: new Set(
+            membership.role.permissions.map(
+              (rp) => rp.permission.key as PermissionKey,
+            ),
+          ),
+          source: "dev-fixture",
+        };
+      }
+    } catch {
+      // Fall through to static placeholders if the database is unreachable.
+    }
+  }
 
   return {
     user: {
@@ -58,7 +122,7 @@ export function fixtureSession(roleKey: string): AppSession {
   };
 }
 
-/** Entitlements mirroring the seed defaults. */
+/** Entitlements mirroring the seed defaults (no-database fallback). */
 export function fixtureEntitlements(): TenantEntitlements {
   const modules: TenantEntitlements["modules"] = {};
   for (const def of Object.values(MODULES)) {

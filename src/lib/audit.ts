@@ -1,7 +1,7 @@
 import "server-only";
 
 import { getDb } from "@/lib/db";
-import { devFixtureRole } from "@/lib/auth/fixture";
+import { devFixtureOffline } from "@/lib/auth/fixture";
 import type { AppSession } from "@/lib/auth/types";
 
 /**
@@ -26,7 +26,7 @@ export async function recordAuditEvent(
   session: AppSession,
   input: AuditInput,
 ): Promise<void> {
-  if (session.source === "dev-fixture" || devFixtureRole()) {
+  if (session.source === "dev-fixture" || devFixtureOffline()) {
     // Dev preview session has no database; make the skip loud in dev logs.
     console.warn(
       `[audit:dev-preview-skipped] ${input.action} ${input.entityType}${input.entityId ? `#${input.entityId}` : ""}`,
@@ -56,7 +56,7 @@ export async function recordSystemAuditEvent(
   tenantId: string | null,
   input: AuditInput,
 ): Promise<void> {
-  if (devFixtureRole()) {
+  if (devFixtureOffline()) {
     console.warn(`[audit:dev-preview-skipped] ${input.action}`);
     return;
   }

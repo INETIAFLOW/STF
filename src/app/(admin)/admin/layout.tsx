@@ -1,6 +1,7 @@
 import { requireAdminArea } from "@/lib/authz/guard";
 import { loadEntitlements } from "@/lib/authz/entitlements";
 import { enabledModuleKeys } from "@/lib/authz/flags";
+import { unreadNotificationCount } from "@/lib/notifications";
 import { Sidebar } from "@/components/shell/Sidebar";
 import { AdminTopBar } from "@/components/shell/TopBar";
 import { ToastProvider } from "@/components/ui/Toast";
@@ -18,6 +19,10 @@ export default async function AdminLayout({
 }) {
   const session = await requireAdminArea();
   const entitlements = await loadEntitlements(
+    session.tenant.id,
+    session.user.id,
+  );
+  const unread = await unreadNotificationCount(
     session.tenant.id,
     session.user.id,
   );
@@ -43,7 +48,10 @@ export default async function AdminLayout({
           roleName={session.membership.roleName}
         />
         <div className="flex min-w-0 flex-1 flex-col">
-          <AdminTopBar tenantName={session.tenant.name} />
+          <AdminTopBar
+            tenantName={session.tenant.name}
+            notificationCount={unread}
+          />
           <main
             id="main"
             className="mx-auto w-full max-w-[var(--stf-layout-content-max-width)] flex-1 px-5 py-5 lg:px-8"

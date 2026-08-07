@@ -40,6 +40,8 @@ export default async function EmployeeLayout({
           showTasks={entitlements.modules.TASKS === true}
           showAttendance={entitlements.modules.ATTENDANCE === true}
         />
+        {/* Leave lives under Profile — the bottom bar is capped at four
+            items with permanent labels (decision D-015). */}
       </ToastProvider>
     </div>
   );

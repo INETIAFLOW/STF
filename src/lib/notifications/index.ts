@@ -1,0 +1,212 @@
+import "server-only";
+
+import { getDb } from "@/lib/db";
+import { devFixtureOffline } from "@/lib/auth/fixture";
+import type { AppSession } from "@/lib/auth/types";
+
+/**
+ * In-app notifications (MODULES.md: Notifications is a CORE module).
+ *
+ * Phase 2 delivers the in-app channel only. Push, email, WhatsApp and SMS
+ * are provider-backed and stay behind their feature flags until providers
+ * are configured — a channel that is off is shown as "Off" in settings and
+ * is never silently failed (user-flows.md §6).
+ *
+ * Titles are ≤60 characters and never guilt-framed: state the fact and the
+ * next action (voice-and-microcopy.md §10).
+ */
+
+interface NotificationInput {
+  tenantId: string;
+  userId: string;
+  title: string;
+  body?: string;
+  href?: string;
+}
+
+async function create(input: NotificationInput): Promise<void> {
+  if (devFixtureOffline()) return; // dev preview session has no database
+  await getDb().notification.create({ data: input });
+}
+
+/** Notify reviewers that an attendance exception needs a decision. */
+async function attendanceException(
+  session: AppSession,
+  recordId: string,
+): Promise<void> {
+  if (devFixtureOffline()) return;
+  const db = getDb();
+
+  // Everyone in the tenant whose role can review attendance.
+  const reviewers = await db.tenantMembership.findMany({
+    where: {
+      tenantId: session.tenant.id,
+      status: "ACTIVE",
+      role: {
+        permissions: { some: { permission: { key: "attendance.review" } } },
+      },
+    },
+    select: { userId: true },
+  });
+
+  await Promise.all(
+    reviewers
+      .filter((r) => r.userId !== session.user.id)
+      .map((r) =>
+        create({
+          tenantId: session.tenant.id,
+          userId: r.userId,
+          title: "Attendance needs your review",
+          body: `${session.user.displayName} checked in outside the permitted area.`,
+          href: `/admin/attendance?record=${recordId}`,
+        }),
+      ),
+  );
+}
+
+/** Tell the employee what their manager decided. */
+async function attendanceDecision(
+  session: AppSession,
+  userId: string,
+  decision: "APPROVED" | "REJECTED" | "DETAILS_REQUESTED",
+  reason?: string,
+): Promise<void> {
+  const title =
+    decision === "APPROVED"
+      ? "Attendance approved"
+      : decision === "REJECTED"
+        ? "Attendance needs a correction"
+        : "Your manager asked for details";
+  await create({
+    tenantId: session.tenant.id,
+    userId,
+    title,
+    body: reason,
+    href: "/attendance",
+  });
+}
+
+/** Leave decision for the requester. */
+async function leaveDecision(
+  session: AppSession,
+  userId: string,
+  decision: "APPROVED" | "REJECTED",
+  dates: string,
+  reason?: string,
+): Promise<void> {
+  await create({
+    tenantId: session.tenant.id,
+    userId,
+    title: `Leave ${decision === "APPROVED" ? "approved" : "rejected"}: ${dates}`,
+    body: reason,
+    href: "/leave",
+  });
+}
+
+/** A new leave request for approvers. */
+async function leaveRequested(
+  session: AppSession,
+  requestId: string,
+  dates: string,
+): Promise<void> {
+  if (devFixtureOffline()) return;
+  const db = getDb();
+  const approvers = await db.tenantMembership.findMany({
+    where: {
+      tenantId: session.tenant.id,
+      status: "ACTIVE",
+      role: { permissions: { some: { permission: { key: "leave.approve" } } } },
+    },
+    select: { userId: true },
+  });
+  await Promise.all(
+    approvers
+      .filter((a) => a.userId !== session.user.id)
+      .map((a) =>
+        create({
+          tenantId: session.tenant.id,
+          userId: a.userId,
+          title: `Leave request: ${dates}`,
+          body: `From ${session.user.displayName}.`,
+          href: `/admin/leave?request=${requestId}`,
+        }),
+      ),
+  );
+}
+
+/** A task was assigned to someone. */
+async function taskAssigned(
+  session: AppSession,
+  userId: string,
+  taskTitle: string,
+  taskId: string,
+): Promise<void> {
+  await create({
+    tenantId: session.tenant.id,
+    userId,
+    title: `New task from ${session.user.displayName.split(/\s+/)[0]}`,
+    body: taskTitle,
+    href: `/tasks/${taskId}`,
+  });
+}
+
+/** Proof submitted — for the task creator. */
+async function proofSubmitted(
+  session: AppSession,
+  userId: string,
+  taskTitle: string,
+  taskId: string,
+): Promise<void> {
+  await create({
+    tenantId: session.tenant.id,
+    userId,
+    title: "Proof submitted for review",
+    body: taskTitle,
+    href: `/admin/tasks/${taskId}`,
+  });
+}
+
+/** Proof decision — for the assignee. */
+async function proofDecision(
+  session: AppSession,
+  userId: string,
+  taskTitle: string,
+  taskId: string,
+  decision: "APPROVED" | "REJECTED" | "DETAILS_REQUESTED",
+  reason?: string,
+): Promise<void> {
+  const title =
+    decision === "APPROVED"
+      ? `Proof approved: ${taskTitle}`
+      : decision === "REJECTED"
+        ? `Proof needs redoing: ${taskTitle}`
+        : `Details requested: ${taskTitle}`;
+  await create({
+    tenantId: session.tenant.id,
+    userId,
+    title: title.slice(0, 60),
+    body: reason,
+    href: `/tasks/${taskId}`,
+  });
+}
+
+export const notify = {
+  attendanceException,
+  attendanceDecision,
+  leaveDecision,
+  leaveRequested,
+  taskAssigned,
+  proofSubmitted,
+  proofDecision,
+};
+
+/** Unread count for the top-bar bell. */
+export async function unreadNotificationCount(
+  tenantId: string,
+  userId: string,
+): Promise<number> {
+  if (devFixtureOffline()) return 0;
+  return getDb().notification.count({
+    where: { tenantId, userId, readAt: null },
+  });
+}

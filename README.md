@@ -4,9 +4,14 @@ Mobile-first, multi-tenant SaaS for practical workforce operations:
 attendance, leave, payroll inputs, tasks, daily reporting and
 tenant-controlled modules. Built for Indian SMEs.
 
-**Status: Phase 1 — foundation and application shell.** Business modules
-(Attendance, Leave, Tasks, Payroll, Notifications) are not built yet; they
-start only after Phase 1 approval.
+**Status: Phase 2 — Daily Operations.** Attendance (check-in/out with
+permitted-area and late rules, exception review), Leave (request →
+paid/unpaid approval), Tasks (assign → proof → review), in-app
+notifications, live dashboards and governed module toggles are built.
+
+**Payroll is deliberately not built.** The roadmap requires approved
+payroll rule documents and a local compliance review before any salary
+calculation exists; the payroll screen is an explained shell.
 
 ## Source of truth
 
@@ -51,6 +56,9 @@ dev preview session — is in `SETUP.md`.
 | `npm run db:generate` | Generate the Prisma client |
 | `npm run db:migrate` | Apply migrations (needs `DIRECT_URL`) |
 | `npm run db:seed` | Seed catalog + fictional demo tenant |
+| `npx tsx scripts/provision-user.ts <email> [ROLE]` | Give a login a role in the demo tenant (dev) |
+| `npx tsx scripts/demo-data.ts [--clear]` | Create/remove placeholder activity for review (dev) |
+| `npx tsx scripts/smoke-phase2.ts` | Exercise the daily loop against the database (dev) |
 
 ## Documentation map
 
