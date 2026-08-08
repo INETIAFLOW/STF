@@ -82,6 +82,43 @@ If a screen suddenly returns empty after a database change, check
 `--status` first: a new table added without RLS is a hole, and a new
 connection role that is not the owner will read nothing.
 
+## The offline queue
+
+Employee attendance, leave and task proof are queued in **IndexedDB on the
+employee's own device** when there is no connection, and sent on
+reconnect, on page load, and when the tab becomes visible. Two operational
+consequences:
+
+- **Queued work is not on the server and cannot be recovered by you.** If
+  someone signs out and discards, or clears their browser data, it is
+  gone. The app warns before both.
+- **A queued action records its capture time, not its arrival time.** So
+  `checkInAt` for a row with `offlineCaptured = true` can be hours before
+  `createdAt`. That is correct and deliberate — do not "fix" it.
+
+Two guards that generate support questions:
+
+| Symptom | Cause | Fix |
+|---|---|---|
+| "This phone's clock is ahead of ours" | Device clock >2 min in the future | Set the phone to automatic time |
+| "…can't be sent now" on an old item | Queued item older than 7 days | Manager records the day manually |
+
+Useful queries when investigating a disputed day:
+
+```sql
+select "workDate", "checkInAt", "checkInClientAt", "offlineCaptured", "conflictNote", "reviewStatus"
+from attendance_records where "tenantId" = $1 and "offlineCaptured" order by "createdAt" desc;
+```
+
+A non-null `conflictNote` means a queued check-in arrived for a day that
+already had one. The saved record stands; both times are in the note and
+the day is raised for review. `attendance.sync_conflict` in
+`audit_events` records the same thing with the actor.
+
+Retried leave requests and proofs are deduplicated by
+`(tenantId, clientRequestId)`. A unique-constraint violation on that pair
+is the mechanism working, not a bug.
+
 ## Incidents
 
 1. **Contain.** If data may be exposed, rotate the database password and

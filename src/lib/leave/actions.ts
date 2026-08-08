@@ -38,6 +38,9 @@ const requestSchema = z
     endDate: dateOnly,
     halfDayPart: z.enum(["FIRST_HALF", "SECOND_HALF"]).optional(),
     reason: z.string().trim().min(1, "Tell your manager why you need these days.").max(500),
+    /** Idempotency key + original time for requests queued offline. */
+    clientRequestId: z.string().uuid().optional(),
+    clientCapturedAt: z.string().datetime().optional(),
   })
   .refine((v) => v.endDate >= v.startDate, {
     message: "The end date cannot be before the start date.",
@@ -63,6 +66,26 @@ export async function requestLeaveAction(
   const db = getDb();
   const start = new Date(`${parsed.data.startDate}T00:00:00.000Z`);
   const end = new Date(`${parsed.data.endDate}T00:00:00.000Z`);
+
+  // A request queued offline may be retried. Returning the existing one
+  // makes a duplicate impossible rather than merely unlikely.
+  if (parsed.data.clientRequestId) {
+    const already = await db.leaveRequest.findUnique({
+      where: {
+        tenantId_clientRequestId: {
+          tenantId: session.tenant.id,
+          clientRequestId: parsed.data.clientRequestId,
+        },
+      },
+    });
+    if (already) {
+      return {
+        ok: true,
+        message: "Leave request sent.",
+        detail: "This was already sent to your manager.",
+      };
+    }
+  }
 
   // Overlap guard — name the clashing dates rather than failing vaguely.
   const existing = await db.leaveRequest.findMany({
@@ -96,6 +119,10 @@ export async function requestLeaveAction(
         parsed.data.type === "HALF_DAY" ? parsed.data.halfDayPart : null,
       reason: parsed.data.reason,
       unpaidDays: days,
+      clientRequestId: parsed.data.clientRequestId,
+      clientCapturedAt: parsed.data.clientCapturedAt
+        ? new Date(parsed.data.clientCapturedAt)
+        : null,
     },
   });
 

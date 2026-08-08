@@ -186,6 +186,8 @@ export default async function AdminAttendancePage({
               outcome: record.checkInOutcome,
               reason: record.checkInReason,
               lateMinutes: record.lateMinutes,
+              conflictNote: record.conflictNote,
+              offlineCaptured: record.offlineCaptured,
             }))}
           />
         )}

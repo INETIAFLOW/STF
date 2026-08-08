@@ -18,6 +18,7 @@ import {
   type AttendanceContext,
 } from "@/lib/attendance/policy";
 import { checkInAction, checkOutAction } from "@/lib/attendance/actions";
+import { useOffline } from "@/lib/offline/OfflineProvider";
 
 /**
  * Attendance action card (component-specifications.md §26) — the signature
@@ -50,6 +51,9 @@ type GeoState =
 
 export function AttendanceActionCard({ context, firstName }: Props) {
   const { show } = useToast();
+  // Connection state and the queue are shared with the offline bar, so
+  // the card and the bar can never disagree about whether we are online.
+  const { online, enqueue, pending: queued } = useOffline();
   const [pending, startTransition] = useTransition();
   const [now, setNow] = useState<Date | null>(null);
   const [geo, setGeo] = useState<GeoState>(
@@ -61,7 +65,6 @@ export function AttendanceActionCard({ context, firstName }: Props) {
     detail?: string;
   } | null>(null);
   const [today, setToday] = useState(context.today);
-  const [online, setOnline] = useState(true);
   const reasonRef = useRef<HTMLTextAreaElement>(null);
 
   // Live clock: ticks every second, but is NOT announced (aria-live off).
@@ -71,19 +74,6 @@ export function AttendanceActionCard({ context, firstName }: Props) {
     return () => {
       clearInterval(id);
       cancelAnimationFrame(raf);
-    };
-  }, []);
-
-  useEffect(() => {
-    const on = () => setOnline(true);
-    const off = () => setOnline(false);
-    const sync = requestAnimationFrame(() => setOnline(navigator.onLine));
-    window.addEventListener("online", on);
-    window.addEventListener("offline", off);
-    return () => {
-      cancelAnimationFrame(sync);
-      window.removeEventListener("online", on);
-      window.removeEventListener("offline", off);
     };
   }, []);
 
@@ -156,6 +146,50 @@ export function AttendanceActionCard({ context, firstName }: Props) {
       return;
     }
     startTransition(async () => {
+      // Offline: keep it on the device with the time it happened, and
+      // confirm locally. The consequence the person just accepted is the
+      // one that will be recorded, because the server re-computes from
+      // this same capture time.
+      if (!online) {
+        const queued = await enqueue(
+          "checkIn",
+          { coords, reason: reason.trim() || undefined },
+          new Date(),
+        );
+        if (!queued) {
+          show({
+            variant: "error",
+            message:
+              "This browser can't save your check-in offline. Try again when you have signal.",
+          });
+          return;
+        }
+        const at = new Intl.DateTimeFormat("en-IN", {
+          hour: "numeric",
+          minute: "2-digit",
+          hour12: true,
+          timeZone: context.timezone,
+        }).format(new Date());
+        setConfirmation({
+          message: `Checked in at ${at}`,
+          detail:
+            "Your check-in is saved on this phone and will be sent when you're back online. Nothing is lost.",
+        });
+        setToday((prev) => ({
+          recordId: prev?.recordId ?? null,
+          checkInAt: new Date(),
+          checkOutAt: null,
+          lateMinutes: lateBy,
+          reviewStatus: consequence?.requiresReason ? "PENDING" : "NONE",
+          exemptionStatus: "NONE",
+          checkInOutcome: location?.outcome ?? null,
+          checkInDistanceM: location?.distanceM ?? null,
+          offlineCaptured: true,
+        }));
+        setReason("");
+        return;
+      }
+
       const result = await checkInAction({
         coords,
         reason: reason.trim() || undefined,
@@ -182,6 +216,31 @@ export function AttendanceActionCard({ context, firstName }: Props) {
 
   function handleCheckOut() {
     startTransition(async () => {
+      if (!online) {
+        const queued = await enqueue("checkOut", { coords }, new Date());
+        if (!queued) {
+          show({
+            variant: "error",
+            message:
+              "This browser can't save your check-out offline. Try again when you have signal.",
+          });
+          return;
+        }
+        const at = new Intl.DateTimeFormat("en-IN", {
+          hour: "numeric",
+          minute: "2-digit",
+          hour12: true,
+          timeZone: context.timezone,
+        }).format(new Date());
+        setConfirmation({
+          message: `Checked out at ${at}`,
+          detail:
+            "Saved on this phone and will be sent when you're back online. Nothing is lost.",
+        });
+        setToday((prev) => (prev ? { ...prev, checkOutAt: new Date() } : prev));
+        return;
+      }
+
       const result = await checkOutAction({ coords });
       if (result.ok) {
         setConfirmation({ message: result.message, detail: result.detail });
@@ -216,7 +275,9 @@ export function AttendanceActionCard({ context, firstName }: Props) {
         {confirmation.detail && (
           <p className="mt-1 text-body text-warm-text">{confirmation.detail}</p>
         )}
-        {!online && (
+        {/* The chip is evidence, not decoration: it shows while work is
+            genuinely still on the device, and disappears once sent. */}
+        {(!online || queued.length > 0) && (
           <p className="mt-3 inline-flex items-center gap-2">
             <StatusChip status={STATUS.waitingToSend} size="sm" />
           </p>

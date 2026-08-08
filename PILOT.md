@@ -73,6 +73,31 @@ Biometric or face attendance, continuous location tracking, a visitor
 register, bank transfers, accounting integrations, a holiday calendar and
 earned-leave balances. These were excluded on purpose, not forgotten.
 
+## Working without signal
+
+Warehouses and delivery routes lose signal. STF is built for that:
+
+- Checking in, checking out, requesting leave and sending task proof all
+  work with no connection. A bar at the top says "No internet — working
+  offline", and each saved item shows **Waiting to send**.
+- The work is kept on the phone, so **closing the app does not lose it**.
+- It is sent automatically when signal returns, and the person sees one
+  message: "2 items sent."
+- **The time recorded is when they tapped, not when the phone found
+  signal.** Someone who checks in at 9 am and reaches signal at 5 pm is
+  recorded as 9 am, and is not marked late for the delay. These records
+  are marked as taken offline so you can see which they are.
+- If a day somehow ends up with two different check-in times, the one
+  already saved stands and you are shown both to decide.
+
+Two things to tell your team: a phone with the **wrong date or time** will
+have its check-in refused with a message explaining why, and **signing out
+with unsent work** will warn them first — they should send it before
+signing out.
+
+Approvals, payroll and settings deliberately need a connection. STF will
+not accept a decision it cannot guarantee.
+
 ## Not ready yet
 
 - Scheduled daily summaries by email or WhatsApp (needs a provider).

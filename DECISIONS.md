@@ -304,3 +304,55 @@ Verified in-browser: horizontal scrolling is impossible at 320px.
 `ACCEPTANCE.md` walks sections A–K and marks items Not met where they are
 not met, notably screen-reader testing, retention workflows and the
 offline queue. Ticking them would have been faster and false.
+
+---
+
+## Phase 7 — Offline queue
+
+**D-P7-01 · 2026-08-09 · An offline action records WHEN IT HAPPENED, not
+when it synced** — This was a genuine bug found while building the queue:
+a check-in made at 9 am and synced at 5 pm would have been recorded as
+5 pm, and judged on-time. Now `checkInAt` is the capture time for queued
+actions, lateness is computed against it, and the record carries
+`offlineCaptured` plus the clock skew. Directly per edge-cases.md:
+"synced … using the ORIGINAL capture time … never silently re-timed".
+Server time remains authoritative for online actions.
+
+**D-P7-02 · 2026-08-09 · A device clock is not trusted blindly** — A
+capture time more than 2 minutes in the future, or more than 7 days old,
+is refused with a plain reason rather than accepted or silently dropped
+(edge-cases.md → "Phone clock wrong / manipulated"). The skew is stored
+for admin review.
+
+**D-P7-03 · 2026-08-09 · IndexedDB, not localStorage** — The queue must
+survive the tab closing, and must hold proof photos as Blobs rather than
+base64. Without persistence the "Waiting to send" chip would be a lie.
+Hand-wrapped; no new dependency. A browser without IndexedDB is told so
+**before** someone relies on it.
+
+**D-P7-04 · 2026-08-09 · Idempotency keys on leave and proof** — Check-in
+and check-out were already idempotent per day, but a retried leave request
+or proof submission would have duplicated. Both now carry a
+client-generated `clientRequestId` with a per-tenant unique constraint, so
+a duplicate is impossible rather than unlikely.
+
+**D-P7-05 · 2026-08-09 · Only transport failures retry** — A server
+*refusal* (missing reason, task gone) leaves the retry loop immediately
+and is surfaced; retrying a refusal forever would hide it. Transport
+failures back off exponentially, capped, and give up after five attempts
+with the reason shown.
+
+**D-P7-06 · 2026-08-09 · Sync conflicts keep both versions** — When a
+queued check-in arrives for a day that already has a record with a
+different time, the saved record stands, both times are written to
+`conflictNote`, the day is raised for review and reviewers are notified.
+The approval card shows both. Nothing is silently overwritten or dropped.
+
+**D-P7-07 · 2026-08-09 · Signing out with unsent work asks first** —
+Queued work belongs to that session and cannot be sent afterwards, and the
+next person on the phone must not inherit it. So sign-out names what would
+be lost and offers to send it, rather than clearing quietly.
+
+**D-P7-08 · 2026-08-09 · Admin work is never queued** — Approvals, payroll
+and configuration require a connection; the admin bar says so. STF will
+not accept a decision it cannot guarantee (implementation guide §7).

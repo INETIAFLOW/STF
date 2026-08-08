@@ -10,6 +10,7 @@ import { TextArea } from "@/components/ui/Input";
 import { useToast } from "@/components/ui/Toast";
 import { startTaskAction, submitProofAction } from "@/lib/tasks/actions";
 import { uploadProofFiles } from "@/lib/tasks/upload";
+import { useOffline } from "@/lib/offline/OfflineProvider";
 
 /**
  * Task actions for the assignee (screens E13/E14).
@@ -29,6 +30,7 @@ export function TaskActions({
 }) {
   const router = useRouter();
   const { show } = useToast();
+  const { online, enqueue } = useOffline();
   const [pending, startTransition] = useTransition();
   const [submitting, setSubmitting] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
@@ -120,6 +122,34 @@ export function TaskActions({
           }
           onClick={() =>
             startTransition(async () => {
+              // Offline: keep the photo itself on the device, not just a
+              // reference to it, so closing the app doesn't lose the work.
+              if (!online) {
+                const queued = await enqueue("taskProof", {
+                  taskId,
+                  note: note.trim() || undefined,
+                  files: await Promise.all(
+                    files.map(async (file) => ({
+                      name: file.name,
+                      type: file.type,
+                      blob: file.slice(0, file.size, file.type),
+                    })),
+                  ),
+                });
+                show({
+                  variant: queued ? "success" : "error",
+                  message: queued
+                    ? "Saved on this phone. It will be sent to your manager when you're back online."
+                    : "This browser can't save your proof offline. Try again when you have signal.",
+                });
+                if (queued) {
+                  setSubmitting(false);
+                  setFiles([]);
+                  setNote("");
+                }
+                return;
+              }
+
               const uploaded = await uploadProofFiles(taskId, files);
               if (!uploaded.ok) {
                 show({ variant: "error", message: uploaded.error });

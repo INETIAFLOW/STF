@@ -19,14 +19,18 @@ export interface ExceptionItem {
   outcome: "INSIDE" | "OUTSIDE" | "UNCONFIRMED" | "NOT_REQUIRED" | null;
   reason: string | null;
   lateMinutes: number;
+  /** Both versions, when a queued check-in clashed with a saved one. */
+  conflictNote: string | null;
+  offlineCaptured: boolean;
 }
 
 export function ExceptionQueue({ items }: { items: ExceptionItem[] }) {
   return (
     <ul className="flex flex-col gap-4">
       {items.map((item) => {
-        const statement =
-          item.outcome === "OUTSIDE" && item.distanceLabel
+        const statement = item.conflictNote
+          ? `Two check-in times for this day.`
+          : item.outcome === "OUTSIDE" && item.distanceLabel
             ? `Checked in ${item.distanceLabel} outside the ${item.branchName ?? "branch"} area at ${item.checkInTime}.`
             : `Checked in at ${item.checkInTime} without a confirmed location.`;
 
@@ -57,6 +61,20 @@ export function ExceptionQueue({ items }: { items: ExceptionItem[] }) {
                       <dd className="font-mono text-data text-text-primary tabular-nums">
                         {item.distanceLabel}
                       </dd>
+                    </div>
+                  )}
+                  {item.offlineCaptured && (
+                    <div className="flex gap-2">
+                      <dt className="font-medium">Recorded</dt>
+                      <dd className="text-text-primary">
+                        On the employee&apos;s phone while offline
+                      </dd>
+                    </div>
+                  )}
+                  {item.conflictNote && (
+                    <div className="flex gap-2">
+                      <dt className="font-medium">Both versions</dt>
+                      <dd className="text-text-primary">{item.conflictNote}</dd>
                     </div>
                   )}
                   {item.reason && (

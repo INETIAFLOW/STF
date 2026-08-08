@@ -5,6 +5,8 @@ import { unreadNotificationCount } from "@/lib/notifications";
 import { Sidebar } from "@/components/shell/Sidebar";
 import { AdminTopBar } from "@/components/shell/TopBar";
 import { ToastProvider } from "@/components/ui/Toast";
+import { OfflineProvider } from "@/lib/offline/OfflineProvider";
+import { AdminOfflineBar } from "@/components/offline/OfflineBar";
 
 /**
  * Admin shell: cool surface, 240px sidebar (lg+) / 72px rail (md),
@@ -47,18 +49,22 @@ export default async function AdminLayout({
           userName={session.user.displayName}
           roleName={session.membership.roleName}
         />
-        <div className="flex min-w-0 flex-1 flex-col">
-          <AdminTopBar
-            tenantName={session.tenant.name}
-            notificationCount={unread}
-          />
-          <main
-            id="main"
-            className="mx-auto w-full max-w-[var(--stf-layout-content-max-width)] flex-1 px-5 py-5 lg:px-8"
-          >
-            {children}
-          </main>
-        </div>
+        <OfflineProvider>
+          <div className="flex min-w-0 flex-1 flex-col">
+            <AdminTopBar
+              tenantName={session.tenant.name}
+              notificationCount={unread}
+            />
+            {/* Admin work is never queued — the bar says so plainly. */}
+            <AdminOfflineBar />
+            <main
+              id="main"
+              className="mx-auto w-full max-w-[var(--stf-layout-content-max-width)] flex-1 px-5 py-5 lg:px-8"
+            >
+              {children}
+            </main>
+          </div>
+        </OfflineProvider>
       </ToastProvider>
     </div>
   );

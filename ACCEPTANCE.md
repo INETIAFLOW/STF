@@ -104,12 +104,13 @@ Legend: **Met** · **Partly met** · **Not met** · **N/A**
 
 | Item | Result |
 |---|---|
-| Check-in, check-out, proof, leave queue locally | **Partly met** — the UI confirms locally and shows `Waiting to send`, but there is **no persistent offline queue**; a closed tab loses a queued action. The design's offline promise is not fully kept. |
-| Queued items keep their capture time | **Partly met** — the field and server handling exist (`checkInClientAt`, offline-captured flag); the client queue does not. |
-| Reconnect syncs with one summary | **Not met** |
-| Conflicts become exceptions showing both versions | **Not met** |
-| Admin approval/payroll/config unavailable offline | **Met** — they simply require the server. |
-| Server time authoritative, echoed back | **Met** |
+| Check-in, check-out, proof, leave queue locally | **Met** — persisted in IndexedDB, so work survives the tab closing. Proof photos are stored as Blobs, not references. Verified in-browser: a check-in made offline was still queued after a page reload, then sent. |
+| Queued items keep their capture time | **Met** — and it is the *recorded* time, not just a note: a check-in made at 9 am and synced at 5 pm records 9 am, and lateness is judged against 9 am. A device clock in the future, or an item older than a week, is refused with a reason rather than trusted. |
+| Reconnect syncs with one summary | **Met** — one toast ("2 items sent."), never one per item. Sync runs on reconnect, on load, and when the tab becomes visible. |
+| Conflicts become exceptions showing both versions | **Met** — a queued check-in clashing with a saved one leaves the saved time standing, records both on the record, raises it for review and notifies. |
+| Admin approval/payroll/config unavailable offline | **Met** — never queued, and the admin bar says so plainly. |
+| Server time authoritative, echoed back | **Met** — for online actions. Offline actions are device-timed **by design** (edge-cases.md), flagged `offlineCaptured`, with the clock skew recorded for review. |
+| Signing out does not silently discard queued work | **Met** — it names what would be lost and offers to send it first. |
 
 ## I. Scope discipline
 
@@ -133,8 +134,8 @@ Legend: **Met** · **Partly met** · **Not met** · **N/A**
 
 | Item | Result |
 |---|---|
-| All P1 screens pass A–H | **Not met** — see C and H above. |
-| `design-decisions.md` updated for every deviation | **Met** — `DECISIONS.md` carries 26 entries. |
+| All P1 screens pass A–H | **Not met** — H now passes; **C is the remaining blocker** (no assistive-technology testing). |
+| `design-decisions.md` updated for every deviation | **Met** — `DECISIONS.md` carries 49 entries. |
 | Tokens generated from one source | **Met** |
 | Lint rules active: no raw design values; no warm token under admin | **Partly met** — the first is enforced by the token pipeline; **the warm-token lint rule is not written**. |
 | Accessibility audit report attached | **Not met** |
@@ -148,9 +149,9 @@ Legend: **Met** · **Partly met** · **Not met** · **N/A**
    colour-blindness, forced-colors, 200% zoom. Built to spec, untested.
 2. **Retention and data rights** — windows agreed, export and deletion
    workflows built (Constitution §7).
-3. **Offline queue** — either build the persistent queue the design
-   promises, or change the promise.
-4. **Support access** — build the audited support session, or agree in
+3. **Support access** — build the audited support session, or agree in
    writing that nobody at STF opens customer data.
-5. **Backup restore rehearsal** (OPERATIONS.md).
-6. **Payroll rules reviewed** by a qualified local professional.
+4. **Backup restore rehearsal** (OPERATIONS.md).
+5. **Payroll rules reviewed** by a qualified local professional.
+
+*Resolved 9 August 2026:* the offline queue now persists (section H).

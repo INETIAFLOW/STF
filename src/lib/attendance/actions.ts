@@ -60,6 +60,50 @@ function toJson<T>(value: T): Parameters<typeof JSON.stringify>[0] {
   return JSON.parse(JSON.stringify(value));
 }
 
+/** A queued action older than this is refused rather than back-dated. */
+const MAX_QUEUE_AGE_MS = 7 * 24 * 60 * 60 * 1000;
+/** Tolerance for an ordinary clock drift before it counts as the future. */
+const CLOCK_SKEW_TOLERANCE_MS = 2 * 60 * 1000;
+
+/**
+ * Resolve a device-supplied capture time.
+ *
+ * The device clock can be wrong or manipulated (edge-cases.md → "Phone
+ * clock wrong"), so a time in the future or improbably old is refused
+ * outright rather than quietly trusted or quietly ignored.
+ */
+function resolveCapturedAt(
+  raw: string | undefined,
+  now: Date,
+): { at: Date | null; skewMs: number; rejected?: string } {
+  if (!raw) return { at: null, skewMs: 0 };
+
+  const at = new Date(raw);
+  if (Number.isNaN(at.getTime())) {
+    return { at: null, skewMs: 0, rejected: "That saved time could not be read." };
+  }
+
+  const skewMs = now.getTime() - at.getTime();
+  if (skewMs < -CLOCK_SKEW_TOLERANCE_MS) {
+    return {
+      at: null,
+      skewMs,
+      rejected:
+        "This phone's clock is ahead of ours. Check the date and time on the phone, then try again.",
+    };
+  }
+  if (skewMs > MAX_QUEUE_AGE_MS) {
+    return {
+      at: null,
+      skewMs,
+      rejected:
+        "This was saved more than a week ago and can't be sent now. Ask your manager to record it.",
+    };
+  }
+
+  return { at, skewMs };
+}
+
 /**
  * Attendance server actions.
  *
@@ -105,9 +149,33 @@ export async function checkInAction(
   }
 
   const db = getDb();
-  const now = new Date(); // server time wins
+  const now = new Date(); // server receive time
+
+  /**
+   * When the attendance actually happened.
+   *
+   * Online, server time is authoritative. Offline, the moment the person
+   * tapped is what matters — recording a 9 am check-in as 5 pm because
+   * that is when the phone found signal would be worse than useless, and
+   * edge-cases.md is explicit: synced "using the ORIGINAL capture time …
+   * never silently re-timed".
+   *
+   * A device clock is not trusted blindly: a future or very old time is
+   * refused, and the skew is stored for admin review.
+   */
+  const captured = resolveCapturedAt(parsed.data.clientCapturedAt, now);
+  if (captured.rejected) {
+    return { ok: false, error: captured.rejected };
+  }
+  const effectiveAt = captured.at ?? now;
+  const isOffline = captured.at != null;
+
   const context = await loadAttendanceContext(session);
-  const state = computeCheckInState(context, parsed.data.coords ?? null, now);
+  const state = computeCheckInState(
+    context,
+    parsed.data.coords ?? null,
+    effectiveAt, // lateness is judged against when it happened
+  );
 
   // A consequence that requires a reason must have one — server-side.
   const reason = parsed.data.reason?.trim();
@@ -118,7 +186,7 @@ export async function checkInAction(
     };
   }
 
-  const workDate = workDateInTimezone(now, session.tenant.timezone);
+  const workDate = workDateInTimezone(effectiveAt, session.tenant.timezone);
   const existing = await db.attendanceRecord.findUnique({
     where: {
       tenantId_membershipId_workDate: {
@@ -129,8 +197,49 @@ export async function checkInAction(
     },
   });
 
-  // Idempotent: a second tap produces no second record and no error.
+  // Idempotent: a second tap — or a queued action retried after the
+  // connection returned — produces no second record and no error.
   if (existing?.checkInAt) {
+    // A queued check-in whose captured time differs from what is already
+    // recorded is a genuine conflict. The server record stands, but the
+    // losing version is preserved so an admin can see both
+    // (edge-cases.md → "Sync conflict").
+    const queuedAt = parsed.data.clientCapturedAt
+      ? new Date(parsed.data.clientCapturedAt)
+      : null;
+    const differsByMinute =
+      queuedAt != null &&
+      Math.abs(queuedAt.getTime() - existing.checkInAt.getTime()) > 60_000;
+
+    if (differsByMinute && !existing.conflictNote) {
+      const both = `This phone recorded ${formatClockTime(queuedAt, session.tenant.timezone)} while offline; ${formatClockTime(existing.checkInAt, session.tenant.timezone)} was already saved. The saved time stands.`;
+      await db.attendanceRecord.update({
+        where: { id: existing.id },
+        data: {
+          conflictNote: both,
+          reviewStatus:
+            existing.reviewStatus === "NONE" ? "PENDING" : existing.reviewStatus,
+        },
+      });
+      await recordAuditEvent(session, {
+        action: "attendance.sync_conflict",
+        entityType: "attendance_record",
+        entityId: existing.id,
+        after: {
+          recorded: existing.checkInAt.toISOString(),
+          queued: queuedAt.toISOString(),
+        },
+      });
+      await notify.attendanceException(session, existing.id);
+
+      return {
+        ok: true,
+        message: `Checked in at ${formatClockTime(existing.checkInAt, session.tenant.timezone)}`,
+        detail:
+          "A different time was saved while you were offline. Your manager will see both.",
+      };
+    }
+
     return {
       ok: true,
       message: `Checked in at ${formatClockTime(existing.checkInAt, session.tenant.timezone)}`,
@@ -157,10 +266,8 @@ export async function checkInAction(
       },
     },
     update: {
-      checkInAt: now,
-      checkInClientAt: parsed.data.clientCapturedAt
-        ? new Date(parsed.data.clientCapturedAt)
-        : null,
+      checkInAt: effectiveAt,
+      checkInClientAt: captured.at,
       checkInLat: parsed.data.coords?.lat,
       checkInLng: parsed.data.coords?.lng,
       checkInAccuracyM: parsed.data.coords?.accuracyM ?? null,
@@ -170,17 +277,15 @@ export async function checkInAction(
       lateMinutes: state.lateBy,
       reviewStatus: needsReview ? "PENDING" : "NONE",
       branchId: matchedBranchId,
-      offlineCaptured: Boolean(parsed.data.clientCapturedAt),
+      offlineCaptured: isOffline,
       policySnapshot: snapshot,
     },
     create: {
       tenantId: session.tenant.id,
       membershipId: session.membership.id,
       workDate,
-      checkInAt: now,
-      checkInClientAt: parsed.data.clientCapturedAt
-        ? new Date(parsed.data.clientCapturedAt)
-        : null,
+      checkInAt: effectiveAt,
+      checkInClientAt: captured.at,
       checkInLat: parsed.data.coords?.lat,
       checkInLng: parsed.data.coords?.lng,
       checkInAccuracyM: parsed.data.coords?.accuracyM ?? null,
@@ -190,7 +295,7 @@ export async function checkInAction(
       lateMinutes: state.lateBy,
       reviewStatus: needsReview ? "PENDING" : "NONE",
       branchId: matchedBranchId,
-      offlineCaptured: Boolean(parsed.data.clientCapturedAt),
+      offlineCaptured: isOffline,
       policySnapshot: snapshot,
     },
   });
@@ -201,7 +306,12 @@ export async function checkInAction(
     entityId: record.id,
     reason,
     after: {
-      checkInAt: now.toISOString(),
+      checkInAt: effectiveAt.toISOString(),
+      // Offline records are device-timed; keep the arrival time and the
+      // clock skew so an admin can review it (edge-cases.md).
+      offlineCaptured: isOffline,
+      receivedAt: isOffline ? now.toISOString() : undefined,
+      clockSkewMs: isOffline ? captured.skewMs : undefined,
       lateMinutes: state.lateBy,
       outcome: state.location.outcome,
       distanceM: state.location.distanceM,
@@ -255,7 +365,10 @@ export async function checkInAction(
   };
 }
 
-const checkOutSchema = z.object({ coords: coordsSchema });
+const checkOutSchema = z.object({
+  coords: coordsSchema,
+  clientCapturedAt: z.string().datetime().optional(),
+});
 
 export async function checkOutAction(
   input: z.input<typeof checkOutSchema>,
@@ -272,7 +385,12 @@ export async function checkOutAction(
 
   const db = getDb();
   const now = new Date();
-  const workDate = workDateInTimezone(now, session.tenant.timezone);
+  // Same rule as check-in: a queued check-out records when the person
+  // actually left, not when the phone found signal.
+  const captured = resolveCapturedAt(parsed.data.clientCapturedAt, now);
+  if (captured.rejected) return { ok: false, error: captured.rejected };
+  const effectiveAt = captured.at ?? now;
+  const workDate = workDateInTimezone(effectiveAt, session.tenant.timezone);
 
   const record = await db.attendanceRecord.findUnique({
     where: {
@@ -299,12 +417,13 @@ export async function checkOutAction(
   }
 
   const context = await loadAttendanceContext(session);
-  const state = computeCheckInState(context, parsed.data.coords ?? null, now);
+  const state = computeCheckInState(context, parsed.data.coords ?? null, effectiveAt);
 
   await db.attendanceRecord.update({
     where: { id: record.id },
     data: {
-      checkOutAt: now,
+      checkOutAt: effectiveAt,
+      checkOutClientAt: captured.at,
       checkOutLat: parsed.data.coords?.lat,
       checkOutLng: parsed.data.coords?.lng,
       checkOutOutcome: state.location.outcome,
@@ -316,7 +435,8 @@ export async function checkOutAction(
     entityType: "attendance_record",
     entityId: record.id,
     after: {
-      checkOutAt: now.toISOString(),
+      checkOutAt: effectiveAt.toISOString(),
+      offlineCaptured: captured.at != null,
       outcome: state.location.outcome,
       branch: state.location.branch?.name ?? null,
     },

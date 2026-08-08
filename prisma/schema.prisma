@@ -259,6 +259,11 @@ model AttendanceRecord {
   checkOutLng      Float?
   checkOutOutcome  LocationOutcome?
 
+  /// A queued check-in arrived after the day already had a record with a
+  /// different time. The server record stands; this preserves the losing
+  /// version so an admin can see both (edge-cases.md → sync conflict).
+  conflictNote  String?
+
   /// Exception review (Approval card contract; Constitution §3).
   reviewStatus  ReviewStatus @default(NONE)
   reviewedById  String?      @db.Uuid
@@ -317,6 +322,11 @@ model LeaveRequest {
   endDate      DateTime    @db.Date
   halfDayPart  HalfDayPart?
   reason       String
+  /// Idempotency key from the device. A request queued offline may be
+  /// retried; this makes a duplicate impossible rather than unlikely.
+  clientRequestId String?  @db.Uuid
+  /// Original device capture time for requests made offline.
+  clientCapturedAt DateTime?
   /// Computed at request time from policy; the approver can change it.
   unpaidDays   Float       @default(0)
   status       LeaveStatus @default(PENDING)
@@ -332,6 +342,7 @@ model LeaveRequest {
   tenant     Tenant           @relation(fields: [tenantId], references: [id])
   membership TenantMembership @relation("leaveRequester", fields: [membershipId], references: [id])
 
+  @@unique([tenantId, clientRequestId])
   @@index([tenantId, status])
   @@index([tenantId, membershipId, startDate])
   @@map("leave_requests")
@@ -392,6 +403,10 @@ model TaskProof {
   taskId        String       @db.Uuid
   submittedById String       @db.Uuid
   note          String?
+  /// Idempotency key from the device (see LeaveRequest.clientRequestId).
+  clientRequestId String?    @db.Uuid
+  /// Original device capture time when submitted offline.
+  clientCapturedAt DateTime?
   submittedAt   DateTime     @default(now())
   decision      ReviewStatus @default(PENDING)
   decidedById   String?      @db.Uuid
@@ -402,6 +417,7 @@ model TaskProof {
   task   Task        @relation(fields: [taskId], references: [id])
   files  ProofFile[]
 
+  @@unique([tenantId, clientRequestId])
   @@index([tenantId, taskId])
   @@map("task_proofs")
 }

@@ -167,6 +167,9 @@ export async function startTaskAction(
 const submitSchema = z.object({
   taskId: z.string().uuid(),
   note: z.string().trim().max(1000).optional(),
+  /** Idempotency key + original time for proof queued offline. */
+  clientRequestId: z.string().uuid().optional(),
+  clientCapturedAt: z.string().datetime().optional(),
   files: z
     .array(
       z.object({
@@ -192,6 +195,27 @@ export async function submitProofAction(
   }
 
   const db = getDb();
+
+  // Proof queued offline may be retried; returning the existing record
+  // makes a duplicate submission impossible.
+  if (parsed.data.clientRequestId) {
+    const already = await db.taskProof.findUnique({
+      where: {
+        tenantId_clientRequestId: {
+          tenantId: session.tenant.id,
+          clientRequestId: parsed.data.clientRequestId,
+        },
+      },
+    });
+    if (already) {
+      return {
+        ok: true,
+        message: "Proof sent for review.",
+        detail: "This was already sent.",
+      };
+    }
+  }
+
   const task = await db.task.findFirst({
     where: {
       id: parsed.data.taskId,
@@ -221,6 +245,10 @@ export async function submitProofAction(
       taskId: task.id,
       submittedById: session.membership.id,
       note: parsed.data.note || null,
+      clientRequestId: parsed.data.clientRequestId,
+      clientCapturedAt: parsed.data.clientCapturedAt
+        ? new Date(parsed.data.clientCapturedAt)
+        : null,
       files: files.length
         ? {
             create: files.map((file) => ({

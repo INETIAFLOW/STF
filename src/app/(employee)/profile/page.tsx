@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { requireSession } from "@/lib/authz/guard";
+import { SignOutButton } from "@/components/offline/SignOutButton";
 import { Button } from "@/components/ui/Button";
 import { Card, CardHeader } from "@/components/ui/Card";
 import { StatusChip } from "@/components/ui/StatusChip";
@@ -114,11 +115,7 @@ export default async function EmployeeProfilePage() {
         can see everything recorded about you in Attendance history.
       </p>
 
-      <form action="/auth/sign-out" method="post">
-        <Button type="submit" variant="outline" size="lg" className="w-full">
-          Sign out
-        </Button>
-      </form>
+      <SignOutButton />
     </div>
   );
 }

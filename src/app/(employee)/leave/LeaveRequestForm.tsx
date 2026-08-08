@@ -17,6 +17,7 @@ import {
   payrollMonthLabel,
 } from "@/lib/leave/policy";
 import { requestLeaveAction } from "@/lib/leave/actions";
+import { useOffline } from "@/lib/offline/OfflineProvider";
 
 /**
  * Leave request form (screen E10).
@@ -43,6 +44,7 @@ type FormValues = z.infer<typeof schema>;
 export function LeaveRequestForm({ timezone }: { timezone: string }) {
   const router = useRouter();
   const { show } = useToast();
+  const { online, enqueue } = useOffline();
   const [pending, startTransition] = useTransition();
   const [open, setOpen] = useState(false);
 
@@ -83,6 +85,28 @@ export function LeaveRequestForm({ timezone }: { timezone: string }) {
 
   function onSubmit(values: FormValues) {
     startTransition(async () => {
+      // Offline: keep it and tell the person plainly that it has NOT yet
+      // reached their manager (empty-loading-error-states.md §5).
+      if (!online) {
+        const queued = await enqueue("leaveRequest", {
+          type: values.type,
+          startDate: values.startDate,
+          endDate: values.endDate,
+          reason: values.reason,
+        });
+        show({
+          variant: queued ? "success" : "error",
+          message: queued
+            ? "Saved on this phone. It has not reached your manager yet — it will be sent when you're back online."
+            : "This browser can't save your request offline. Try again when you have signal.",
+        });
+        if (queued) {
+          reset({ type: "FULL_DAY", startDate: "", endDate: "", reason: "" });
+          setOpen(false);
+        }
+        return;
+      }
+
       const result = await requestLeaveAction({
         type: values.type,
         startDate: values.startDate,

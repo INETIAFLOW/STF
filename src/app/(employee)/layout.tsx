@@ -3,6 +3,8 @@ import { loadEntitlements } from "@/lib/authz/entitlements";
 import { BottomNav } from "@/components/shell/BottomNav";
 import { EmployeeTopBar } from "@/components/shell/TopBar";
 import { ToastProvider } from "@/components/ui/Toast";
+import { OfflineProvider } from "@/lib/offline/OfflineProvider";
+import { OfflineBar } from "@/components/offline/OfflineBar";
 
 /**
  * Employee mobile shell: warm surface, top bar, bottom navigation.
@@ -23,25 +25,29 @@ export default async function EmployeeLayout({
   return (
     <div data-surface="employee" className="min-h-dvh">
       <ToastProvider>
-        <a
-          href="#main"
-          className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:rounded-md focus:bg-surface-default focus:px-3 focus:py-2"
-        >
-          Skip to content
-        </a>
-        <EmployeeTopBar title={session.tenant.name} />
-        <main
-          id="main"
-          className="mx-auto w-full max-w-[640px] px-5 pt-4 pb-[calc(var(--stf-layout-bottom-nav-height)+env(safe-area-inset-bottom)+var(--stf-space-6))]"
-        >
-          {children}
-        </main>
-        <BottomNav
-          showTasks={entitlements.modules.TASKS === true}
-          showAttendance={entitlements.modules.ATTENDANCE === true}
-        />
-        {/* Leave lives under Profile — the bottom bar is capped at four
-            items with permanent labels (decision D-015). */}
+        <OfflineProvider>
+          <a
+            href="#main"
+            className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:rounded-md focus:bg-surface-default focus:px-3 focus:py-2"
+          >
+            Skip to content
+          </a>
+          <EmployeeTopBar title={session.tenant.name} />
+          {/* Persistent while offline, and not dismissible. */}
+          <OfflineBar />
+          <main
+            id="main"
+            className="mx-auto w-full max-w-[640px] px-5 pt-4 pb-[calc(var(--stf-layout-bottom-nav-height)+env(safe-area-inset-bottom)+var(--stf-space-6))]"
+          >
+            {children}
+          </main>
+          <BottomNav
+            showTasks={entitlements.modules.TASKS === true}
+            showAttendance={entitlements.modules.ATTENDANCE === true}
+          />
+          {/* Leave lives under Profile — the bottom bar is capped at four
+              items with permanent labels (decision D-015). */}
+        </OfflineProvider>
       </ToastProvider>
     </div>
   );
