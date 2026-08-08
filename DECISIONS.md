@@ -191,3 +191,61 @@ nothing, and offers a direct alternative. **Open question for approval.**
 **D-P4-03 · 2026-08-08 · Signed-out visitors land on marketing** — `/`
 routes to `/product` when there is no session, so the public site is the
 front door and `/sign-in` stays for people who already have an account.
+
+---
+
+## Phase 5 — Multi-location
+
+**D-P5-01 · 2026-08-09 · New feature flag `ATTENDANCE.any_branch_check_in`**
+— Lifecycle metadata per FEATURE-FLAGS.md: key `any_branch_check_in`;
+description "Check in at any company location"; scope tenant + user;
+owner Tenant Owner; default **off** (it relaxes a control, so it is opted
+into, matching `multiple_punch`); depends on `ATTENDANCE.geofence`;
+rollout general; no retirement date.
+Deliberately **no** `multi_branch` flag: multiple locations are already
+approved (MODULES.md puts branches under Tenant Settings, A24 lists them)
+and there is no coherent off-state — "off" would mean refusing to create a
+second row, which is a limit, not a capability. Per the flag doc it would
+be born retired.
+
+**D-P5-02 · 2026-08-09 · Roaming is a boolean, not a set of locations** —
+`TenantMembership.canCheckInAtAnyBranch`. The approved model
+(edge-cases.md) is "their profile allows multi-branch" — one bit. A join
+table would be strictly more expressive than the approved rule, need
+set-management UI, and could not be filled from existing data. Revisit
+only if a customer asks for "these three shops specifically".
+
+**D-P5-03 · 2026-08-09 · Per-location radius overrides the tenant default**
+— `Branch.radiusM` is now nullable: null inherits the tenant's attendance
+policy, a value overrides it. A warehouse yard needs more room than a shop
+counter. Resolution happens once, server-side, in `loadAttendanceContext`.
+
+**D-P5-04 · 2026-08-09 · Fixed: saving the attendance policy destroyed
+per-location and per-shift settings** — `saveAttendancePolicyAction` ran
+`branch.updateMany({ radiusM })` and `shift.updateMany({ graceMinutes })`
+across the whole tenant, so saving the policy form silently overwrote every
+radius and grace an admin had deliberately set elsewhere. Both removed; the
+policy value is now the default that locations and shifts inherit. The form
+states how many locations are affected before saving.
+*Behaviour change an owner may notice:* editing the policy no longer
+propagates grace to existing shifts.
+
+**D-P5-05 · 2026-08-09 · An attendance record explains itself** —
+`policySnapshot` v2 stores the policy version and the home and matched
+locations **by value** (name and coordinates), plus which radius applied
+and the exact consequence sentence the employee accepted. A later rename or
+move cannot change what a past day says. Records with no `v` are the Phase 3
+shape and are never rewritten; `describeAttendanceRecord` reads both and
+flags when a name came from the live join rather than the record.
+
+**D-P5-06 · 2026-08-09 · No home location is a stated gap, not "no check"**
+— A membership with no branch while the company has locations now surfaces
+"Your work location isn't set — ask your manager" instead of silently
+skipping the permitted-area check. The migration deliberately does **not**
+guess anyone's workplace.
+
+**D-P5-07 · 2026-08-09 · The location filter lives in the URL, per page** —
+`?branch=<id>`, validated server-side against the tenant's own locations
+before it reaches any query. Not a global top-bar control: App Router
+layouts do not receive `searchParams`, and a global filter would leak into
+payroll and roles, which have no location dimension.

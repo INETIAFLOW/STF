@@ -196,6 +196,25 @@ async function main() {
       },
     }));
 
+  // A second location so multi-location behaviour is exercisable. Its
+  // permitted area is deliberately larger than the company default — a
+  // warehouse yard needs more room than a shop counter.
+  const existingSecond = await prisma.branch.findFirst({
+    where: { tenantId: tenant.id, name: "Warehouse (placeholder)" },
+  });
+  if (!existingSecond) {
+    await prisma.branch.create({
+      data: {
+        tenantId: tenant.id,
+        name: "Warehouse (placeholder)",
+        address: "Placeholder address 2",
+        lat: 19.1,
+        lng: 72.9,
+        radiusM: 500,
+      },
+    });
+  }
+
   const existingShift = await prisma.shift.findFirst({
     where: { tenantId: tenant.id, isDefault: true },
   });
@@ -263,6 +282,18 @@ async function main() {
     where: { tenantId: tenant.id, branchId: null },
     data: { branchId: branch.id, shiftId: shift.id },
   });
+
+  // One placeholder person is marked as working across locations, so the
+  // roaming path can be tried without editing data by hand.
+  const roamingUser = await prisma.user.findUnique({
+    where: { email: "dev.employee@example.com" },
+  });
+  if (roamingUser) {
+    await prisma.tenantMembership.updateMany({
+      where: { tenantId: tenant.id, userId: roamingUser.id },
+      data: { canCheckInAtAnyBranch: true },
+    });
+  }
 
   await prisma.auditEvent.create({
     data: {

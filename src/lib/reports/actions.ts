@@ -24,6 +24,8 @@ const schema = z.object({
   type: z.enum(["attendance", "leave", "tasks"]),
   from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  /** Optional location scope. The client value is a hint, never authority. */
+  branchId: z.string().uuid().optional(),
 });
 
 /** RFC 4180 escaping so names with commas or quotes survive a round trip. */
@@ -72,6 +74,16 @@ export async function exportReportAction(
   const from = new Date(`${parsed.data.from}T00:00:00.000Z`);
   const to = new Date(`${parsed.data.to}T00:00:00.000Z`);
 
+  // Re-validate the location against this tenant. A branch id from the
+  // client must never scope a query on trust (Constitution §2).
+  const branch = parsed.data.branchId
+    ? await db.branch.findFirst({
+        where: { id: parsed.data.branchId, tenantId: session.tenant.id },
+        select: { id: true, name: true },
+      })
+    : null;
+  const branchId = branch?.id ?? null;
+
   let headers: string[] = [];
   let rows: unknown[][] = [];
 
@@ -80,6 +92,7 @@ export async function exportReportAction(
       where: {
         tenantId: session.tenant.id,
         workDate: { gte: from, lte: to },
+        ...(branchId ? { branchId } : {}),
       },
       include: { membership: { include: { user: true } }, branch: true },
       orderBy: [{ workDate: "asc" }],
@@ -120,6 +133,7 @@ export async function exportReportAction(
         tenantId: session.tenant.id,
         startDate: { lte: to },
         endDate: { gte: from },
+        ...(branchId ? { membership: { branchId } } : {}),
       },
       include: { membership: { include: { user: true } } },
       orderBy: [{ startDate: "asc" }],
@@ -151,6 +165,7 @@ export async function exportReportAction(
       where: {
         tenantId: session.tenant.id,
         createdAt: { gte: from, lte: new Date(to.getTime() + 86_399_000) },
+        ...(branchId ? { assignee: { branchId } } : {}),
       },
       include: {
         assignee: { include: { user: true } },
@@ -182,9 +197,13 @@ export async function exportReportAction(
     ]);
   }
 
-  const filename = `stf-${parsed.data.type}-${parsed.data.from}-to-${parsed.data.to}.csv`;
+  const scopeSuffix = branch
+    ? `-${branch.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`
+    : "";
+  const filename = `stf-${parsed.data.type}${scopeSuffix}-${parsed.data.from}-to-${parsed.data.to}.csv`;
 
-  // Exports are recorded — who exported what, and when (Constitution §7).
+  // Exports are recorded — who exported what, over what scope, and when
+  // (Constitution §7).
   await recordAuditEvent(session, {
     action: "report.exported",
     entityType: "report",
@@ -195,6 +214,7 @@ export async function exportReportAction(
       to: parsed.data.to,
       rows: rows.length,
       filename,
+      branch: branch?.name ?? "All branches",
     },
   });
 

@@ -40,6 +40,25 @@ export async function saveAttendancePolicyAction(
   }
 
   const db = getDb();
+
+  // These values are the tenant DEFAULT. They are deliberately NOT written
+  // onto every branch and shift row: a location may set its own permitted
+  // area (a warehouse needs more room than a shop) and a shift may set its
+  // own grace. Overwriting them here would silently destroy configuration
+  // an admin set on purpose, from a form that never mentioned it.
+  const [usingDefault, withOwnRadius] = await Promise.all([
+    db.branch.count({
+      where: { tenantId: session.tenant.id, isActive: true, radiusM: null },
+    }),
+    db.branch.count({
+      where: {
+        tenantId: session.tenant.id,
+        isActive: true,
+        radiusM: { not: null },
+      },
+    }),
+  ]);
+
   const { version, previous } = await setPolicy(
     session.tenant.id,
     "attendance",
@@ -47,31 +66,29 @@ export async function saveAttendancePolicyAction(
     session.user.id,
   );
 
-  // Shift grace and branch radius are stored on their own records too, so
-  // the policy and the operational rows stay in step.
-  await db.shift.updateMany({
-    where: { tenantId: session.tenant.id },
-    data: { graceMinutes: parsed.data.graceMinutes },
-  });
-  await db.branch.updateMany({
-    where: { tenantId: session.tenant.id },
-    data: { radiusM: parsed.data.radiusM },
-  });
-
   await recordAuditEvent(session, {
     action: "policy.attendance_changed",
     entityType: "tenant_policy",
     entityId: session.tenant.id,
     before: previous ?? undefined,
     after: { ...parsed.data, version },
+    metadata: {
+      locationsUsingDefault: usingDefault,
+      locationsWithOwnRadius: withOwnRadius,
+    },
   });
 
   revalidatePath("/admin/settings/attendance");
 
+  const locationNote =
+    withOwnRadius > 0
+      ? ` ${usingDefault} location${usingDefault === 1 ? "" : "s"} use this radius. ${withOwnRadius} use their own and ${withOwnRadius === 1 ? "is" : "are"} unchanged.`
+      : "";
+
   return {
     ok: true,
     message: `Attendance policy saved as version ${version}.`,
-    detail: "Records already saved keep the version that applied to them.",
+    detail: `Records already saved keep the version that applied to them.${locationNote}`,
   };
 }
 
@@ -157,6 +174,16 @@ export async function saveShiftAction(
   }
 
   const db = getDb();
+  // Guard the tenant boundary: a shift id arrives from the client.
+  if (parsed.data.shiftId) {
+    const owned = await db.shift.count({
+      where: { id: parsed.data.shiftId, tenantId: session.tenant.id },
+    });
+    if (owned === 0) {
+      return { ok: false, error: "That shift is no longer available." };
+    }
+  }
+
   const shift = parsed.data.shiftId
     ? await db.shift.update({
         where: { id: parsed.data.shiftId },

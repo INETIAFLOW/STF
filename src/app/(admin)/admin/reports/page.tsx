@@ -9,6 +9,7 @@ import { Alert } from "@/components/ui/Alert";
 import { Card, CardHeader } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ExportPanel } from "./ExportPanel";
+import { loadBranchOptions } from "@/lib/branches/scope";
 
 export const metadata: Metadata = { title: "Reports" };
 
@@ -64,7 +65,11 @@ export default async function AdminReportsPage() {
           />
         </Card>
       ) : (
-        <ExportPanel types={available} canExport={canExport} />
+        <ExportPanel
+          types={available}
+          canExport={canExport}
+          branches={await loadBranchOptions(session.tenant.id)}
+        />
       )}
 
       <Card flush>

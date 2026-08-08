@@ -58,7 +58,8 @@ async function main() {
       name: employee.branch!.name,
       lat: employee.branch!.lat,
       lng: employee.branch!.lng,
-      radiusM: employee.branch!.radiusM,
+      // radiusM is now nullable — null means "inherit the tenant default".
+      radiusM: employee.branch!.radiusM ?? 300,
     },
     coords: {
       lat: employee.branch!.lat! + 0.02, // ~2.2 km away

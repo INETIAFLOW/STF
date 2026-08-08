@@ -11,6 +11,12 @@ import { evaluateAccess } from "@/lib/authz/flags";
 import { loadEntitlements } from "@/lib/authz/entitlements";
 import { CreateTaskPanel } from "./CreateTaskPanel";
 import { ProofQueue } from "./ProofQueue";
+import { BranchFilter } from "@/components/filters/BranchFilter";
+import {
+  branchName,
+  loadBranchOptions,
+  resolveBranchFilter,
+} from "@/lib/branches/scope";
 
 export const metadata: Metadata = { title: "Tasks" };
 
@@ -28,12 +34,29 @@ const priorityFor = {
 } as const;
 
 /** Task list + create + proof review (screens A7/A8/A9). */
-export default async function AdminTasksPage() {
+export default async function AdminTasksPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ branch?: string }>;
+}) {
   const { session, decision } = await checkAccess({
     module: "TASKS",
     permission: "tasks.view",
   });
   if (!decision.allowed) redirect("/unauthorized");
+
+  // A task has no location of its own, so filter by where its assignee
+  // works. Validated against this tenant's locations before use.
+  const params = await searchParams;
+  const branchOptions = await loadBranchOptions(session.tenant.id);
+  const branchFilter = resolveBranchFilter(
+    params.branch,
+    new Set(branchOptions.map((b) => b.id)),
+  );
+  const selectedBranchName = branchName(branchFilter, branchOptions);
+  const assigneeWhere = branchFilter
+    ? { assignee: { branchId: branchFilter } }
+    : {};
 
   const canManage = session.permissions.has("tasks.manage");
   const tz = session.tenant.timezone;
@@ -58,13 +81,17 @@ export default async function AdminTasksPage() {
     ? [[], [], []]
     : await Promise.all([
         getDb().task.findMany({
-          where: { tenantId: session.tenant.id },
+          where: { tenantId: session.tenant.id, ...assigneeWhere },
           include: { assignee: { include: { user: true } } },
           orderBy: [{ status: "asc" }, { createdAt: "desc" }],
           take: 50,
         }),
         getDb().tenantMembership.findMany({
-          where: { tenantId: session.tenant.id, status: "ACTIVE" },
+          where: {
+            tenantId: session.tenant.id,
+            status: "ACTIVE",
+            ...(branchFilter ? { branchId: branchFilter } : {}),
+          },
           include: { user: true },
           orderBy: { createdAt: "asc" },
         }),
@@ -72,6 +99,7 @@ export default async function AdminTasksPage() {
           where: {
             tenantId: session.tenant.id,
             status: "SUBMITTED_FOR_REVIEW",
+            ...assigneeWhere,
           },
           include: {
             assignee: { include: { user: true } },
@@ -87,7 +115,10 @@ export default async function AdminTasksPage() {
 
   return (
     <div className="flex flex-col gap-5">
-      <h1 className="font-heading text-h1 text-text-primary">Tasks</h1>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <h1 className="font-heading text-h1 text-text-primary">Tasks</h1>
+        <BranchFilter options={branchOptions} selected={branchFilter} />
+      </div>
 
       {canManage && (
         <CreateTaskPanel
@@ -141,8 +172,16 @@ export default async function AdminTasksPage() {
         {tasks.length === 0 ? (
           <Card flush>
             <EmptyState
-              title="No tasks yet."
-              body="Assign the first task to see it here."
+              title={
+                selectedBranchName
+                  ? `No tasks for ${selectedBranchName}.`
+                  : "No tasks yet."
+              }
+              body={
+                selectedBranchName
+                  ? "Other locations may still have tasks."
+                  : "Assign the first task to see it here."
+              }
             />
           </Card>
         ) : (

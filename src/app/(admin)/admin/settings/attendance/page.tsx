@@ -8,6 +8,7 @@ import { getPolicy, getPolicyVersion } from "@/lib/policies";
 import { Alert } from "@/components/ui/Alert";
 import { Card, CardHeader } from "@/components/ui/Card";
 import { DEFAULT_LATE_POLICY, type LatePolicy } from "@/lib/payroll/engine";
+import { LocationsCard } from "./LocationsCard";
 import { PolicyForms } from "./PolicyForms";
 
 export const metadata: Metadata = { title: "Attendance policy" };
@@ -44,7 +45,7 @@ export default async function AttendancePolicyPage() {
   }
 
   const db = getDb();
-  const [attendance, payroll, attendanceVersion, payrollVersion, shifts] =
+  const [attendance, payroll, attendanceVersion, payrollVersion, shifts, branches] =
     await Promise.all([
       getPolicy<AttendancePolicy>(session.tenant.id, "attendance"),
       getPolicy<Partial<LatePolicy>>(session.tenant.id, "payroll"),
@@ -54,7 +55,16 @@ export default async function AttendancePolicyPage() {
         where: { tenantId: session.tenant.id },
         orderBy: { startMinutes: "asc" },
       }),
+      db.branch.findMany({
+        where: { tenantId: session.tenant.id },
+        orderBy: [{ isActive: "desc" }, { name: "asc" }],
+        include: {
+          _count: { select: { memberships: { where: { status: "ACTIVE" } } } },
+        },
+      }),
     ]);
+
+  const defaultRadiusM = attendance?.radiusM ?? DEFAULT_ATTENDANCE.radiusM;
 
   return (
     <div className="flex flex-col gap-5">
@@ -75,9 +85,25 @@ export default async function AttendancePolicyPage() {
         payroll already approved keep the version that applied to them.
       </Alert>
 
+      <LocationsCard
+        defaultRadiusM={defaultRadiusM}
+        locations={branches.map((branch) => ({
+          id: branch.id,
+          name: branch.name,
+          address: branch.address,
+          lat: branch.lat,
+          lng: branch.lng,
+          radiusM: branch.radiusM,
+          isActive: branch.isActive,
+          assignedCount: branch._count.memberships,
+        }))}
+      />
+
       <PolicyForms
         attendance={{ ...DEFAULT_ATTENDANCE, ...(attendance ?? {}) }}
         attendanceVersion={attendanceVersion}
+        locationsUsingDefault={branches.filter((b) => b.radiusM == null).length}
+        locationsWithOwnRadius={branches.filter((b) => b.radiusM != null).length}
         payroll={{ ...DEFAULT_LATE_POLICY, ...(payroll ?? {}) }}
         payrollVersion={payrollVersion}
         shifts={shifts.map((shift) => ({

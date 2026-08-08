@@ -11,16 +11,12 @@ import { useToast } from "@/components/ui/Toast";
 import { STATUS, statusLate, type Status } from "@/lib/status";
 import { cn } from "@/lib/cn";
 import {
-  assessLocation,
   checkInButtonLabel,
-  checkInConsequence,
+  computeCheckInState,
   formatDuration,
-  lateMinutes,
-  minutesInTimezone,
   formatShiftTime,
-  type LocationAssessment,
+  type AttendanceContext,
 } from "@/lib/attendance/policy";
-import type { AttendanceContext } from "@/lib/attendance/service";
 import { checkInAction, checkOutAction } from "@/lib/attendance/actions";
 
 /**
@@ -130,35 +126,17 @@ export function AttendanceActionCard({ context, firstName }: Props) {
   const checkedOut = Boolean(today?.checkOutAt);
 
   const coords = geo.phase === "ready" ? geo.coords : null;
-  const location: LocationAssessment | null =
-    geo.phase === "resolving"
+
+  // The SAME function the server action runs, so the sentence shown before
+  // the tap is by construction the sentence that gets recorded (D-011).
+  const state =
+    geo.phase === "resolving" || !now
       ? null
-      : assessLocation({
-          locationRequired: context.locationRequired,
-          branch: context.branch
-            ? {
-                name: context.branch.name,
-                lat: context.branch.lat,
-                lng: context.branch.lng,
-                radiusM: context.branch.radiusM,
-              }
-            : null,
-          coords,
-        });
+      : computeCheckInState(context, coords, now);
 
-  const lateBy =
-    now && context.shift
-      ? lateMinutes(minutesInTimezone(now, context.timezone), context.shift)
-      : 0;
-
-  const consequence =
-    location && !checkedIn
-      ? checkInConsequence({
-          location,
-          lateBy,
-          branchName: context.branch?.name,
-        })
-      : null;
+  const location = state?.location ?? null;
+  const lateBy = state?.lateBy ?? 0;
+  const consequence = state && !checkedIn ? state.consequence : null;
 
   const reasonMissing = Boolean(consequence?.requiresReason) && !reason.trim();
 
@@ -301,6 +279,17 @@ export function AttendanceActionCard({ context, firstName }: Props) {
           ) : (
             <Skeleton className="h-8 w-56 rounded-chip" />
           )}
+        </div>
+      )}
+
+      {/* A missing work location is a configuration gap, not "no location
+          needed" — say so rather than silently skipping the area check. */}
+      {context.branchMissing && (
+        <div className="mt-3">
+          <Alert variant="warning" title="Your work location isn't set.">
+            Ask your manager to set it. You can still check in, and it will
+            be sent for approval.
+          </Alert>
         </div>
       )}
 

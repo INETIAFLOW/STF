@@ -6,8 +6,59 @@ import { getDb } from "@/lib/db";
 import { recordAuditEvent } from "@/lib/audit";
 import { notify } from "@/lib/notifications";
 import { checkAccess } from "@/lib/authz/guard";
-import { workDateInTimezone, formatClockTime, formatDistance } from "./policy";
-import { computeCheckInState, loadAttendanceContext } from "./service";
+import { getPolicyVersion } from "@/lib/policies";
+import {
+  computeCheckInState,
+  workDateInTimezone,
+  formatClockTime,
+  formatDistance,
+  type AttendanceContext,
+  type AttendanceSnapshot,
+  type CheckInState,
+} from "./policy";
+import { loadAttendanceContext } from "./service";
+
+/**
+ * What was true when the record was written, captured by value so a later
+ * rename, move or policy change cannot alter what a past day says.
+ * Prisma's Json input needs a plain object, hence the round trip.
+ */
+function buildSnapshot(
+  context: AttendanceContext,
+  state: CheckInState,
+  policyVersion: number,
+): AttendanceSnapshot {
+  const matched = state.location.branch;
+  const home = context.homeBranch;
+  return {
+    v: 2,
+    policyVersion,
+    locationRequired: context.locationRequired,
+    canCheckInAtAnyBranch: context.canCheckInAtAnyBranch,
+    shift: context.shift,
+    homeBranch: home
+      ? { id: home.id, name: home.name, lat: home.lat, lng: home.lng, radiusM: home.radiusM }
+      : null,
+    matchedBranch: matched
+      ? {
+          id: matched.id,
+          name: matched.name,
+          lat: matched.lat,
+          lng: matched.lng,
+          radiusM: matched.radiusM,
+        }
+      : null,
+    candidateBranchCount: context.branches.length,
+    outcome: state.location.outcome,
+    distanceM: state.location.distanceM,
+    consequenceSentence: state.consequence?.sentence ?? null,
+  };
+}
+
+/** Prisma Json input requires plain JSON; our interfaces are precise. */
+function toJson<T>(value: T): Parameters<typeof JSON.stringify>[0] {
+  return JSON.parse(JSON.stringify(value));
+}
 
 /**
  * Attendance server actions.
@@ -91,6 +142,12 @@ export async function checkInAction(
     state.location.outcome === "OUTSIDE" ||
     state.location.outcome === "UNCONFIRMED";
 
+  const policyVersion = await getPolicyVersion(session.tenant.id, "attendance");
+  const snapshot = toJson(buildSnapshot(context, state, policyVersion));
+  // The location this was JUDGED against — for roaming staff that need not
+  // be their home location.
+  const matchedBranchId = state.location.branch?.id ?? context.homeBranch?.id;
+
   const record = await db.attendanceRecord.upsert({
     where: {
       tenantId_membershipId_workDate: {
@@ -112,13 +169,9 @@ export async function checkInAction(
       checkInReason: reason,
       lateMinutes: state.lateBy,
       reviewStatus: needsReview ? "PENDING" : "NONE",
-      branchId: context.branch?.id,
+      branchId: matchedBranchId,
       offlineCaptured: Boolean(parsed.data.clientCapturedAt),
-      policySnapshot: {
-        shift: context.shift,
-        radiusM: context.branch?.radiusM ?? null,
-        locationRequired: context.locationRequired,
-      },
+      policySnapshot: snapshot,
     },
     create: {
       tenantId: session.tenant.id,
@@ -136,13 +189,9 @@ export async function checkInAction(
       checkInReason: reason,
       lateMinutes: state.lateBy,
       reviewStatus: needsReview ? "PENDING" : "NONE",
-      branchId: context.branch?.id,
+      branchId: matchedBranchId,
       offlineCaptured: Boolean(parsed.data.clientCapturedAt),
-      policySnapshot: {
-        shift: context.shift,
-        radiusM: context.branch?.radiusM ?? null,
-        locationRequired: context.locationRequired,
-      },
+      policySnapshot: snapshot,
     },
   });
 
@@ -156,6 +205,11 @@ export async function checkInAction(
       lateMinutes: state.lateBy,
       outcome: state.location.outcome,
       distanceM: state.location.distanceM,
+      branch: state.location.branch?.name ?? null,
+      awayFromHomeBranch:
+        state.location.branch != null &&
+        context.homeBranch != null &&
+        state.location.branch.id !== context.homeBranch.id,
     },
   });
 
@@ -185,10 +239,19 @@ export async function checkInAction(
       detail: `Late by ${state.lateBy} min · sent for review.`,
     };
   }
+  // "Recorded at {branch}" (copy-deck.md §5) — worth saying when someone
+  // has checked in somewhere other than their usual place of work.
+  const awayFromHome =
+    state.location.branch != null &&
+    context.homeBranch != null &&
+    state.location.branch.id !== context.homeBranch.id;
+  const firstName = session.user.displayName.split(/\s+/)[0];
   return {
     ok: true,
     message: `Checked in at ${time}`,
-    detail: `Have a good shift, ${session.user.displayName.split(/\s+/)[0]}.`,
+    detail: awayFromHome
+      ? `Recorded at ${state.location.branch?.name}. Have a good shift, ${firstName}.`
+      : `Have a good shift, ${firstName}.`,
   };
 }
 
@@ -252,7 +315,11 @@ export async function checkOutAction(
     action: "attendance.checkout",
     entityType: "attendance_record",
     entityId: record.id,
-    after: { checkOutAt: now.toISOString() },
+    after: {
+      checkOutAt: now.toISOString(),
+      outcome: state.location.outcome,
+      branch: state.location.branch?.name ?? null,
+    },
   });
 
   revalidatePath("/home");

@@ -17,9 +17,11 @@ import { exportReportAction } from "@/lib/reports/actions";
 export function ExportPanel({
   types,
   canExport,
+  branches = [],
 }: {
   types: Array<{ value: string; label: string }>;
   canExport: boolean;
+  branches?: Array<{ id: string; name: string }>;
 }) {
   const router = useRouter();
   const { show } = useToast();
@@ -30,6 +32,12 @@ export function ExportPanel({
   const monthStart = `${today.slice(0, 7)}-01`;
   const [from, setFrom] = useState(monthStart);
   const [to, setTo] = useState(today);
+  const [branchId, setBranchId] = useState("all");
+
+  const scopeName =
+    branchId === "all"
+      ? "All branches"
+      : (branches.find((b) => b.id === branchId)?.name ?? "All branches");
 
   return (
     <Card>
@@ -53,7 +61,23 @@ export function ExportPanel({
           value={to}
           onChange={(e) => setTo(e.target.value)}
         />
+        {branches.length > 1 && (
+          <Select
+            label="Location"
+            value={branchId}
+            onChange={(e) => setBranchId(e.target.value)}
+            options={[
+              { value: "all", label: "All branches" },
+              ...branches.map((b) => ({ value: b.id, label: b.name })),
+            ]}
+          />
+        )}
       </div>
+
+      <p className="mt-3 text-caption text-text-secondary">
+        Scope: {scopeName}. Names, dates, times and hours only — no salary
+        or bank details.
+      </p>
 
       <div className="mt-4">
         <Button
@@ -70,6 +94,7 @@ export function ExportPanel({
                 type: type as "attendance" | "leave" | "tasks",
                 from,
                 to,
+                branchId: branchId === "all" ? undefined : branchId,
               });
               if (!result.ok) {
                 show({ variant: "error", message: result.error });

@@ -141,6 +141,7 @@ export const FEATURES: ReadonlyArray<{
 }> = [
   { module: "ATTENDANCE", key: "gps_capture", name: "GPS capture", defaultEnabled: true },
   { module: "ATTENDANCE", key: "geofence", name: "Permitted-area check", defaultEnabled: true },
+  { module: "ATTENDANCE", key: "any_branch_check_in", name: "Check in at any company location", defaultEnabled: false },
   { module: "ATTENDANCE", key: "outside_area_approval", name: "Outside-area approval", defaultEnabled: true },
   { module: "ATTENDANCE", key: "multiple_punch", name: "Multiple punches per day", defaultEnabled: false },
   { module: "ATTENDANCE", key: "offline_capture", name: "Offline capture", defaultEnabled: true },

@@ -110,8 +110,13 @@ model TenantMembership {
   roleId       String           @db.Uuid
   status       MembershipStatus @default(ACTIVE)
   employeeCode String?
-  /// Permitted attendance location; null = location not required by policy.
+  /// Home location. Used for reporting, and the ONLY permitted area unless
+  /// canCheckInAtAnyBranch is true. Null = location not checked for this person.
   branchId     String?          @db.Uuid
+  /// Any ACTIVE company location counts as a permitted area for this person
+  /// (delivery, field and relief staff). Admin-set and audited; gated
+  /// server-side by the ATTENDANCE.any_branch_check_in feature.
+  canCheckInAtAnyBranch Boolean @default(false)
   /// Working shift; null = tenant default shift.
   shiftId      String?          @db.Uuid
   /// Reporting manager (approval routing arrives with the employee module).
@@ -136,6 +141,7 @@ model TenantMembership {
 
   @@unique([tenantId, userId])
   @@index([tenantId, status])
+  @@index([tenantId, branchId])
   @@index([userId])
   @@map("tenant_memberships")
 }
@@ -151,8 +157,10 @@ model Branch {
   address  String?
   lat      Float?
   lng      Float?
-  /// Permitted-area radius in metres (tenant policy, Constitution §1).
-  radiusM  Int     @default(300)
+  /// Per-location override of the permitted-area radius in metres.
+  /// NULL = inherit the tenant's attendance policy radius. A warehouse may
+  /// need 500 m where a shop needs 100 m (Constitution §1).
+  radiusM  Int?
   isActive Boolean @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -252,8 +260,12 @@ model AttendanceRecord {
   reviewedAt    DateTime?
   reviewReason  String?
 
+  /// The location this check-in was ASSESSED AGAINST (the nearest permitted
+  /// area), which for roaming staff need not be their home location.
   branchId String? @db.Uuid
   /// Policy values in force when recorded (never retroactively rewritten).
+  /// v2 carries branches by value so a later rename cannot change what a
+  /// past record says. See lib/attendance/policy.ts → AttendanceSnapshot.
   policySnapshot Json?
 
   createdAt DateTime @default(now())
@@ -266,6 +278,7 @@ model AttendanceRecord {
   @@unique([tenantId, membershipId, workDate])
   @@index([tenantId, workDate])
   @@index([tenantId, reviewStatus])
+  @@index([tenantId, branchId, workDate])
   @@map("attendance_records")
 }
 

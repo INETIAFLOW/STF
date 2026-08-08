@@ -4,40 +4,27 @@ import { getDb } from "@/lib/db";
 import type { AppSession } from "@/lib/auth/types";
 import { loadEntitlements } from "@/lib/authz/entitlements";
 import { evaluateAccess } from "@/lib/authz/flags";
+import { getPolicy, getPolicyVersion } from "@/lib/policies";
 import {
-  assessLocation,
-  checkInConsequence,
-  lateMinutes,
-  minutesInTimezone,
+  candidateBranches,
+  effectiveRadiusM,
   workDateInTimezone,
-  type Consequence,
-  type LocationAssessment,
+  type AttendanceContext,
+  type BranchPolicy,
 } from "./policy";
 
 /**
- * Attendance read model — resolves policy + today's record for a session.
- * Every query is tenant-scoped from the session, never from client input
- * (Constitution §2).
+ * Attendance read model — resolves policy, permitted areas and today's
+ * record for a session. Every query is tenant-scoped from the session,
+ * never from client input (Constitution §2).
+ *
+ * The selection maths lives in `policy.ts` (pure, and shared with the
+ * browser); this module only answers the database question — WHICH
+ * locations are candidates, and what radius applies to each.
  */
-export interface TodayAttendance {
-  recordId: string | null;
-  checkInAt: Date | null;
-  checkOutAt: Date | null;
-  lateMinutes: number;
-  reviewStatus: "NONE" | "PENDING" | "APPROVED" | "REJECTED" | "DETAILS_REQUESTED";
-  exemptionStatus: "NONE" | "REQUESTED" | "EXEMPTED" | "DECLINED";
-  checkInOutcome: LocationAssessment["outcome"] | null;
-  checkInDistanceM: number | null;
-  offlineCaptured: boolean;
-}
 
-export interface AttendanceContext {
-  timezone: string;
-  branch: { id: string; name: string; lat: number | null; lng: number | null; radiusM: number } | null;
-  shift: { name: string; startMinutes: number; endMinutes: number; graceMinutes: number } | null;
-  locationRequired: boolean;
-  today: TodayAttendance | null;
-}
+export type { AttendanceContext, TodayAttendance } from "./policy";
+export { computeCheckInState } from "./policy";
 
 const DEFAULT_SHIFT = {
   name: "General shift",
@@ -45,6 +32,14 @@ const DEFAULT_SHIFT = {
   endMinutes: 18 * 60 + 30,
   graceMinutes: 10,
 };
+
+const DEFAULT_RADIUS_M = 300;
+
+interface AttendancePolicyValue {
+  graceMinutes?: number;
+  radiusM?: number;
+  requireReasonOutsideArea?: boolean;
+}
 
 /** Load everything the check-in screen needs for the current session. */
 export async function loadAttendanceContext(
@@ -55,6 +50,7 @@ export async function loadAttendanceContext(
     session.tenant.id,
     session.user.id,
   );
+
   const locationRequired = evaluateAccess({
     session,
     entitlements,
@@ -62,10 +58,24 @@ export async function loadAttendanceContext(
     feature: "geofence",
   }).allowed;
 
-  const membership = await db.tenantMembership.findUnique({
-    where: { id: session.membership.id },
-    include: { branch: true, shift: true },
-  });
+  // The per-person roaming setting only takes effect when the tenant has
+  // the feature on. The flag is the control (Constitution §5).
+  const anyBranchFeatureOn = evaluateAccess({
+    session,
+    entitlements,
+    module: "ATTENDANCE",
+    feature: "any_branch_check_in",
+  }).allowed;
+
+  const [membership, policy] = await Promise.all([
+    db.tenantMembership.findUnique({
+      where: { id: session.membership.id },
+      include: { branch: true, shift: true },
+    }),
+    getPolicy<AttendancePolicyValue>(session.tenant.id, "attendance"),
+  ]);
+
+  const tenantRadiusM = policy?.radiusM ?? DEFAULT_RADIUS_M;
 
   const fallbackShift = membership?.shift
     ? null
@@ -73,9 +83,52 @@ export async function loadAttendanceContext(
         where: { tenantId: session.tenant.id, isDefault: true },
       });
 
-  const shift = membership?.shift ?? fallbackShift ?? DEFAULT_SHIFT;
-  const workDate = workDateInTimezone(new Date(), session.tenant.timezone);
+  const resolvedShift = membership?.shift ?? fallbackShift ?? {
+    ...DEFAULT_SHIFT,
+    graceMinutes: policy?.graceMinutes ?? DEFAULT_SHIFT.graceMinutes,
+  };
 
+  const toBranchPolicy = (branch: {
+    id: string;
+    name: string;
+    lat: number | null;
+    lng: number | null;
+    radiusM: number | null;
+  }): BranchPolicy => ({
+    id: branch.id,
+    name: branch.name,
+    lat: branch.lat,
+    lng: branch.lng,
+    radiusM: effectiveRadiusM(branch.radiusM, tenantRadiusM),
+  });
+
+  const homeBranch = membership?.branch
+    ? toBranchPolicy(membership.branch)
+    : null;
+  const canCheckInAtAnyBranch = membership?.canCheckInAtAnyBranch ?? false;
+
+  // Only roaming staff need the full list — everyone else costs one join.
+  const activeBranches =
+    canCheckInAtAnyBranch && anyBranchFeatureOn
+      ? (
+          await db.branch.findMany({
+            where: { tenantId: session.tenant.id, isActive: true },
+            orderBy: { name: "asc" },
+          })
+        ).map(toBranchPolicy)
+      : [];
+
+  // A person with no home location while the company has locations is a
+  // configuration gap, not "location not required" — say so rather than
+  // silently skipping the permitted-area check.
+  const branchMissing =
+    homeBranch === null &&
+    locationRequired &&
+    (await db.branch.count({
+      where: { tenantId: session.tenant.id, isActive: true },
+    })) > 0;
+
+  const workDate = workDateInTimezone(new Date(), session.tenant.timezone);
   const record = await db.attendanceRecord.findUnique({
     where: {
       tenantId_membershipId_workDate: {
@@ -88,20 +141,20 @@ export async function loadAttendanceContext(
 
   return {
     timezone: session.tenant.timezone,
-    branch: membership?.branch
-      ? {
-          id: membership.branch.id,
-          name: membership.branch.name,
-          lat: membership.branch.lat,
-          lng: membership.branch.lng,
-          radiusM: membership.branch.radiusM,
-        }
-      : null,
+    homeBranch,
+    branches: candidateBranches({
+      homeBranch,
+      activeBranches,
+      canCheckInAtAnyBranch,
+      anyBranchFeatureOn,
+    }),
+    canCheckInAtAnyBranch: canCheckInAtAnyBranch && anyBranchFeatureOn,
+    branchMissing,
     shift: {
-      name: shift.name,
-      startMinutes: shift.startMinutes,
-      endMinutes: shift.endMinutes,
-      graceMinutes: shift.graceMinutes,
+      name: resolvedShift.name,
+      startMinutes: resolvedShift.startMinutes,
+      endMinutes: resolvedShift.endMinutes,
+      graceMinutes: resolvedShift.graceMinutes,
     },
     locationRequired,
     today: record
@@ -120,46 +173,13 @@ export async function loadAttendanceContext(
   };
 }
 
-/**
- * Compute the consequence for checking in right now, given the device's
- * reported position. Used by the server action AND echoed to the client so
- * the sentence shown before the tap is the sentence that gets recorded.
- */
-export function computeCheckInState(
-  context: AttendanceContext,
-  coords: { lat: number; lng: number; accuracyM?: number | null } | null,
-  now: Date,
-): {
-  location: LocationAssessment;
-  lateBy: number;
-  consequence: Consequence | null;
-} {
-  const location = assessLocation({
-    locationRequired: context.locationRequired,
-    branch: context.branch
-      ? {
-          name: context.branch.name,
-          lat: context.branch.lat,
-          lng: context.branch.lng,
-          radiusM: context.branch.radiusM,
-        }
-      : null,
-    coords,
-  });
-
-  const shift = context.shift ?? DEFAULT_SHIFT;
-  const lateBy = lateMinutes(
-    minutesInTimezone(now, context.timezone),
-    shift,
-  );
-
-  return {
-    location,
-    lateBy,
-    consequence: checkInConsequence({
-      location,
-      lateBy,
-      branchName: context.branch?.name,
-    }),
-  };
+/** The tenant's default permitted-area radius and current policy version. */
+export async function loadAttendancePolicyMeta(
+  tenantId: string,
+): Promise<{ radiusM: number; version: number }> {
+  const [policy, version] = await Promise.all([
+    getPolicy<AttendancePolicyValue>(tenantId, "attendance"),
+    getPolicyVersion(tenantId, "attendance"),
+  ]);
+  return { radiusM: policy?.radiusM ?? DEFAULT_RADIUS_M, version };
 }

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { checkAccess } from "@/lib/authz/guard";
 import { getDb } from "@/lib/db";
@@ -15,6 +16,12 @@ import {
   workDateInTimezone,
 } from "@/lib/attendance/policy";
 import { ExceptionQueue } from "./ExceptionQueue";
+import { BranchFilter } from "@/components/filters/BranchFilter";
+import {
+  branchName,
+  loadBranchOptions,
+  resolveBranchFilter,
+} from "@/lib/branches/scope";
 import { cn } from "@/lib/cn";
 
 export const metadata: Metadata = { title: "Attendance" };
@@ -23,7 +30,11 @@ export const metadata: Metadata = { title: "Attendance" };
  * Attendance dashboard + exceptions review (screens A2/A3).
  * Metrics are real counts for today; exceptions use the Approval card.
  */
-export default async function AdminAttendancePage() {
+export default async function AdminAttendancePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ branch?: string }>;
+}) {
   const { session, decision } = await checkAccess({
     module: "ATTENDANCE",
     permission: "attendance.view",
@@ -34,22 +45,48 @@ export default async function AdminAttendancePage() {
   const canReview = session.permissions.has("attendance.review");
   const workDate = workDateInTimezone(new Date(), tz);
 
+  // The filter arrives in the URL, so it is validated against this
+  // tenant's own locations before it reaches any query.
+  const params = await searchParams;
+  const branchOptions = await loadBranchOptions(session.tenant.id);
+  const branchFilter = resolveBranchFilter(
+    params.branch,
+    new Set(branchOptions.map((b) => b.id)),
+  );
+  const selectedBranchName = branchName(branchFilter, branchOptions);
+
+  // Records are filtered by where the check-in was judged; the headcount
+  // by where people work, so "of N employees" stays truthful.
+  const recordWhere = branchFilter ? { branchId: branchFilter } : {};
+  const peopleWhere = branchFilter ? { branchId: branchFilter } : {};
+
   const [records, exceptions, headcount] = devFixtureOffline()
     ? [[], [], 0]
     : await Promise.all([
         getDb().attendanceRecord.findMany({
-          where: { tenantId: session.tenant.id, workDate },
-          include: { membership: { include: { user: true } } },
+          where: { tenantId: session.tenant.id, workDate, ...recordWhere },
+          include: {
+            membership: { include: { user: true } },
+            branch: true,
+          },
           orderBy: { checkInAt: "asc" },
         }),
         getDb().attendanceRecord.findMany({
-          where: { tenantId: session.tenant.id, reviewStatus: "PENDING" },
+          where: {
+            tenantId: session.tenant.id,
+            reviewStatus: "PENDING",
+            ...recordWhere,
+          },
           include: { membership: { include: { user: true } }, branch: true },
           orderBy: { checkInAt: "asc" },
           take: 25,
         }),
         getDb().tenantMembership.count({
-          where: { tenantId: session.tenant.id, status: "ACTIVE" },
+          where: {
+            tenantId: session.tenant.id,
+            status: "ACTIVE",
+            ...peopleWhere,
+          },
         }),
       ]);
 
@@ -67,7 +104,10 @@ export default async function AdminAttendancePage() {
 
   return (
     <div className="flex flex-col gap-5">
-      <h1 className="font-heading text-h1 text-text-primary">Attendance</h1>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <h1 className="font-heading text-h1 text-text-primary">Attendance</h1>
+        <BranchFilter options={branchOptions} selected={branchFilter} />
+      </div>
 
       <section aria-label="Attendance today">
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -103,8 +143,26 @@ export default async function AdminAttendancePage() {
         {exceptions.length === 0 ? (
           <Card flush>
             <EmptyState
-              title="No exceptions to review."
-              body="Attendance for today is clear."
+              title={
+                selectedBranchName
+                  ? `No exceptions to review at ${selectedBranchName}.`
+                  : "No exceptions to review."
+              }
+              body={
+                selectedBranchName
+                  ? "Other locations may still have exceptions waiting."
+                  : "Attendance for today is clear."
+              }
+              action={
+                selectedBranchName ? (
+                  <Link
+                    href="/admin/attendance"
+                    className="text-label text-brand-primary underline-offset-2 hover:underline"
+                  >
+                    Show all locations
+                  </Link>
+                ) : undefined
+              }
             />
           </Card>
         ) : !canReview ? (
@@ -140,8 +198,22 @@ export default async function AdminAttendancePage() {
         {records.length === 0 ? (
           <Card flush>
             <EmptyState
-              title="No attendance recorded yet."
+              title={
+                selectedBranchName
+                  ? `No attendance recorded at ${selectedBranchName} today.`
+                  : "No attendance recorded yet."
+              }
               body="Records appear here as employees check in."
+              action={
+                selectedBranchName ? (
+                  <Link
+                    href="/admin/attendance"
+                    className="text-label text-brand-primary underline-offset-2 hover:underline"
+                  >
+                    Show all locations
+                  </Link>
+                ) : undefined
+              }
             />
           </Card>
         ) : (

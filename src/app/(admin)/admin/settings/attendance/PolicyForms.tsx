@@ -40,6 +40,8 @@ function toMinutes(time: string): number {
 export function PolicyForms({
   attendance,
   attendanceVersion,
+  locationsUsingDefault,
+  locationsWithOwnRadius,
   payroll,
   payrollVersion,
   shifts,
@@ -50,6 +52,8 @@ export function PolicyForms({
     requireReasonOutsideArea: boolean;
   };
   attendanceVersion: number;
+  locationsUsingDefault: number;
+  locationsWithOwnRadius: number;
   payroll: { latesPerDeductedDay: number; deductAbsentDays: boolean };
   payrollVersion: number;
   shifts: Shift[];
@@ -93,7 +97,11 @@ export function PolicyForms({
             inputMode="numeric"
             min={50}
             suffix="metres"
-            helper="Checking in beyond this distance from a branch becomes an exception for approval."
+            helper={
+              locationsWithOwnRadius > 0
+                ? `Checking in beyond this distance becomes an exception for approval. ${locationsUsingDefault} location${locationsUsingDefault === 1 ? "" : "s"} use this radius; ${locationsWithOwnRadius} set their own and will not change.`
+                : "Checking in beyond this distance from a location becomes an exception for approval. Any location can set its own radius instead."
+            }
             value={radius}
             onChange={(e) => setRadius(e.target.value)}
           />
