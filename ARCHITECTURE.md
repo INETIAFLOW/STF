@@ -52,9 +52,15 @@ src/generated/prisma/   Generated Prisma client (gitignored)
 - **Work** (Phase 2): `src/lib/tasks/*` — tasks, proof, review.
 - **Notifications** (Phase 2): `src/lib/notifications/*` — in-app channel;
   provider adapters arrive with their flags.
-- **Payroll**: not implemented. Its inputs (approved leave, attendance
-  with `policySnapshot`, late minutes) are already recorded so a future
-  run can be traced to them.
+- **Payroll** (Phase 3): `src/lib/payroll/*` — `engine.ts` is pure and
+  contains **no statutory formulas**; `service.ts` gathers approved inputs
+  (attendance, decided leave, salary structures, tenant policy);
+  `actions.ts` owns calculation, the locking approval and adjustments.
+- **Configuration** (Phase 3): `src/lib/policies/*` (versioned tenant
+  policy), `src/lib/roles/*` (permission changes), `src/lib/reports/*`
+  (CSV export, audited).
+- **Marketing** (Phase 4): `src/app/(marketing)/*` — public routes with
+  no session requirement, rendered on the admin surface.
 
 Each domain keeps its rules in a pure module so the same logic serves the
 UI, server actions and future jobs identically.

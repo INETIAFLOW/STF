@@ -9,7 +9,15 @@ import { createServerClient } from "@supabase/ssr";
  * (src/lib/authz) — never here, and never only in the UI.
  */
 
-const PUBLIC_PATHS = ["/sign-in", "/auth"];
+/** Public routes: sign-in, the auth callbacks, and marketing pages. */
+const PUBLIC_PATHS = [
+  "/sign-in",
+  "/auth",
+  "/product",
+  "/modules",
+  "/pricing",
+  "/demo",
+];
 
 function isPublic(pathname: string): boolean {
   return PUBLIC_PATHS.some(
@@ -36,9 +44,9 @@ export default async function proxy(request: NextRequest) {
   // Without Supabase configured, only public routes are reachable.
   if (!url || !key) {
     if (isPublic(pathname)) return NextResponse.next();
-    const signIn = request.nextUrl.clone();
-    signIn.pathname = "/sign-in";
-    return NextResponse.redirect(signIn);
+    const marketing = request.nextUrl.clone();
+    marketing.pathname = "/product";
+    return NextResponse.redirect(marketing);
   }
 
   let response = NextResponse.next({ request });
@@ -63,7 +71,8 @@ export default async function proxy(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user && !isPublic(pathname)) {
+  // The root path routes signed-out visitors to marketing, not sign-in.
+  if (!user && !isPublic(pathname) && pathname !== "/") {
     const signIn = request.nextUrl.clone();
     signIn.pathname = "/sign-in";
     signIn.searchParams.set("next", pathname);

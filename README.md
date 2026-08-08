@@ -4,14 +4,18 @@ Mobile-first, multi-tenant SaaS for practical workforce operations:
 attendance, leave, payroll inputs, tasks, daily reporting and
 tenant-controlled modules. Built for Indian SMEs.
 
-**Status: Phase 2 — Daily Operations.** Attendance (check-in/out with
-permitted-area and late rules, exception review), Leave (request →
-paid/unpaid approval), Tasks (assign → proof → review), in-app
-notifications, live dashboards and governed module toggles are built.
+**Status: Phases 1–4 built.** Foundation and design system; attendance,
+leave, tasks with proof, notifications and dashboards; payroll,
+configuration, roles and reporting; public marketing pages.
 
-**Payroll is deliberately not built.** The roadmap requires approved
-payroll rule documents and a local compliance review before any salary
-calculation exists; the payroll screen is an explained shell.
+**On payroll:** STF contains **no statutory formulas**. It does not
+calculate PF, ESI, professional tax or TDS. A company defines its own
+salary components with the figures its accountant supplies; STF turns
+approved attendance and leave into a payslip whose every line shows how it
+was reached. Approval requires an explicit accountant acknowledgement.
+**STF does not certify statutory compliance** — a qualified local
+professional must review the rules before real salary processing
+(ROADMAP.md decision gates).
 
 ## Source of truth
 
@@ -58,7 +62,10 @@ dev preview session — is in `SETUP.md`.
 | `npm run db:seed` | Seed catalog + fictional demo tenant |
 | `npx tsx scripts/provision-user.ts <email> [ROLE]` | Give a login a role in the demo tenant (dev) |
 | `npx tsx scripts/demo-data.ts [--clear]` | Create/remove placeholder activity for review (dev) |
+| `npx tsx scripts/demo-payroll.ts [--clear]` | Placeholder salary components, structures and attendance (dev) |
+| `npx tsx scripts/setup-storage.ts` | Create the private `task-proof` bucket and its policies |
 | `npx tsx scripts/smoke-phase2.ts` | Exercise the daily loop against the database (dev) |
+| `npx tsx scripts/smoke-phase3.ts` | Exercise the payroll cycle against the database (dev) |
 
 ## Documentation map
 

@@ -14,6 +14,7 @@ import {
   ListChecks,
   LogOut,
   ReceiptIndianRupee,
+  ScrollText,
   ShieldCheck,
   ToggleRight,
   Users,
@@ -71,6 +72,11 @@ export function Sidebar({ enabledModules, can, userName, roleName }: SidebarProp
       href: "/admin/roles",
       label: "Roles & permissions",
       icon: ShieldCheck,
+    },
+    can.settings && {
+      href: "/admin/settings/attendance",
+      label: "Attendance & pay rules",
+      icon: ScrollText,
     },
     can.settings && {
       href: "/admin/settings",

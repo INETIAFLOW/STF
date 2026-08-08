@@ -61,19 +61,31 @@ explicit invite flow with tokens.
 location) must write an audit event when those features are built —
 the helper (`lib/audit.ts`) exists and is the only sanctioned writer.
 
-## File storage (task proof)
+## File storage (task proof) — provisioned
 
-Proof files upload to the Supabase Storage bucket `task-proof`. Before use:
+The `task-proof` bucket exists and is configured by
+`scripts/setup-storage.ts` (idempotent):
 
-1. Create the bucket and set it **private** (never public).
-2. Add an RLS policy allowing authenticated users to INSERT, and reads only
-   through server-generated signed URLs — the app never links a raw
-   storage path.
-3. Paths are `{taskId}/{timestamp}-{filename}`; the owning tenant is
-   resolved server-side from the task row, never from the path.
+- **Private** (`public = false`). Nothing is served from a public path.
+- 10 MB per file; JPEG, PNG, HEIC, WebP and PDF only.
+- One policy: authenticated users may **INSERT**. There is deliberately no
+  select, update or delete policy — reads go through short-lived signed
+  URLs minted server-side in `lib/tasks/proof-access.ts` after the
+  caller's tenant and permission are checked, and each view writes an
+  audit event.
+- Paths are `{taskId}/{timestamp}-{filename}`; the owning tenant is
+  resolved from the task row, never from the path.
 
-Until the bucket exists, submitting proof reports "File storage isn't
-configured yet" rather than failing silently.
+## Payroll data
+
+- Salary structures, payroll lines and payslips are behind the sensitive
+  `payroll.view` / `payroll.edit` / `payroll.approve` permissions.
+- Employees can read only their own payslip, and only after the period is
+  approved — a draft figure is never shown to the person it concerns.
+- Reports export never includes salary or bank details; payroll figures
+  leave through the payroll module, by someone with payroll permission.
+- Approved runs are immutable: adjustments are appended with an actor and
+  reason instead of editing a figure.
 
 ## Deferred to later phases (tracked, not forgotten)
 

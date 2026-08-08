@@ -120,3 +120,74 @@ Notifications module is CORE, so in-app delivery is always available.
 Push, email, WhatsApp and SMS remain behind their feature flags until
 providers are configured; the daily report shows each channel's true state
 as Enabled/Disabled rather than failing silently (user-flows.md §6).
+
+---
+
+## Phase 3 — Payroll and Reporting
+
+**D-P3-01 · 2026-08-08 · STF ships NO statutory formulas** — The payroll
+engine contains no PF, ESI, professional tax or TDS calculation. Those are
+tenant-defined salary components whose amount or percentage the customer's
+accountant supplies, flagged `isStatutory` so every screen and payslip can
+say who defined them. This is the only reading consistent with the Product
+Bible ("statutory compliance must be configured and reviewed by a
+qualified local professional") and D-019. Approval requires the
+accountant acknowledgement; no screen ever claims compliance.
+*Reopens if:* a licensed local payroll professional signs off specific
+rules for inclusion, documented as an approved rule document first.
+
+**D-P3-02 · 2026-08-08 · One documented rounding rule** — Half-up to whole
+rupees, applied per component, and totals are summed from the ROUNDED
+lines so a payslip always reconciles to what is printed. Stated on the
+payslip (Constitution §6, edge-cases.md → Payroll → Rounding).
+
+**D-P3-03 · 2026-08-08 · Pro-rating is per calendar day** — Payable days =
+days in the month − unpaid days (unpaid leave + absent days if the tenant's
+policy deducts them + days converted from repeated lateness). Components
+marked `prorated` scale by payableDays/calendarDays; PER_DAY components are
+not pro-rated twice. Working-day calendars would need a holiday calendar,
+which is explicitly out of V1 scope.
+
+**D-P3-04 · 2026-08-08 · Approval re-computes server-side and locks** — The
+client never submits figures. On approval the run is recalculated from the
+database, blocked if any net pay is negative, and employees with no salary
+structure are named as excluded. After approval the run is immutable;
+money changes only through a `PayrollAdjustment` carrying a label, signed
+amount, reason and actor, which changes net pay and leaves gross and
+deductions as calculated.
+
+**D-P3-05 · 2026-08-08 · Policies are versioned, never edited in place** —
+`TenantPolicy` stores a new version on every change and retires the
+previous one. Approved payroll keeps the `policyVersion` it was calculated
+with, and a salary structure cannot be back-dated into an approved period
+(edge-cases.md: a policy change never rewrites past days).
+
+**D-P3-06 · 2026-08-08 · Exports exclude money and are logged** — Report
+export covers attendance, leave and tasks only; salary and bank details
+are never in a report export. Exporting requires `reports.export` and
+writes an audit event naming the type, period and row count.
+
+**D-P3-07 · 2026-08-08 · The Owner role cannot be de-permissioned** — Role
+editing refuses to strip the Tenant Owner, so a company can never lock
+itself out of its own data. All other roles are freely configurable within
+the platform catalog.
+
+---
+
+## Phase 4 — Marketing and pilot readiness
+
+**D-P4-01 · 2026-08-08 · Marketing renders on the admin surface** — The
+public pages are owner-facing, so they use Disha precision with no warm
+tokens (brand-guidelines.md §4). Copy is verbatim from copy-deck.md §11;
+prices render as `₹ —`; no customer names, statistics, badges or
+compliance claims appear.
+
+**D-P4-02 · 2026-08-08 · The demo form does not submit** — Where enquiries
+should go (inbox, CRM or WhatsApp) is not decided, and storing a
+prospect's details needs a privacy notice. Rather than dropping requests
+silently, the form states plainly that it is not connected, stores
+nothing, and offers a direct alternative. **Open question for approval.**
+
+**D-P4-03 · 2026-08-08 · Signed-out visitors land on marketing** — `/`
+routes to `/product` when there is no session, so the public site is the
+front door and `/sign-in` stays for people who already have an account.

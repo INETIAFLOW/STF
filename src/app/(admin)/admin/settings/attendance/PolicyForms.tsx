@@ -1,0 +1,318 @@
+"use client";
+
+import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { Alert } from "@/components/ui/Alert";
+import { Button } from "@/components/ui/Button";
+import { Card, CardHeader } from "@/components/ui/Card";
+import { Checkbox } from "@/components/ui/Checkbox";
+import { Input } from "@/components/ui/Input";
+import { useToast } from "@/components/ui/Toast";
+import {
+  saveAttendancePolicyAction,
+  savePayrollPolicyAction,
+  saveShiftAction,
+} from "@/lib/policies/actions";
+
+/**
+ * Policy editors. Each states the effect of its rule in plain words so an
+ * owner can see what a change does before saving it.
+ */
+interface Shift {
+  id: string;
+  name: string;
+  startMinutes: number;
+  endMinutes: number;
+  graceMinutes: number;
+}
+
+function toTime(minutes: number): string {
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+}
+
+function toMinutes(time: string): number {
+  const [h, m] = time.split(":").map(Number);
+  return (h || 0) * 60 + (m || 0);
+}
+
+export function PolicyForms({
+  attendance,
+  attendanceVersion,
+  payroll,
+  payrollVersion,
+  shifts,
+}: {
+  attendance: {
+    graceMinutes: number;
+    radiusM: number;
+    requireReasonOutsideArea: boolean;
+  };
+  attendanceVersion: number;
+  payroll: { latesPerDeductedDay: number; deductAbsentDays: boolean };
+  payrollVersion: number;
+  shifts: Shift[];
+}) {
+  const router = useRouter();
+  const { show } = useToast();
+  const [pending, startTransition] = useTransition();
+
+  const [grace, setGrace] = useState(String(attendance.graceMinutes));
+  const [radius, setRadius] = useState(String(attendance.radiusM));
+  const [requireReason, setRequireReason] = useState(
+    attendance.requireReasonOutsideArea,
+  );
+
+  const [lates, setLates] = useState(String(payroll.latesPerDeductedDay));
+  const [deductAbsent, setDeductAbsent] = useState(payroll.deductAbsentDays);
+
+  const [shiftDraft, setShiftDraft] = useState<Shift | null>(null);
+
+  return (
+    <div className="flex flex-col gap-5">
+      <Card>
+        <CardHeader
+          title="Attendance"
+          meta={`Version ${attendanceVersion}`}
+        />
+        <div className="flex flex-col gap-1">
+          <Input
+            label="Grace period"
+            type="number"
+            inputMode="numeric"
+            min={0}
+            suffix="minutes"
+            helper={`Arriving up to ${grace || 0} minutes after the shift starts is not late. Exactly ${grace || 0} minutes is not late.`}
+            value={grace}
+            onChange={(e) => setGrace(e.target.value)}
+          />
+          <Input
+            label="Permitted area radius"
+            type="number"
+            inputMode="numeric"
+            min={50}
+            suffix="metres"
+            helper="Checking in beyond this distance from a branch becomes an exception for approval."
+            value={radius}
+            onChange={(e) => setRadius(e.target.value)}
+          />
+          <div className="mt-2">
+            <Checkbox
+              checked={requireReason}
+              onChange={(e) => setRequireReason(e.target.checked)}
+              label="Require a reason when checking in outside the permitted area"
+              helper="Employees can always check in; the reason goes to their manager."
+            />
+          </div>
+        </div>
+        <div className="mt-4">
+          <Button
+            loading={pending}
+            onClick={() =>
+              startTransition(async () => {
+                const result = await saveAttendancePolicyAction({
+                  graceMinutes: Number(grace || 0),
+                  radiusM: Number(radius || 300),
+                  requireReasonOutsideArea: requireReason,
+                });
+                if (result.ok) {
+                  show({ variant: "success", message: result.message });
+                  router.refresh();
+                } else {
+                  show({ variant: "error", message: result.error });
+                }
+              })
+            }
+          >
+            Save changes
+          </Button>
+        </div>
+      </Card>
+
+      <Card>
+        <CardHeader
+          title="How attendance affects pay"
+          meta={`Version ${payrollVersion}`}
+        />
+        <Alert variant="consequence" title="This rule changes what people are paid.">
+          Approved payroll periods keep the version they were calculated
+          with — saving here affects future calculations only.
+        </Alert>
+        <div className="mt-3 flex flex-col gap-1">
+          <Input
+            label="Late arrivals that equal one unpaid day"
+            type="number"
+            inputMode="numeric"
+            min={0}
+            helper={
+              Number(lates) > 0
+                ? `Every ${lates} late arrivals in a month deduct one day's pay.`
+                : "Lateness never reduces pay."
+            }
+            value={lates}
+            onChange={(e) => setLates(e.target.value)}
+          />
+          <div className="mt-2">
+            <Checkbox
+              checked={deductAbsent}
+              onChange={(e) => setDeductAbsent(e.target.checked)}
+              label="Days with no attendance and no approved leave reduce pay"
+            />
+          </div>
+        </div>
+        <div className="mt-4">
+          <Button
+            loading={pending}
+            onClick={() =>
+              startTransition(async () => {
+                const result = await savePayrollPolicyAction({
+                  latesPerDeductedDay: Number(lates || 0),
+                  deductAbsentDays: deductAbsent,
+                });
+                if (result.ok) {
+                  show({ variant: "success", message: result.message });
+                  router.refresh();
+                } else {
+                  show({ variant: "error", message: result.error });
+                }
+              })
+            }
+          >
+            Save changes
+          </Button>
+        </div>
+      </Card>
+
+      <Card>
+        <CardHeader
+          title="Shifts"
+          action={
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() =>
+                setShiftDraft({
+                  id: "",
+                  name: "",
+                  startMinutes: 9 * 60 + 30,
+                  endMinutes: 18 * 60 + 30,
+                  graceMinutes: Number(grace || 10),
+                })
+              }
+            >
+              Add shift
+            </Button>
+          }
+        />
+        <ul className="flex flex-col">
+          {shifts.map((shift) => (
+            <li
+              key={shift.id}
+              className="flex flex-wrap items-center justify-between gap-3 border-b border-border-subtle py-2.5 last:border-0"
+            >
+              <div>
+                <p className="text-body font-semibold text-text-primary">
+                  {shift.name}
+                </p>
+                <p className="font-mono text-data text-text-secondary tabular-nums">
+                  {toTime(shift.startMinutes)} – {toTime(shift.endMinutes)} ·
+                  grace {shift.graceMinutes} min
+                </p>
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setShiftDraft(shift)}
+              >
+                Edit
+              </Button>
+            </li>
+          ))}
+        </ul>
+
+        {shiftDraft && (
+          <div className="mt-4 border-t border-border-subtle pt-4">
+            <div className="flex flex-col gap-1">
+              <Input
+                label="Shift name"
+                required
+                value={shiftDraft.name}
+                onChange={(e) =>
+                  setShiftDraft({ ...shiftDraft, name: e.target.value })
+                }
+              />
+              <Input
+                label="Starts"
+                type="time"
+                value={toTime(shiftDraft.startMinutes)}
+                onChange={(e) =>
+                  setShiftDraft({
+                    ...shiftDraft,
+                    startMinutes: toMinutes(e.target.value),
+                  })
+                }
+              />
+              <Input
+                label="Ends"
+                type="time"
+                value={toTime(shiftDraft.endMinutes)}
+                onChange={(e) =>
+                  setShiftDraft({
+                    ...shiftDraft,
+                    endMinutes: toMinutes(e.target.value),
+                  })
+                }
+              />
+              <Input
+                label="Grace"
+                type="number"
+                inputMode="numeric"
+                suffix="minutes"
+                value={String(shiftDraft.graceMinutes)}
+                onChange={(e) =>
+                  setShiftDraft({
+                    ...shiftDraft,
+                    graceMinutes: Number(e.target.value || 0),
+                  })
+                }
+              />
+            </div>
+            <div className="mt-3 flex flex-col gap-2 md:flex-row">
+              <Button
+                loading={pending}
+                disabled={!shiftDraft.name.trim()}
+                disabledReason={
+                  !shiftDraft.name.trim() ? "Name the shift." : undefined
+                }
+                onClick={() =>
+                  startTransition(async () => {
+                    const result = await saveShiftAction({
+                      shiftId: shiftDraft.id || undefined,
+                      name: shiftDraft.name.trim(),
+                      startMinutes: shiftDraft.startMinutes,
+                      endMinutes: shiftDraft.endMinutes,
+                      graceMinutes: shiftDraft.graceMinutes,
+                    });
+                    if (result.ok) {
+                      show({ variant: "success", message: result.message });
+                      setShiftDraft(null);
+                      router.refresh();
+                    } else {
+                      show({ variant: "error", message: result.error });
+                    }
+                  })
+                }
+              >
+                Save shift
+              </Button>
+              <Button variant="outline" onClick={() => setShiftDraft(null)}>
+                Cancel
+              </Button>
+            </div>
+          </div>
+        )}
+      </Card>
+    </div>
+  );
+}

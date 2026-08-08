@@ -85,6 +85,11 @@ model Tenant {
   tasks             Task[]
   taskProofs        TaskProof[]
   notifications     Notification[]
+  salaryComponents  SalaryComponent[]
+  salaryStructures  SalaryStructure[]
+  payrollRuns       PayrollRun[]
+  /// Tenant-configured policies (attendance, leave, notifications).
+  policies          TenantPolicy[]
 
   @@map("tenants")
 }
@@ -126,6 +131,8 @@ model TenantMembership {
   leaveRequests     LeaveRequest[]     @relation("leaveRequester")
   tasksAssigned     Task[]             @relation("taskAssignee")
   tasksCreated      Task[]             @relation("taskCreator")
+  salaryStructures  SalaryStructure[]
+  payrollLines      PayrollLine[]
 
   @@unique([tenantId, userId])
   @@index([tenantId, status])
@@ -396,6 +403,210 @@ model ProofFile {
 
   @@index([tenantId])
   @@map("proof_files")
+}
+
+// --------------------------------------------------------------- policies
+
+/// Versioned tenant policy documents (Constitution §1, edge-cases.md:
+/// "Records keep the policy_version in force on that date"). A change
+/// creates a NEW version; past records keep the version that applied.
+model TenantPolicy {
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String   @db.Uuid
+  /// attendance | leave | payroll | notifications
+  key       String
+  version   Int      @default(1)
+  value     Json
+  isCurrent Boolean  @default(true)
+  updatedById String? @db.Uuid
+  createdAt DateTime @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  @@unique([tenantId, key, version])
+  @@index([tenantId, key, isCurrent])
+  @@map("tenant_policies")
+}
+
+// ---------------------------------------------------------------- payroll
+
+enum ComponentKind {
+  EARNING
+  DEDUCTION
+}
+
+enum ComponentCalculation {
+  /// A fixed monthly rupee amount.
+  FIXED
+  /// A percentage of the structure's base amount.
+  PERCENT_OF_BASE
+  /// A fixed amount multiplied by payable days.
+  PER_DAY
+}
+
+/// A salary component defined BY THE TENANT (Constitution §1: configuration
+/// before custom code). STF ships no statutory formulas: PF, ESI, PT, TDS
+/// and similar are configured here by the customer's accountant and marked
+/// `isStatutory` so the UI can say so plainly. STF never certifies them.
+model SalaryComponent {
+  id          String               @id @default(uuid()) @db.Uuid
+  tenantId    String               @db.Uuid
+  key         String
+  name        String
+  kind        ComponentKind
+  calculation ComponentCalculation @default(FIXED)
+  /// True when the tenant marks this as defined by their accountant.
+  isStatutory Boolean              @default(false)
+  /// Whether unpaid days reduce this component (pro-rating).
+  prorated    Boolean              @default(true)
+  sortOrder   Int                  @default(0)
+  isActive    Boolean              @default(true)
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+
+  tenant Tenant                @relation(fields: [tenantId], references: [id])
+  lines  SalaryStructureLine[]
+
+  @@unique([tenantId, key])
+  @@map("salary_components")
+}
+
+/// One employee's salary definition, effective from a date. A new
+/// structure supersedes the previous one; history is never overwritten.
+model SalaryStructure {
+  id            String   @id @default(uuid()) @db.Uuid
+  tenantId      String   @db.Uuid
+  membershipId  String   @db.Uuid
+  effectiveFrom DateTime @db.Date
+  /// Base figure percentage components resolve against.
+  baseAmount    Decimal  @db.Decimal(12, 2)
+  note          String?
+  createdById   String?  @db.Uuid
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  tenant     Tenant                @relation(fields: [tenantId], references: [id])
+  membership TenantMembership      @relation(fields: [membershipId], references: [id])
+  lines      SalaryStructureLine[]
+
+  @@unique([tenantId, membershipId, effectiveFrom])
+  @@index([tenantId, membershipId])
+  @@map("salary_structures")
+}
+
+model SalaryStructureLine {
+  id          String  @id @default(uuid()) @db.Uuid
+  structureId String  @db.Uuid
+  componentId String  @db.Uuid
+  /// Used by FIXED and PER_DAY.
+  amount      Decimal @db.Decimal(12, 2) @default(0)
+  /// Used by PERCENT_OF_BASE (0–100).
+  percent     Decimal @db.Decimal(6, 3) @default(0)
+
+  structure SalaryStructure @relation(fields: [structureId], references: [id], onDelete: Cascade)
+  component SalaryComponent @relation(fields: [componentId], references: [id])
+
+  @@unique([structureId, componentId])
+  @@map("salary_structure_lines")
+}
+
+enum PayrollRunStatus {
+  DRAFT
+  APPROVED
+}
+
+/// A payroll period for one tenant. Approval LOCKS it; later changes are
+/// only auditable adjustments (Constitution §6).
+model PayrollRun {
+  id          String           @id @default(uuid()) @db.Uuid
+  tenantId    String           @db.Uuid
+  /// First day of the payroll month (date only).
+  periodMonth DateTime         @db.Date
+  status      PayrollRunStatus @default(DRAFT)
+  /// Inputs and policy in force when calculated — payroll traceability.
+  inputsSnapshot Json?
+  calculatedAt   DateTime?
+  approvedById   String?   @db.Uuid
+  approvedAt     DateTime?
+  approvalReason String?
+  /// Required acknowledgement: figures checked with the tenant's
+  /// accountant. STF does not certify statutory compliance (D-019).
+  accountantAcknowledged Boolean @default(false)
+  grossTotal     Decimal   @default(0) @db.Decimal(14, 2)
+  deductionTotal Decimal   @default(0) @db.Decimal(14, 2)
+  netTotal       Decimal   @default(0) @db.Decimal(14, 2)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  tenant Tenant        @relation(fields: [tenantId], references: [id])
+  lines  PayrollLine[]
+
+  @@unique([tenantId, periodMonth])
+  @@index([tenantId, status])
+  @@map("payroll_runs")
+}
+
+enum PayrollLineStatus {
+  READY
+  NO_SALARY_STRUCTURE
+  BLOCKED
+}
+
+model PayrollLine {
+  id           String            @id @default(uuid()) @db.Uuid
+  tenantId     String            @db.Uuid
+  runId        String            @db.Uuid
+  membershipId String            @db.Uuid
+  status       PayrollLineStatus @default(READY)
+  /// Why a line is blocked or excluded, stated plainly.
+  statusReason String?
+
+  calendarDays   Int     @default(0)
+  presentDays    Decimal @default(0) @db.Decimal(6, 2)
+  paidLeaveDays  Decimal @default(0) @db.Decimal(6, 2)
+  unpaidDays     Decimal @default(0) @db.Decimal(6, 2)
+  payableDays    Decimal @default(0) @db.Decimal(6, 2)
+  lateMinutes    Int     @default(0)
+  lateDeductionDays Decimal @default(0) @db.Decimal(6, 2)
+
+  /// Per-component breakdown so every figure traces to its input.
+  earnings   Json?
+  deductions Json?
+
+  gross          Decimal @default(0) @db.Decimal(12, 2)
+  deductionTotal Decimal @default(0) @db.Decimal(12, 2)
+  adjustmentTotal Decimal @default(0) @db.Decimal(12, 2)
+  net            Decimal @default(0) @db.Decimal(12, 2)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  run         PayrollRun          @relation(fields: [runId], references: [id], onDelete: Cascade)
+  membership  TenantMembership    @relation(fields: [membershipId], references: [id])
+  adjustments PayrollAdjustment[]
+
+  @@unique([runId, membershipId])
+  @@index([tenantId, runId])
+  @@map("payroll_lines")
+}
+
+/// The only sanctioned way to change money after approval: an adjustment
+/// with a reason and an actor. Payroll is never overwritten.
+model PayrollAdjustment {
+  id          String   @id @default(uuid()) @db.Uuid
+  tenantId    String   @db.Uuid
+  lineId      String   @db.Uuid
+  label       String
+  /// Signed: positive adds to net pay, negative reduces it.
+  amount      Decimal  @db.Decimal(12, 2)
+  reason      String
+  createdById String?  @db.Uuid
+  createdAt   DateTime @default(now())
+
+  line PayrollLine @relation(fields: [lineId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, lineId])
+  @@map("payroll_adjustments")
 }
 
 // ---------------------------------------------------------- notifications

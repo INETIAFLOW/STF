@@ -1,9 +1,14 @@
 import { redirect } from "next/navigation";
-import { requireSession } from "@/lib/authz/guard";
+import { getAppSession } from "@/lib/auth/session";
 
-/** Entry: route the signed-in user to their surface. */
+/**
+ * Entry point.
+ * - Signed in → their surface (admin area or employee home).
+ * - Signed out → the marketing home, which offers sign-in and a demo.
+ */
 export default async function RootPage() {
-  const session = await requireSession();
+  const session = await getAppSession();
+  if (!session) redirect("/product");
   if (session.permissions.has("admin.access")) redirect("/admin");
   redirect("/home");
 }

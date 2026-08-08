@@ -97,10 +97,12 @@ export interface InputProps
   optional?: boolean;
   /** Leading affix, e.g. the +91 phone prefix chip or ₹. */
   prefix?: ReactNode;
+  /** Trailing affix, e.g. a unit like "minutes" or "metres". */
+  suffix?: ReactNode;
 }
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
-  { label, helper, error, required, optional, prefix, className, ...rest },
+  { label, helper, error, required, optional, prefix, suffix, className, ...rest },
   ref,
 ) {
   const uid = useId();
@@ -134,6 +136,11 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
           className={cn(fieldClasses(error), className)}
           {...rest}
         />
+        {suffix && (
+          <span className="inline-flex items-center rounded-input border-[1.5px] border-border-default bg-surface-sunken px-3 text-secondary text-text-secondary">
+            {suffix}
+          </span>
+        )}
       </div>
     </FieldChrome>
   );

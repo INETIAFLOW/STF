@@ -1,6 +1,7 @@
 "use client";
 
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { PROOF_BUCKET, PROOF_MAX_LONG_EDGE } from "./bucket";
 
 /**
  * Upload task proof to the PRIVATE Supabase bucket.
@@ -13,8 +14,7 @@ import { createSupabaseBrowserClient } from "@/lib/supabase/client";
  * - Photos are downscaled client-side to a 2000px long edge before upload
  *   (mobile-first guidelines §5).
  */
-export const PROOF_BUCKET = "task-proof";
-const MAX_LONG_EDGE = 2000;
+const MAX_LONG_EDGE = PROOF_MAX_LONG_EDGE;
 
 export type UploadResult =
   | {

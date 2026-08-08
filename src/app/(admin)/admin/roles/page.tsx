@@ -1,25 +1,54 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { checkAccess } from "@/lib/authz/guard";
+import { getDb } from "@/lib/db";
+import { devFixtureOffline } from "@/lib/auth/fixture";
 import { PERMISSIONS, ROLE_TEMPLATES } from "@/lib/catalog";
 import { Alert } from "@/components/ui/Alert";
 import { Card } from "@/components/ui/Card";
-import { StatusChip } from "@/components/ui/StatusChip";
+import { RoleEditor } from "./RoleEditor";
 
 export const metadata: Metadata = { title: "Roles & permissions" };
 
 /**
- * Roles & permissions shell (screen A19). Templates and the permission
- * catalog are real; editing opens in a later phase together with the
- * live-impact warning flow ("You are about to change what N people can
- * see…") required by the design.
+ * Roles and permissions (screen A19).
+ *
+ * Roles are templates; granular permissions are the enforcement unit.
+ * Sensitive permissions are grouped and labelled, and changing one warns
+ * in advance what it lets people see (user-flows.md §9).
  */
 export default async function RolesPage() {
-  const { decision } = await checkAccess({
+  const { session, decision } = await checkAccess({
     module: "EMPLOYEES",
     permission: "roles.manage",
   });
   if (!decision.allowed) redirect("/unauthorized");
+
+  if (devFixtureOffline()) {
+    return (
+      <div className="flex flex-col gap-5">
+        <h1 className="font-heading text-h1 text-text-primary">
+          Roles &amp; permissions
+        </h1>
+        <Alert variant="info" title="Connect a database to edit roles." />
+      </div>
+    );
+  }
+
+  const db = getDb();
+  const roles = await db.role.findMany({
+    where: { tenantId: session.tenant.id },
+    include: {
+      permissions: { include: { permission: true } },
+      _count: { select: { memberships: { where: { status: "ACTIVE" } } } },
+    },
+    orderBy: { key: "asc" },
+  });
+
+  const order = ROLE_TEMPLATES.map((r) => r.key);
+  const sorted = [...roles].sort(
+    (a, b) => order.indexOf(a.key) - order.indexOf(b.key),
+  );
 
   return (
     <div className="flex flex-col gap-5">
@@ -27,63 +56,28 @@ export default async function RolesPage() {
         Roles &amp; permissions
       </h1>
 
-      <Alert variant="info" title="Record scope">
-        Scope is applied before every permission below. Role editing, record
-        scope and per-person exceptions open in a later build phase, with
-        impact warnings and audit.
+      <Alert variant="info" title="Record scope is applied before every permission">
+        A permission only ever applies within the records a person can
+        already see. Changes take effect on each person&apos;s next request
+        and are recorded in the activity log.
       </Alert>
 
-      <div className="grid gap-4 xl:grid-cols-2">
-        {ROLE_TEMPLATES.map((role) => (
-          <Card key={role.key} className="flex flex-col gap-3">
-            <div>
-              <h2 className="font-heading text-h3 text-text-primary">
-                {role.name}
-              </h2>
-              <p className="mt-0.5 text-secondary text-text-secondary">
-                {role.description}
-              </p>
-            </div>
-
-            {role.permissions.length === 0 ? (
-              <p className="text-secondary text-text-secondary">
-                No admin permissions. Acts on own records only.
-              </p>
-            ) : (
-              <ul className="flex flex-wrap gap-1.5">
-                {role.permissions.map((permKey) => {
-                  const perm = PERMISSIONS.find((p) => p.key === permKey)!;
-                  return (
-                    <li key={permKey}>
-                      <span
-                        className={
-                          perm.isSensitive
-                            ? "inline-flex h-6 items-center gap-1 rounded-chip bg-status-warning-bg px-2 text-[12px] font-semibold text-status-warning-text"
-                            : "inline-flex h-6 items-center rounded-chip bg-surface-sunken px-2 text-[12px] font-semibold text-text-secondary"
-                        }
-                      >
-                        {perm.name}
-                        {perm.isSensitive && (
-                          <span className="font-normal"> · Sensitive</span>
-                        )}
-                      </span>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
-
-            <div className="mt-auto border-t border-border-subtle pt-2">
-              <StatusChip
-                status={{
-                  key: "template",
-                  label: "System template",
-                  tone: "neutral",
-                }}
-                size="sm"
-                dot={false}
-              />
-            </div>
+      <div className="flex flex-col gap-4">
+        {sorted.map((role) => (
+          <Card key={role.id}>
+            <RoleEditor
+              roleId={role.id}
+              roleKey={role.key}
+              roleName={role.name}
+              description={role.description}
+              memberCount={role._count.memberships}
+              granted={role.permissions.map((rp) => rp.permission.key)}
+              permissions={PERMISSIONS.map((p) => ({
+                key: p.key,
+                name: p.name,
+                isSensitive: p.isSensitive,
+              }))}
+            />
           </Card>
         ))}
       </div>
