@@ -1,0 +1,230 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { notFound, redirect } from "next/navigation";
+import { checkAccess } from "@/lib/authz/guard";
+import { getDb } from "@/lib/db";
+import { devFixtureOffline } from "@/lib/auth/fixture";
+import { Card, CardHeader } from "@/components/ui/Card";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { StatusChip } from "@/components/ui/StatusChip";
+import { STATUS, statusLate, type Status } from "@/lib/status";
+import { formatClockTime } from "@/lib/attendance/policy";
+import { EmployeeForm } from "./EmployeeForm";
+import { DocumentsPanel } from "./DocumentsPanel";
+import { SensitivePanel } from "./SensitivePanel";
+
+export const metadata: Metadata = { title: "Employee" };
+
+const docStatus: Record<string, Status> = {
+  PENDING_REVIEW: STATUS.needsReview,
+  VERIFIED: STATUS.verified,
+  REJECTED: STATUS.rejected,
+};
+
+/**
+ * Employee profile (screen A5).
+ *
+ * Sensitive blocks (salary, bank) are never rendered inline — they need
+ * the permission AND an explicit reveal, and revealing is audited
+ * (Constitution §7).
+ */
+export default async function EmployeeProfilePage({
+  params,
+}: {
+  params: Promise<{ membershipId: string }>;
+}) {
+  const { membershipId } = await params;
+  const { session, decision } = await checkAccess({
+    module: "EMPLOYEES",
+    permission: "employees.view",
+  });
+  if (!decision.allowed) redirect("/unauthorized");
+  if (devFixtureOffline()) notFound();
+
+  const db = getDb();
+  const member = await db.tenantMembership.findFirst({
+    where: { id: membershipId, tenantId: session.tenant.id },
+    include: {
+      user: true,
+      role: true,
+      branch: true,
+      shift: true,
+      reportingTo: { include: { user: true } },
+      documents: { orderBy: { uploadedAt: "desc" } },
+    },
+  });
+  if (!member) notFound();
+
+  const canManage = session.permissions.has("employees.manage");
+  const canSeeDocuments = session.permissions.has("documents.view");
+  const tz = session.tenant.timezone;
+
+  const [branches, shifts, managers, recentAttendance] = await Promise.all([
+    db.branch.findMany({
+      where: { tenantId: session.tenant.id, isActive: true },
+      select: { id: true, name: true },
+      orderBy: { name: "asc" },
+    }),
+    db.shift.findMany({
+      where: { tenantId: session.tenant.id },
+      select: { id: true, name: true },
+      orderBy: { startMinutes: "asc" },
+    }),
+    db.tenantMembership.findMany({
+      where: {
+        tenantId: session.tenant.id,
+        status: "ACTIVE",
+        id: { not: member.id },
+      },
+      include: { user: true },
+      orderBy: { createdAt: "asc" },
+    }),
+    db.attendanceRecord.findMany({
+      where: { tenantId: session.tenant.id, membershipId: member.id },
+      include: { branch: true },
+      orderBy: { workDate: "desc" },
+      take: 10,
+    }),
+  ]);
+
+  return (
+    <div className="flex flex-col gap-5">
+      <div>
+        <Link
+          href="/admin/employees"
+          className="text-label text-brand-primary underline-offset-2 hover:underline"
+        >
+          ← All employees
+        </Link>
+        <h1 className="mt-2 font-heading text-h1 text-text-primary">
+          {member.user.displayName}
+        </h1>
+        <p className="mt-1 text-secondary text-text-secondary">
+          {member.role.name}
+          {member.designation && ` · ${member.designation}`}
+          {member.branch && ` · ${member.branch.name}`}
+        </p>
+      </div>
+
+      <EmployeeForm
+        canManage={canManage}
+        member={{
+          id: member.id,
+          displayName: member.user.displayName,
+          email: member.user.email,
+          phone: member.user.phone,
+          employeeCode: member.employeeCode,
+          designation: member.designation,
+          joinedOn: member.joinedOn
+            ? member.joinedOn.toISOString().slice(0, 10)
+            : "",
+          branchId: member.branchId,
+          shiftId: member.shiftId,
+          reportingToId: member.reportingToId,
+          canCheckInAtAnyBranch: member.canCheckInAtAnyBranch,
+          status: member.status,
+        }}
+        branches={branches}
+        shifts={shifts}
+        managers={managers.map((m) => ({
+          id: m.id,
+          name: m.user.displayName,
+        }))}
+      />
+
+      <SensitivePanel
+        membershipId={member.id}
+        canSeeSalary={session.permissions.has("payroll.view")}
+        canSeeBank={session.permissions.has("bank.view")}
+      />
+
+      {canSeeDocuments ? (
+        <DocumentsPanel
+          membershipId={member.id}
+          canManage={canManage}
+          canDownload={session.permissions.has("documents.download")}
+          documents={member.documents.map((doc) => ({
+            id: doc.id,
+            kind: doc.kind,
+            name: doc.name,
+            sizeBytes: doc.sizeBytes,
+            status: doc.status,
+            reviewReason: doc.reviewReason,
+            uploadedAt: new Intl.DateTimeFormat("en-GB", {
+              day: "numeric",
+              month: "short",
+              year: "numeric",
+              timeZone: tz,
+            }).format(doc.uploadedAt),
+          }))}
+        />
+      ) : (
+        <Card>
+          <CardHeader title="Documents" />
+          <p className="text-secondary text-text-secondary">
+            You don&apos;t have access to employee documents. Ask your company
+            owner if you need it.
+          </p>
+        </Card>
+      )}
+
+      <Card flush>
+        <div className="p-5 pb-0">
+          <CardHeader title="Recent attendance" meta="Last 10 days recorded" />
+        </div>
+        {recentAttendance.length === 0 ? (
+          <EmptyState
+            title="No records yet."
+            body="Attendance appears here after their first check-in."
+          />
+        ) : (
+          <ul className="flex flex-col p-5 pt-0">
+            {recentAttendance.map((record) => {
+              const statuses: Status[] = [];
+              if (record.lateMinutes > 0)
+                statuses.push(statusLate(record.lateMinutes));
+              else if (record.checkInAt) statuses.push(STATUS.present);
+              if (record.reviewStatus === "PENDING")
+                statuses.push(STATUS.pendingReview);
+              return (
+                <li
+                  key={record.id}
+                  className="flex flex-wrap items-center justify-between gap-3 border-b border-border-subtle py-2.5 last:border-0"
+                >
+                  <div>
+                    <p className="font-mono text-data text-text-primary tabular-nums">
+                      {new Intl.DateTimeFormat("en-GB", {
+                        weekday: "short",
+                        day: "numeric",
+                        month: "short",
+                        timeZone: "UTC",
+                      }).format(record.workDate)}
+                      {" · "}
+                      {record.checkInAt
+                        ? formatClockTime(record.checkInAt, tz)
+                        : "—"}
+                      {" – "}
+                      {record.checkOutAt
+                        ? formatClockTime(record.checkOutAt, tz)
+                        : "—"}
+                    </p>
+                    {record.branch && (
+                      <p className="text-caption text-text-secondary">
+                        {record.branch.name}
+                      </p>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {statuses.map((status) => (
+                      <StatusChip key={status.key} status={status} size="sm" />
+                    ))}
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </Card>
+    </div>
+  );
+}

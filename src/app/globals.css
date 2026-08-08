@@ -20,6 +20,11 @@
     color: var(--stf-color-text-primary);
     background: var(--stf-color-surface-canvas);
     text-size-adjust: 100%;
+    /* Overlays (tooltips, toasts) are positioned over the page and must
+       never create a horizontal scrollbar — the 320px reflow rule
+       (WCAG 1.4.10). `clip` rather than `hidden` so sticky headers and
+       the bottom nav keep working. */
+    overflow-x: clip;
   }
 
   body {

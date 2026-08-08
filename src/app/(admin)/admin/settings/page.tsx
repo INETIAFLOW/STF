@@ -1,17 +1,15 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { checkAccess } from "@/lib/authz/guard";
-import { Alert } from "@/components/ui/Alert";
+import { getDb } from "@/lib/db";
+import { devFixtureOffline } from "@/lib/auth/fixture";
 import { Card, CardHeader } from "@/components/ui/Card";
-import { Input } from "@/components/ui/Input";
-import { FileUpload } from "@/components/ui/FileUpload";
+import { CompanyForm } from "./CompanyForm";
 
 export const metadata: Metadata = { title: "Company settings" };
 
-/**
- * Company / tenant settings shell (screen A24). Values are the tenant's
- * real settings, read-only until the save + audit flow ships.
- */
+/** Company / tenant settings (screen A24). */
 export default async function CompanySettingsPage() {
   const { session, decision } = await checkAccess({
     module: "EMPLOYEES",
@@ -19,55 +17,86 @@ export default async function CompanySettingsPage() {
   });
   if (!decision.allowed) redirect("/unauthorized");
 
+  const counts = devFixtureOffline()
+    ? { people: 0, locations: 0 }
+    : {
+        people: await getDb().tenantMembership.count({
+          where: { tenantId: session.tenant.id, status: "ACTIVE" },
+        }),
+        locations: await getDb().branch.count({
+          where: { tenantId: session.tenant.id, isActive: true },
+        }),
+      };
+
   return (
-    <div className="flex max-w-[720px] flex-col gap-5">
+    <div className="flex max-w-[760px] flex-col gap-5">
       <h1 className="font-heading text-h1 text-text-primary">
         Company settings
       </h1>
 
-      <Alert variant="info" title="Read-only in this build">
-        Editing company settings opens in a later build phase. Every change
-        will be recorded in the activity log.
-      </Alert>
+      <CompanyForm
+        name={session.tenant.name}
+        timezone={session.tenant.timezone}
+      />
 
       <Card>
-        <CardHeader title="Company" />
-        <div className="flex flex-col gap-1">
-          <Input
-            label="Company name"
-            defaultValue={session.tenant.name}
-            readOnly
-          />
-          <Input
-            label="Timezone"
-            defaultValue={session.tenant.timezone}
-            helper="Times are stored in UTC and shown in this timezone."
-            readOnly
-          />
+        <CardHeader title="Your company at a glance" />
+        <dl className="flex flex-col gap-2">
+          <Row label="People" value={String(counts.people)} />
+          <Row label="Locations" value={String(counts.locations)} />
+        </dl>
+        <div className="mt-3 flex flex-wrap gap-4 border-t border-border-subtle pt-3">
+          <Link
+            href="/admin/settings/attendance"
+            className="text-label text-brand-primary underline-offset-2 hover:underline"
+          >
+            Locations, shifts &amp; rules
+          </Link>
+          <Link
+            href="/admin/settings/notifications"
+            className="text-label text-brand-primary underline-offset-2 hover:underline"
+          >
+            Notifications
+          </Link>
+          <Link
+            href="/admin/employees"
+            className="text-label text-brand-primary underline-offset-2 hover:underline"
+          >
+            Employees
+          </Link>
         </div>
       </Card>
 
       <Card>
-        <CardHeader
-          title="Company logo"
-          meta="Appears on payslips and reports. PNG or SVG, at least 256px."
-        />
-        <FileUpload
-          label="Logo file"
-          constraintsText="PNG or SVG · up to 10 MB · storage connects in a later build phase"
-          accept="image/png,image/svg+xml"
-          maxFiles={1}
-        />
+        <CardHeader title="Company logo" />
+        <p className="text-secondary text-text-secondary">
+          A logo appears on payslips and reports. Uploading one is not
+          switched on yet — where tenant files are stored and retained needs
+          to be settled first, and we would rather not accept a file we
+          cannot yet promise to keep safely.
+        </p>
       </Card>
 
       <Card>
         <CardHeader title="Data and privacy" />
         <p className="text-secondary text-text-secondary">
-          Employees can ask for a copy of their own records. Deletion requests
-          are handled subject to legal obligations. Retention windows for
-          location, files, payroll and logs are defined before production use.
+          Employees can ask for a copy of their own records. Deletion
+          requests are handled subject to legal obligations. Retention
+          windows for location, files, payroll and logs must be agreed
+          before production use — they are not set in this build.
         </p>
       </Card>
+    </div>
+  );
+}
+
+function Row({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-center justify-between gap-3 border-b border-border-subtle pb-2 last:border-0">
+      <dt className="text-secondary text-text-secondary">{label}</dt>
+      <dd className="font-mono text-data text-text-primary tabular-nums">
+        {value}
+      </dd>
     </div>
   );
 }

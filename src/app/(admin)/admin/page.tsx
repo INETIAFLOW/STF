@@ -10,6 +10,8 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { StatusChip } from "@/components/ui/StatusChip";
 import { STATUS } from "@/lib/status";
 import { workDateInTimezone } from "@/lib/attendance/policy";
+import { periodLabel } from "@/lib/payroll/engine";
+import { currentPeriod } from "@/lib/payroll/service";
 import { cn } from "@/lib/cn";
 
 export const metadata: Metadata = { title: "Dashboard" };
@@ -34,9 +36,28 @@ export default async function AdminDashboardPage() {
   }).allowed;
   const leaveOn = evaluateAccess({ session, entitlements, module: "LEAVE" }).allowed;
   const tasksOn = evaluateAccess({ session, entitlements, module: "TASKS" }).allowed;
+  const payrollOn =
+    evaluateAccess({ session, entitlements, module: "PAYROLL" }).allowed &&
+    session.permissions.has("payroll.view");
+
+  const currentMonth = currentPeriod(tz);
+  const currentPeriodLabel = periodLabel(currentMonth, tz);
 
   const workDate = workDateInTimezone(new Date(), tz);
   const db = devFixtureOffline() ? null : getDb();
+
+  const payrollRun =
+    db && payrollOn
+      ? await db.payrollRun.findUnique({
+          where: {
+            tenantId_periodMonth: {
+              tenantId: session.tenant.id,
+              periodMonth: currentMonth,
+            },
+          },
+          select: { status: true },
+        })
+      : null;
 
   const [headcount, records, pendingExceptions, pendingLeave, openTasks, proofToReview, activity] =
     db
@@ -185,17 +206,38 @@ export default async function AdminDashboardPage() {
             </Card>
           )}
 
-          <Card>
-            <CardHeader
-              title="Payroll"
-              action={<StatusChip status={STATUS.notReady} size="sm" />}
-            />
-            <p className="text-secondary text-text-secondary">
-              Payroll runs open in a later phase, once its rules are approved
-              and reviewed. Attendance and leave inputs are being recorded
-              now.
-            </p>
-          </Card>
+          {payrollOn && (
+            <Card>
+              <CardHeader
+                title={`${currentPeriodLabel} payroll`}
+                action={
+                  <StatusChip
+                    status={
+                      payrollRun?.status === "APPROVED"
+                        ? STATUS.locked
+                        : payrollRun
+                          ? STATUS.draft
+                          : STATUS.notReady
+                    }
+                    size="sm"
+                  />
+                }
+              />
+              <p className="text-secondary text-text-secondary">
+                {payrollRun?.status === "APPROVED"
+                  ? "Approved and locked. Later changes need an auditable adjustment."
+                  : payrollRun
+                    ? "Calculated but not approved. Review the figures before approving."
+                    : "Not yet calculated. Payroll uses approved attendance and leave for the period."}
+              </p>
+              <Link
+                href="/admin/payroll"
+                className="mt-3 inline-block text-label text-brand-primary underline-offset-2 hover:underline"
+              >
+                Open payroll
+              </Link>
+            </Card>
+          )}
 
           <Card flush>
             <div className="p-5 pb-0">

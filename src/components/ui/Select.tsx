@@ -19,11 +19,23 @@ export interface SelectProps
   error?: string;
   options: Array<{ value: string; label: string; disabled?: boolean }>;
   placeholder?: string;
+  /** Mark optional where a form mixes required and optional fields. */
+  optional?: boolean;
 }
 
 export const Select = forwardRef<HTMLSelectElement, SelectProps>(
   function Select(
-    { label, helper, error, required, options, placeholder, className, ...rest },
+    {
+      label,
+      helper,
+      error,
+      required,
+      optional,
+      options,
+      placeholder,
+      className,
+      ...rest
+    },
     ref,
   ) {
     const uid = useId();
@@ -37,6 +49,11 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
           {required && (
             <span className="ml-1 font-normal text-text-secondary">
               · Required
+            </span>
+          )}
+          {!required && optional && (
+            <span className="ml-1 font-normal text-text-secondary">
+              · Optional
             </span>
           )}
         </label>

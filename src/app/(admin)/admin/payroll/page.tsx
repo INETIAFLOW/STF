@@ -78,6 +78,11 @@ export default async function AdminPayrollPage({
     }),
   ]);
 
+  // Saved line ids, so a calculated row can open its payslip.
+  const savedLineIdByMembership = new Map(
+    (run?.lines ?? []).map((line) => [line.membershipId, line.id]),
+  );
+
   const approved = run?.status === "APPROVED";
   const ready = preview.lines.filter((l) => l.status === "READY");
   const excluded = preview.lines.filter(
@@ -279,7 +284,16 @@ export default async function AdminPayrollPage({
                     scope="row"
                     className="px-4 py-2.5 text-left text-body font-semibold text-text-primary"
                   >
-                    {line.name}
+                    {savedLineIdByMembership.get(line.membershipId) ? (
+                      <Link
+                        href={`/admin/payroll/payslips/${savedLineIdByMembership.get(line.membershipId)}`}
+                        className="underline-offset-2 hover:underline"
+                      >
+                        {line.name}
+                      </Link>
+                    ) : (
+                      line.name
+                    )}
                     {line.employeeCode && (
                       <span className="ml-2 font-mono text-mono font-normal text-text-tertiary">
                         {line.employeeCode}

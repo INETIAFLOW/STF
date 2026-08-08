@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import type { Metadata } from "next";
 import { Skeleton } from "@/components/ui/Loading";
 import { SignInForm } from "./SignInForm";
@@ -47,6 +48,15 @@ export default function SignInPage() {
           >
             <SignInForm />
           </Suspense>
+        </div>
+
+        <div className="mt-4 text-center">
+          <Link
+            href="/forgot-password"
+            className="inline-flex min-h-11 items-center text-label text-brand-primary underline-offset-2 hover:underline"
+          >
+            Forgot password?
+          </Link>
         </div>
 
         <div className="flex-1" />

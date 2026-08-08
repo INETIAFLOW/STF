@@ -88,6 +88,7 @@ model Tenant {
   salaryComponents  SalaryComponent[]
   salaryStructures  SalaryStructure[]
   payrollRuns       PayrollRun[]
+  employeeDocuments EmployeeDocument[]
   /// Tenant-configured policies (attendance, leave, notifications).
   policies          TenantPolicy[]
 
@@ -119,8 +120,11 @@ model TenantMembership {
   canCheckInAtAnyBranch Boolean @default(false)
   /// Working shift; null = tenant default shift.
   shiftId      String?          @db.Uuid
-  /// Reporting manager (approval routing arrives with the employee module).
+  /// Reporting manager.
   reportingToId String?         @db.Uuid
+  /// Workforce profile (MODULES.md → Employee Management).
+  designation  String?
+  joinedOn     DateTime?        @db.Date
   createdAt    DateTime         @default(now())
   updatedAt    DateTime         @updatedAt
 
@@ -138,6 +142,7 @@ model TenantMembership {
   tasksCreated      Task[]             @relation("taskCreator")
   salaryStructures  SalaryStructure[]
   payrollLines      PayrollLine[]
+  documents         EmployeeDocument[]
 
   @@unique([tenantId, userId])
   @@index([tenantId, status])
@@ -416,6 +421,45 @@ model ProofFile {
 
   @@index([tenantId])
   @@map("proof_files")
+}
+
+// ------------------------------------------------------ employee documents
+
+enum DocumentStatus {
+  PENDING_REVIEW
+  VERIFIED
+  REJECTED
+}
+
+/// An employee's document (ID, address proof, certificate).
+///
+/// Privacy (Constitution §7): the file lives in a PRIVATE bucket, is read
+/// only through short-lived signed URLs, and every download is audited.
+/// Visible to the employee, HR and permitted roles — stated on screen at
+/// the point of capture.
+model EmployeeDocument {
+  id           String         @id @default(uuid()) @db.Uuid
+  tenantId     String         @db.Uuid
+  membershipId String         @db.Uuid
+  /// Free-text kind chosen by the tenant ("ID proof", "Address proof").
+  kind         String
+  name         String
+  path         String
+  mime         String
+  sizeBytes    Int
+  status       DocumentStatus @default(PENDING_REVIEW)
+  uploadedById String?        @db.Uuid
+  uploadedAt   DateTime       @default(now())
+  reviewedById String?        @db.Uuid
+  reviewedAt   DateTime?
+  reviewReason String?
+
+  tenant     Tenant           @relation(fields: [tenantId], references: [id])
+  membership TenantMembership @relation(fields: [membershipId], references: [id])
+
+  @@index([tenantId, membershipId])
+  @@index([tenantId, status])
+  @@map("employee_documents")
 }
 
 // --------------------------------------------------------------- policies

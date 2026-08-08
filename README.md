@@ -4,9 +4,14 @@ Mobile-first, multi-tenant SaaS for practical workforce operations:
 attendance, leave, payroll inputs, tasks, daily reporting and
 tenant-controlled modules. Built for Indian SMEs.
 
-**Status: Phases 1–4 built.** Foundation and design system; attendance,
-leave, tasks with proof, notifications and dashboards; payroll,
-configuration, roles and reporting; public marketing pages.
+**Status: V1 scope complete, plus multi-location.** Foundation and design
+system; attendance, leave, tasks with proof, notifications and dashboards;
+payroll, configuration, roles and reporting; employee records and
+documents; public marketing pages; multiple work locations.
+
+**Before a real pilot**, read [ACCEPTANCE.md](ACCEPTANCE.md) — it records
+honestly what is and is not verified. Accessibility testing, data
+retention, and the offline queue are the open items.
 
 **On payroll:** STF contains **no statutory formulas**. It does not
 calculate PF, ESI, professional tax or TDS. A company defines its own
@@ -75,4 +80,7 @@ dev preview session — is in `SETUP.md`.
 | `ARCHITECTURE.md` | Modular-monolith boundaries, auth flow, flag evaluation, audit |
 | `DESIGN-SYSTEM-MAPPING.md` | How design files map to code (tokens → CSS → Tailwind → components) |
 | `SECURITY-NOTES.md` | Tenant isolation, authorization layers, dev preview session, key handling |
-| `DECISIONS.md` | Phase 1 decision log (append-only) |
+| `DECISIONS.md` | Decision log (append-only) |
+| `ACCEPTANCE.md` | Acceptance checklist A–K with the honest result |
+| `OPERATIONS.md` | Backups, RLS, incidents, secrets, known gaps |
+| `PILOT.md` | Notes to hand to the first customer |

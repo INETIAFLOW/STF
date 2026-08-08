@@ -33,27 +33,29 @@ export function BranchFilter({
   if (options.length < 2) return null;
 
   return (
-    <Select
-      label={label}
-      value={selected ?? "all"}
-      disabled={pending}
-      className="max-w-64"
-      options={[
-        { value: "all", label: "All branches" },
-        ...options.map((option) => ({
-          value: option.id,
-          label: option.name,
-        })),
-      ]}
-      onChange={(event) => {
-        const params = new URLSearchParams(searchParams.toString());
-        if (event.target.value === "all") params.delete("branch");
-        else params.set("branch", event.target.value);
-        const query = params.toString();
-        startTransition(() => {
-          router.replace(query ? `${pathname}?${query}` : pathname);
-        });
-      }}
-    />
+    // The Select fills its container, so the container carries the width.
+    <div className="w-full sm:w-56">
+      <Select
+        label={label}
+        value={selected ?? "all"}
+        disabled={pending}
+        options={[
+          { value: "all", label: "All branches" },
+          ...options.map((option) => ({
+            value: option.id,
+            label: option.name,
+          })),
+        ]}
+        onChange={(event) => {
+          const params = new URLSearchParams(searchParams.toString());
+          if (event.target.value === "all") params.delete("branch");
+          else params.set("branch", event.target.value);
+          const query = params.toString();
+          startTransition(() => {
+            router.replace(query ? `${pathname}?${query}` : pathname);
+          });
+        }}
+      />
+    </div>
   );
 }

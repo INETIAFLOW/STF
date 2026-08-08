@@ -249,3 +249,58 @@ guess anyone's workplace.
 before it reaches any query. Not a global top-bar control: App Router
 layouts do not receive `searchParams`, and a global filter would leak into
 payroll and roles, which have no location dimension.
+
+---
+
+## Phase 6 — Completing V1
+
+**D-P6-01 · 2026-08-09 · A membership IS the workforce record** — Employee
+Management extends `TenantMembership` (designation, joinedOn) rather than
+adding a parallel `Employee` table. Attendance, leave, tasks and payroll
+already point at the membership; a second identity for the same person
+would need constant reconciliation.
+
+**D-P6-02 · 2026-08-09 · Employee documents get their own private bucket**
+— `employee-documents`, insert-only, no read policy; reads are short-lived
+signed URLs minted after a permission check, and every view is audited.
+Downloading *someone else's* document needs the separately-permissioned
+`documents.download`; `documents.view` alone lets you see that a document
+exists but not open it.
+
+**D-P6-03 · 2026-08-09 · Forgot-password is email, not OTP** — Screen E2
+specifies a 6-digit code to a phone. Phone auth still needs an SMS
+provider and DLT registration (D-P1-05 is open), so the reset link goes by
+email — the same journey on the channel we have. The response is identical
+whether or not the address is registered, so it cannot be used to discover
+who works at a company.
+
+**D-P6-04 · 2026-08-09 · Missed check-out is a request, never an
+invention** — The employee proposes a time with a reason; it is stored as
+a pending exception and only becomes the record when a manager approves.
+STF never writes a check-out time nobody gave it (edge-cases.md).
+
+**D-P6-05 · 2026-08-09 · Company logo upload deliberately not built** —
+The screen says why: where tenant files are stored and how long they are
+kept is unsettled, and accepting a file we cannot promise to keep safely
+would be worse than not accepting it. Retention is an open item in
+ACCEPTANCE.md §G.
+
+**D-P6-06 · 2026-08-09 · RLS enabled with no permissive policy** — All 25
+tenant tables have row-level security on and no policy for anon or
+authenticated, so the API keys can read nothing. The app connects as the
+table owner and is unaffected — verified by running all three smoke suites
+before and after. A per-tenant JWT-claim policy was deliberately NOT
+written: the app resolves tenancy server-side from the session, so such a
+policy would never be consulted on the path we actually use, and would be
+decoration. `scripts/setup-rls.ts --rollback` undoes it.
+
+**D-P6-07 · 2026-08-09 · Horizontal overflow is clipped at the document**
+— Tooltips and toasts are positioned over the page and could extend the
+scroll area at 320px, breaking WCAG 1.4.10. `overflow-x: clip` on `html`
+(not `hidden`, which would break sticky headers and the bottom nav).
+Verified in-browser: horizontal scrolling is impossible at 320px.
+
+**D-P6-08 · 2026-08-09 · The acceptance checklist is recorded honestly** —
+`ACCEPTANCE.md` walks sections A–K and marks items Not met where they are
+not met, notably screen-reader testing, retention workflows and the
+offline queue. Ticking them would have been faster and false.

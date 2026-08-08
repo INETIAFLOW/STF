@@ -12,6 +12,8 @@ import { createServerClient } from "@supabase/ssr";
 /** Public routes: sign-in, the auth callbacks, and marketing pages. */
 const PUBLIC_PATHS = [
   "/sign-in",
+  "/forgot-password",
+  "/reset",
   "/auth",
   "/product",
   "/modules",

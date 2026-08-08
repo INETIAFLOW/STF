@@ -17,9 +17,15 @@ import { Client } from "pg";
 
 loadEnv({ path: [".env.local", ".env"], quiet: true });
 
-const BUCKET = "task-proof";
 const MAX_BYTES = 10 * 1024 * 1024;
 const MIME = ["image/jpeg", "image/png", "image/heic", "image/webp", "application/pdf"];
+
+/**
+ * Both buckets are private and insert-only. Employee documents are ID and
+ * address proofs — the most sensitive files STF holds — so they get the
+ * same treatment as proof, never a public path (Constitution §7).
+ */
+const BUCKETS = ["task-proof", "employee-documents"];
 
 const connectionString = process.env.DIRECT_URL ?? process.env.DATABASE_URL;
 if (!connectionString) {
@@ -32,49 +38,53 @@ const client = new Client({ connectionString });
 async function main() {
   await client.connect();
 
-  await client.query(
-    `insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
-     values ($1, $1, false, $2, $3)
-     on conflict (id) do update
-       set public = false,
-           file_size_limit = excluded.file_size_limit,
-           allowed_mime_types = excluded.allowed_mime_types`,
-    [BUCKET, MAX_BYTES, MIME],
-  );
+  for (const bucket of BUCKETS) {
+    const policyName = `${bucket.replace(/-/g, "_")}_authenticated_insert`;
 
-  // Policies are dropped and recreated so this script stays idempotent.
-  await client.query(
-    `drop policy if exists "task_proof_authenticated_insert" on storage.objects`,
-  );
-  await client.query(
-    `create policy "task_proof_authenticated_insert"
-     on storage.objects for insert to authenticated
-     with check (bucket_id = '${BUCKET}')`,
-  );
+    await client.query(
+      `insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+       values ($1, $1, false, $2, $3)
+       on conflict (id) do update
+         set public = false,
+             file_size_limit = excluded.file_size_limit,
+             allowed_mime_types = excluded.allowed_mime_types`,
+      [bucket, MAX_BYTES, MIME],
+    );
 
-  // No select/update/delete policy exists by design: reads are signed-URL
-  // only, and deletion is an audited server-side operation.
-  await client.query(
-    `drop policy if exists "task_proof_authenticated_select" on storage.objects`,
-  );
-  await client.query(
-    `drop policy if exists "task_proof_authenticated_delete" on storage.objects`,
-  );
+    // Policies are dropped and recreated so this script stays idempotent.
+    await client.query(
+      `drop policy if exists "${policyName}" on storage.objects`,
+    );
+    await client.query(
+      `create policy "${policyName}"
+       on storage.objects for insert to authenticated
+       with check (bucket_id = '${bucket}')`,
+    );
+
+    // No select/update/delete policy exists by design: reads are
+    // signed-URL only, minted server-side after a permission check, and
+    // deletion is an audited server-side operation.
+    for (const cmd of ["select", "update", "delete"]) {
+      await client.query(
+        `drop policy if exists "${bucket.replace(/-/g, "_")}_authenticated_${cmd}" on storage.objects`,
+      );
+    }
+  }
 
   const { rows } = await client.query(
-    `select id, public, file_size_limit, allowed_mime_types
-     from storage.buckets where id = $1`,
-    [BUCKET],
+    `select id, public, file_size_limit
+     from storage.buckets where id = any($1) order by id`,
+    [BUCKETS],
   );
   const policies = await client.query(
     `select policyname, cmd, roles::text
      from pg_policies
      where schemaname = 'storage' and tablename = 'objects'
-       and policyname like 'task_proof%'
+       and (policyname like 'task_proof%' or policyname like 'employee_documents%')
      order by policyname`,
   );
 
-  console.log("bucket:", rows[0]);
+  console.log("buckets:", rows);
   console.log("policies:", policies.rows);
 }
 

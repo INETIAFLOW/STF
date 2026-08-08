@@ -92,6 +92,14 @@ export default async function EmployeeProfilePage() {
           </li>
           <li>
             <Link
+              href="/documents"
+              className="text-body text-brand-primary underline-offset-2 hover:underline"
+            >
+              My documents
+            </Link>
+          </li>
+          <li>
+            <Link
               href="/notifications"
               className="text-body text-brand-primary underline-offset-2 hover:underline"
             >

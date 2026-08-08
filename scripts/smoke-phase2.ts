@@ -49,7 +49,10 @@ async function main() {
   check("employee has a shift", Boolean(employee.shift));
 
   const now = new Date();
-  const workDate = workDateInTimezone(now, tz);
+  // A far-future work date so the test never collides with real or demo
+  // attendance for today — the earlier version wrote to today's date and
+  // silently reused whatever was already there.
+  const workDate = new Date(Date.UTC(2099, 2, 1));
 
   // --- attendance: an outside-area check-in becomes a pending exception
   const far = assessLocation({
