@@ -44,7 +44,10 @@ export function ForgotPasswordForm() {
             return;
           }
           await supabase.auth.resetPasswordForEmail(email.trim(), {
-            redirectTo: `${window.location.origin}/auth/reset`,
+            // `(auth)` is a route group — it adds no path segment, so the
+            // page lives at /reset. Must also be in Supabase's redirect
+            // allow-list for the deployed domain (DEPLOY.md).
+            redirectTo: `${window.location.origin}/reset`,
           });
           // Always the same outcome — never confirm whether an account exists.
           setSent(true);
