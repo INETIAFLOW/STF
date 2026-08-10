@@ -91,6 +91,9 @@ model Tenant {
   employeeDocuments EmployeeDocument[]
   /// Tenant-configured policies (attendance, leave, notifications).
   policies          TenantPolicy[]
+  departments       Department[]
+  employeeInvites   EmployeeInvite[]
+  actionRequests    ActionRequest[]
 
   @@map("tenants")
 }
@@ -100,6 +103,17 @@ enum MembershipStatus {
   INVITED
   SUSPENDED
   DEACTIVATED
+}
+
+/// How someone is engaged. Recorded for the employee record and reports;
+/// STF attaches NO statutory meaning to these — payroll components are
+/// tenant-defined (PRODUCT-CONSTITUTION §6).
+enum EmploymentType {
+  FULL_TIME
+  PART_TIME
+  CONTRACT
+  TEMPORARY
+  APPRENTICE
 }
 
 /// A user's place inside one tenant. A user may belong to several tenants;
@@ -125,6 +139,10 @@ model TenantMembership {
   /// Workforce profile (MODULES.md → Employee Management).
   designation  String?
   joinedOn     DateTime?        @db.Date
+  /// Organisational unit. Null = unassigned; action tiles about this person
+  /// then reach tenant admins only, and the directory says so.
+  departmentId String?          @db.Uuid
+  employmentType EmploymentType @default(FULL_TIME)
   createdAt    DateTime         @default(now())
   updatedAt    DateTime         @updatedAt
 
@@ -136,6 +154,11 @@ model TenantMembership {
   reportingTo TenantMembership?  @relation("reporting", fields: [reportingToId], references: [id])
   reports     TenantMembership[] @relation("reporting")
 
+  department        Department?        @relation("departmentMembers", fields: [departmentId], references: [id])
+  headOfDepartments Department[]       @relation("departmentHead")
+  invites           EmployeeInvite[]
+  actionRequestsAbout ActionRequest[]  @relation("actionAbout")
+
   attendanceRecords AttendanceRecord[]
   leaveRequests     LeaveRequest[]     @relation("leaveRequester")
   tasksAssigned     Task[]             @relation("taskAssignee")
@@ -145,6 +168,10 @@ model TenantMembership {
   documents         EmployeeDocument[]
 
   @@unique([tenantId, userId])
+  /// An employee code identifies one person within one company. NULLs stay
+  /// distinct in Postgres, so people without a code are unaffected.
+  @@unique([tenantId, employeeCode])
+  @@index([tenantId, departmentId])
   @@index([tenantId, status])
   @@index([tenantId, branchId])
   @@index([userId])
@@ -902,4 +929,172 @@ model AuditEvent {
   @@index([tenantId, createdAt])
   @@index([tenantId, entityType, entityId])
   @@map("audit_events")
+}
+
+// ------------------------------------------------------------- departments
+
+/// An organisational unit inside a tenant. Distinct from Branch, which is a
+/// PLACE: a company can run Dispatch and Accounts out of one warehouse, and
+/// one Dispatch department across three warehouses.
+///
+/// The head is who receives action tiles for their people alongside the
+/// admins (src/lib/actions/audience.ts).
+model Department {
+  id       String  @id @default(uuid()) @db.Uuid
+  tenantId String  @db.Uuid
+  name     String
+  /// Department head. Null = no head yet; tiles go to tenant admins only,
+  /// and the directory says so rather than silently dropping them.
+  headId   String? @db.Uuid
+  isActive Boolean @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant  Tenant             @relation(fields: [tenantId], references: [id])
+  head    TenantMembership?  @relation("departmentHead", fields: [headId], references: [id])
+  members TenantMembership[] @relation("departmentMembers")
+
+  @@unique([tenantId, name])
+  @@index([tenantId, isActive])
+  @@map("departments")
+}
+
+// ----------------------------------------------------------------- invites
+
+enum InviteStatus {
+  /// Sent (or ready to send) and not yet accepted.
+  PENDING
+  /// The person set a password and signed in.
+  ACCEPTED
+  /// Past expiresAt without acceptance. Resend issues a NEW token.
+  EXPIRED
+  /// Withdrawn by an admin, or the employee was deactivated first.
+  REVOKED
+}
+
+/// Delivery route for an invitation. Email is the only channel that can
+/// actually reach someone today; LINK is the honest fallback for workers
+/// with no email address, where the admin passes the link on themselves
+/// (WhatsApp, printed slip). Phone/OTP stays blocked on D-P1-05.
+enum InviteChannel {
+  EMAIL
+  LINK
+}
+
+/// An outstanding invitation to join a tenant.
+///
+/// The raw token is shown ONCE, at creation, and only its SHA-256 hash is
+/// stored — a leaked database backup must not yield working invitation
+/// links (SECURITY-NOTES.md).
+model EmployeeInvite {
+  id           String        @id @default(uuid()) @db.Uuid
+  tenantId     String        @db.Uuid
+  membershipId String        @db.Uuid
+  /// SHA-256 of the raw token. Never the token itself.
+  tokenHash    String        @unique
+  channel      InviteChannel @default(EMAIL)
+  status       InviteStatus  @default(PENDING)
+  /// The address this invitation was sent to, recorded at send time so a
+  /// later profile edit cannot rewrite where it actually went.
+  sentToEmail  String?
+  expiresAt    DateTime
+  sentAt       DateTime?
+  acceptedAt   DateTime?
+  revokedAt    DateTime?
+  /// How many times an admin re-sent. Rate-limited in the action.
+  resendCount  Int           @default(0)
+  lastResendAt DateTime?
+  createdById  String?       @db.Uuid
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  tenant     Tenant           @relation(fields: [tenantId], references: [id])
+  membership TenantMembership @relation(fields: [membershipId], references: [id])
+
+  @@index([tenantId, status])
+  @@index([membershipId])
+  @@map("employee_invites")
+}
+
+// --------------------------------------------------------- action requests
+
+/// What kind of decision is being asked for. Each maps to an existing
+/// approval surface — this queue routes and chases, it never invents a new
+/// approval step.
+enum ActionRequestKind {
+  ATTENDANCE_EXCEPTION
+  LEAVE_REQUEST
+  TASK_PROOF
+  EMPLOYEE_INVITE
+}
+
+enum ActionRequestStatus {
+  /// Waiting for someone in the audience to decide.
+  PENDING
+  /// Hidden until snoozedUntil, then PENDING again.
+  SNOOZED
+  /// Someone decided. Records who, so a second reviewer is not asked again.
+  RESOLVED
+  /// The underlying subject went away (task deleted, leave withdrawn).
+  CANCELLED
+}
+
+/// One decision awaiting a human, addressed to a set of people.
+///
+/// This is deliberately a table and not a derived query: a snooze is a
+/// per-person promise about when to ask again, and a promise you cannot
+/// survive a restart is not a promise (Constitution §3).
+model ActionRequest {
+  id          String              @id @default(uuid()) @db.Uuid
+  tenantId    String              @db.Uuid
+  kind        ActionRequestKind
+  status      ActionRequestStatus @default(PENDING)
+  /// The row this decision is about, e.g. an attendance_records id.
+  subjectType String
+  subjectId   String              @db.Uuid
+  /// Whose work this concerns — used to find their department head.
+  aboutMembershipId String?       @db.Uuid
+  /// Plain-language summary, rendered as-is. Written once at creation so
+  /// the tile cannot drift from what was recorded (integrity pattern 1).
+  title       String
+  body        String?
+  /// Where the decision is actually made.
+  href        String
+  /// Set when someone acts, so the tile disappears for everyone.
+  resolvedAt      DateTime?
+  resolvedByUserId String?        @db.Uuid
+  resolution      String?
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  tenant     Tenant                  @relation(fields: [tenantId], references: [id])
+  about      TenantMembership?       @relation("actionAbout", fields: [aboutMembershipId], references: [id])
+  recipients ActionRequestRecipient[]
+
+  @@unique([tenantId, subjectType, subjectId])
+  @@index([tenantId, status])
+  @@map("action_requests")
+}
+
+/// One addressee of an action request. Snooze is per-person: a supervisor
+/// putting something off must not hide it from the owner.
+model ActionRequestRecipient {
+  id              String    @id @default(uuid()) @db.Uuid
+  actionRequestId String    @db.Uuid
+  tenantId        String    @db.Uuid
+  userId          String    @db.Uuid
+  /// Why this person is being asked — shown in the tile so nobody wonders
+  /// why it reached them ("You are the head of Dispatch").
+  reason          String
+  /// Hidden until this time for THIS person only.
+  snoozedUntil    DateTime?
+  snoozeCount     Int       @default(0)
+  seenAt          DateTime?
+  createdAt       DateTime  @default(now())
+
+  actionRequest ActionRequest @relation(fields: [actionRequestId], references: [id], onDelete: Cascade)
+
+  @@unique([actionRequestId, userId])
+  @@index([tenantId, userId, snoozedUntil])
+  @@map("action_request_recipients")
 }

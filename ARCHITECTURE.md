@@ -105,3 +105,64 @@ traceable; offline attendance is captured as pending evidence and
 validated server-side on sync; payroll preserves calculation inputs and
 policy versions. These are Phase 2/3 obligations already reflected in the
 schema style (policy JSON, audit store, UTC timestamps).
+
+## Employee onboarding
+
+```
+Admin (browser)
+   │  inviteEmployeeAction          src/lib/invites/actions.ts
+   ├─ checkAccess(EMPLOYEES, employees.manage)      ← server-side gate
+   ├─ normalise mobile / email / employee code      ← invites/policy.ts (pure)
+   ├─ duplicate check, tenant-scoped first          ← never leaks another tenant
+   ├─ supabaseAdmin.createUser()                    ← supabase/admin.ts, server-only
+   ├─ User + TenantMembership (INVITED)             ← one transaction
+   ├─ EmployeeInvite { tokenHash, expiresAt }       ← raw token never stored
+   └─ sendMail()                                    ← email/send.ts; failure → link shown
+
+Employee (no session)
+   │  GET /invite/[token]
+   ├─ previewInviteAction   → look up by SHA-256, validate, render welcome
+   └─ acceptInviteAction    → set password via admin API, ACTIVE, sign in
+```
+
+**Why the token and not Supabase's own invite email.** STF owns the
+invitation state (Pending / Accepted / Expired / Revoked, resend counts,
+cooldown, a copyable link for staff with no email). Borrowing Supabase's
+auth emails would put that state in a system we cannot query and would
+brand an employer's message "Supabase". The auth *account* is still
+Supabase's; only the invitation is ours.
+
+**Why the hash.** A database backup that leaks must not yield working
+invitation links. Lookup is by `sha256(token)`, which is also the unique
+index, so the raw token exists only in the email and the URL bar.
+
+## The action queue
+
+```
+event (exception / leave / proof)
+   ├─ notify.*              → the bell: "this happened"
+   └─ raiseActionRequest    → the tile: "you must decide this"
+        ├─ loadCandidates   → everyone with the deciding permission
+        ├─ resolveAudience  → + department head, − actor, − subject   (pure)
+        └─ ActionRequest + one ActionRequestRecipient per person
+
+decision made (existing action)
+   └─ resolveActionRequest  → status RESOLVED; the tile clears for everyone
+```
+
+Three properties worth stating because they were designed for, not
+inherited:
+
+1. **Raising a tile can never break the thing it is about.** The whole
+   call is wrapped; a failure logs and returns. A leave request that saves
+   but fails to raise a tile is still a valid leave request.
+2. **Snooze is per recipient.** A supervisor deferring something must not
+   hide it from the owner. `snoozedUntil` lives on the recipient row.
+3. **Approving from a tile calls the same server action as the approval
+   screen** — same permission check, same audit event, same notification.
+   There is no second code path to drift.
+
+Delivery is a 30-second poll of `pollActionTilesAction`, paused while the
+tab is hidden. Not Supabase Realtime: RLS denies the anon key everything by
+design, and opening a hole in that for a convenience feature is a bad
+trade.

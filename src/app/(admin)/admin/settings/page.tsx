@@ -53,6 +53,12 @@ export default async function CompanySettingsPage() {
             Locations, shifts &amp; rules
           </Link>
           <Link
+            href="/admin/settings/departments"
+            className="text-label text-brand-primary underline-offset-2 hover:underline"
+          >
+            Departments
+          </Link>
+          <Link
             href="/admin/settings/notifications"
             className="text-label text-brand-primary underline-offset-2 hover:underline"
           >

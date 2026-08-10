@@ -100,3 +100,55 @@ The `task-proof` bucket exists and is configured by
   (SYSTEM-ARCHITECTURE.md security boundary) — with the Documents module.
 - Retention windows for location, files, payroll and logs — must be
   defined before production (Constitution §7).
+
+## The Supabase secret key
+
+`SUPABASE_SECRET_KEY` (or the legacy `SUPABASE_SERVICE_ROLE_KEY`) is used
+to create and update auth accounts when someone is invited. It bypasses
+Row Level Security and can read every row in the project.
+
+Three defences, in order of how much they can be relied on:
+
+1. **`import "server-only"`** at the top of `src/lib/supabase/admin.ts`.
+   A client component importing it — directly or through a chain — fails
+   the build. This is the one that holds when someone is not thinking.
+2. **No `NEXT_PUBLIC_` prefix**, so Next.js will not inline it into a
+   client bundle even if the first defence were removed.
+3. **Nothing in that module accepts a tenant id from a caller.** It only
+   touches `auth.users`; tenant scoping happens in the calling action,
+   against the session.
+
+Absent configuration is a stated condition, not a crash: invitations are
+refused with a message naming the missing key, so a half-configured
+deployment is obvious rather than mysterious.
+
+## Invitation tokens
+
+- 32 bytes of CSPRNG output, base64url. Shown once, never stored.
+- Only `sha256(token)` reaches the database, and it is the unique index —
+  so a leaked backup yields no usable links.
+- Comparison is constant-time (`timingSafeEqual`).
+- Seven-day expiry, computed at read time. A row can say PENDING while the
+  clock says expired; the clock wins, so no job is needed to keep the
+  displayed status honest.
+- **Single use**, enforced by a conditional `updateMany` on status rather
+  than a read-then-write. Two tabs racing produce one acceptance.
+- Every failure — wrong token, expired, revoked, already used — returns
+  the same shape and reveals nothing about whether a token exists, so the
+  page cannot be used to probe for live invitations.
+- Resending **revokes** the previous token. An invitation that leaked
+  cannot be revived by asking an admin to send it again.
+- The invite page sets `robots: noindex` and `referrer: no-referrer`.
+
+## Duplicate identities and the tenant boundary
+
+Email and phone are unique platform-wide, which creates a way to probe for
+whether an address is registered. So the message depends on where the
+clash is:
+
+- **In your own tenant** — the colleague is named. That is your data.
+- **Anywhere else** — "This email address can't be used here. Use a
+  different one for this person." True, actionable, and it does not
+  confirm the address exists or say who holds it.
+
+Employee IDs are scoped per tenant and may repeat across companies.

@@ -5,6 +5,9 @@ import { EmployeeTopBar } from "@/components/shell/TopBar";
 import { ToastProvider } from "@/components/ui/Toast";
 import { OfflineProvider } from "@/lib/offline/OfflineProvider";
 import { OfflineBar } from "@/components/offline/OfflineBar";
+import { unreadNotificationCount } from "@/lib/notifications";
+import { ActionQueueProvider } from "@/lib/actions/ActionQueueProvider";
+import { ActionTiles } from "@/components/actions/ActionTiles";
 
 /**
  * Employee mobile shell: warm surface, top bar, bottom navigation.
@@ -21,18 +24,26 @@ export default async function EmployeeLayout({
     session.tenant.id,
     session.user.id,
   );
+  const unread = await unreadNotificationCount(
+    session.tenant.id,
+    session.user.id,
+  );
 
   return (
     <div data-surface="employee" className="min-h-dvh">
       <ToastProvider>
         <OfflineProvider>
+        <ActionQueueProvider enabled={session.source === "supabase"}>
           <a
             href="#main"
             className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:rounded-md focus:bg-surface-default focus:px-3 focus:py-2"
           >
             Skip to content
           </a>
-          <EmployeeTopBar title={session.tenant.name} />
+          <EmployeeTopBar
+            title={session.tenant.name}
+            notificationCount={unread}
+          />
           {/* Persistent while offline, and not dismissible. */}
           <OfflineBar />
           <main
@@ -47,6 +58,8 @@ export default async function EmployeeLayout({
           />
           {/* Leave lives under Profile — the bottom bar is capped at four
               items with permanent labels (decision D-015). */}
+          <ActionTiles />
+        </ActionQueueProvider>
         </OfflineProvider>
       </ToastProvider>
     </div>

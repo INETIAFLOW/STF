@@ -7,6 +7,8 @@ import { AdminTopBar } from "@/components/shell/TopBar";
 import { ToastProvider } from "@/components/ui/Toast";
 import { OfflineProvider } from "@/lib/offline/OfflineProvider";
 import { AdminOfflineBar } from "@/components/offline/OfflineBar";
+import { ActionQueueProvider } from "@/lib/actions/ActionQueueProvider";
+import { ActionTiles } from "@/components/actions/ActionTiles";
 
 /**
  * Admin shell: cool surface, 240px sidebar (lg+) / 72px rail (md),
@@ -50,20 +52,23 @@ export default async function AdminLayout({
           roleName={session.membership.roleName}
         />
         <OfflineProvider>
-          <div className="flex min-w-0 flex-1 flex-col">
-            <AdminTopBar
-              tenantName={session.tenant.name}
-              notificationCount={unread}
-            />
-            {/* Admin work is never queued — the bar says so plainly. */}
-            <AdminOfflineBar />
-            <main
-              id="main"
-              className="mx-auto w-full max-w-[var(--stf-layout-content-max-width)] flex-1 px-5 py-5 lg:px-8"
-            >
-              {children}
-            </main>
-          </div>
+          <ActionQueueProvider enabled={session.source === "supabase"}>
+            <div className="flex min-w-0 flex-1 flex-col">
+              <AdminTopBar
+                tenantName={session.tenant.name}
+                notificationCount={unread}
+              />
+              {/* Admin work is never queued — the bar says so plainly. */}
+              <AdminOfflineBar />
+              <main
+                id="main"
+                className="mx-auto w-full max-w-[var(--stf-layout-content-max-width)] flex-1 px-5 py-5 lg:px-8"
+              >
+                {children}
+              </main>
+            </div>
+            <ActionTiles />
+          </ActionQueueProvider>
         </OfflineProvider>
       </ToastProvider>
     </div>

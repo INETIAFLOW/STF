@@ -5,6 +5,7 @@ import { z } from "zod";
 import { getDb } from "@/lib/db";
 import { recordAuditEvent } from "@/lib/audit";
 import { notify } from "@/lib/notifications";
+import { clearActionRequest, raiseTaskProof, SUBJECT } from "@/lib/actions/raise";
 import { checkAccess } from "@/lib/authz/guard";
 
 /**
@@ -290,6 +291,15 @@ export async function submitProofAction(
     task.title,
     task.id,
   );
+  if (nextStatus === "SUBMITTED_FOR_REVIEW") {
+    await raiseTaskProof(
+      session,
+      task.id,
+      session.membership.id,
+      session.user.displayName,
+      task.title,
+    );
+  }
 
   revalidatePath("/tasks");
   revalidatePath("/home");
@@ -379,6 +389,13 @@ export async function reviewProofAction(
     before: { status: task.status },
     after: { status: nextStatus, decision: parsed.data.decision },
   });
+
+  await clearActionRequest(
+    session,
+    SUBJECT.taskProof,
+    task.id,
+    parsed.data.decision,
+  );
 
   await notify.proofDecision(
     session,

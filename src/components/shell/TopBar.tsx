@@ -1,7 +1,6 @@
 import Image from "next/image";
-import { Bell } from "lucide-react";
 import { cn } from "@/lib/cn";
-import { IconButton } from "@/components/ui/IconButton";
+import { NotificationBell } from "@/components/actions/NotificationBell";
 
 /**
  * Top bars (component-specifications.md §17).
@@ -30,31 +29,19 @@ export function AdminTopBar({
         </span>
       </div>
       <div className="flex items-center gap-2">
-        <IconButton
-          label={
-            notificationCount > 0
-              ? `Notifications, ${notificationCount} unread`
-              : "Notifications"
-          }
-        >
-          <span className="relative inline-flex">
-            <Bell />
-            {notificationCount > 0 && (
-              <span
-                aria-hidden="true"
-                className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-pill bg-brand-primary px-1 font-mono text-[10px] font-semibold text-text-on-primary"
-              >
-                {notificationCount > 9 ? "9+" : notificationCount}
-              </span>
-            )}
-          </span>
-        </IconButton>
+        <NotificationBell initialUnread={notificationCount} />
       </div>
     </header>
   );
 }
 
-export function EmployeeTopBar({ title }: { title: string }) {
+export function EmployeeTopBar({
+  title,
+  notificationCount = 0,
+}: {
+  title: string;
+  notificationCount?: number;
+}) {
   return (
     <header
       className={cn(
@@ -72,6 +59,9 @@ export function EmployeeTopBar({ title }: { title: string }) {
       <span className="min-w-0 flex-1 truncate text-label text-text-primary">
         {title}
       </span>
+      {/* A team leader approves work from the same phone they check in on,
+          so the bell belongs here too, not only in the admin shell. */}
+      <NotificationBell initialUnread={notificationCount} />
     </header>
   );
 }

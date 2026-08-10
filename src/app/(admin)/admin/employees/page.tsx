@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { UserPlus } from "lucide-react";
 import { checkAccess } from "@/lib/authz/guard";
 import { getDb } from "@/lib/db";
 import { devFixtureOffline } from "@/lib/auth/fixture";
@@ -8,6 +9,7 @@ import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { StatusChip } from "@/components/ui/StatusChip";
 import { STATUS, type Status } from "@/lib/status";
+import { computeInviteStatus } from "@/lib/invites/policy";
 import { BranchFilter } from "@/components/filters/BranchFilter";
 import {
   branchName,
@@ -71,10 +73,30 @@ export default async function AdminEmployeesPage({
               }
             : {}),
         },
-        include: { user: true, branch: true, role: true },
+        include: {
+          user: true,
+          branch: true,
+          role: true,
+          department: true,
+          invites: { orderBy: { createdAt: "desc" }, take: 1 },
+        },
         orderBy: [{ status: "asc" }, { createdAt: "asc" }],
         take: 200,
       });
+
+  const now = new Date();
+  /**
+   * What to show in the Status column. For someone who has joined, their
+   * membership status is the useful fact; for someone who has not, the
+   * state of their invitation is — "Invited" alone does not tell an admin
+   * whether to chase, resend or wait.
+   */
+  function displayStatus(member: (typeof members)[number]): Status {
+    if (member.status !== "INVITED") {
+      return membershipStatus[member.status] ?? STATUS.active;
+    }
+    return computeInviteStatus(member.invites[0] ?? null, now);
+  }
 
   const total = devFixtureOffline()
     ? 0
@@ -88,7 +110,18 @@ export default async function AdminEmployeesPage({
     <div className="flex flex-col gap-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <h1 className="font-heading text-h1 text-text-primary">Employees</h1>
-        <BranchFilter options={branchOptions} selected={branchFilter} />
+        <div className="flex flex-wrap items-end gap-3">
+          <BranchFilter options={branchOptions} selected={branchFilter} />
+          {session.permissions.has("employees.manage") && (
+            <Link
+              href="/admin/employees/new"
+              className="inline-flex h-11 items-center gap-2 rounded-button bg-brand-primary px-5 text-label text-text-on-primary hover:brightness-[0.94]"
+            >
+              <UserPlus className="size-4" aria-hidden="true" />
+              Add employee
+            </Link>
+          )}
+        </div>
       </div>
 
       <EmployeeSearch
@@ -152,7 +185,7 @@ export default async function AdminEmployeesPage({
                       </p>
                     </div>
                     <StatusChip
-                      status={membershipStatus[member.status] ?? STATUS.active}
+                      status={displayStatus(member)}
                       size="sm"
                     />
                   </div>
@@ -228,10 +261,7 @@ export default async function AdminEmployeesPage({
                       {member.user.phone ?? member.user.email ?? "—"}
                     </td>
                     <td className="px-4 py-2.5">
-                      <StatusChip
-                        status={membershipStatus[member.status] ?? STATUS.active}
-                        size="sm"
-                      />
+                      <StatusChip status={displayStatus(member)} size="sm" />
                     </td>
                   </tr>
                 ))}

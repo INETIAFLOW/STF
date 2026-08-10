@@ -5,6 +5,7 @@ import { z } from "zod";
 import { getDb } from "@/lib/db";
 import { recordAuditEvent } from "@/lib/audit";
 import { notify } from "@/lib/notifications";
+import { clearActionRequest, raiseLeaveRequest, SUBJECT } from "@/lib/actions/raise";
 import { checkAccess } from "@/lib/authz/guard";
 import {
   formatDateRange,
@@ -139,10 +140,14 @@ export async function requestLeaveAction(
     },
   });
 
-  await notify.leaveRequested(
+  const dates = formatDateRange(start, end, session.tenant.timezone);
+  await notify.leaveRequested(session, request.id, dates);
+  await raiseLeaveRequest(
     session,
     request.id,
-    formatDateRange(start, end, session.tenant.timezone),
+    session.membership.id,
+    session.user.displayName,
+    dates,
   );
 
   revalidatePath("/leave");
@@ -229,6 +234,13 @@ export async function decideLeaveAction(
       unpaidDays: paid ? 0 : request.unpaidDays,
     },
   });
+
+  await clearActionRequest(
+    session,
+    SUBJECT.leave,
+    request.id,
+    parsed.data.decision,
+  );
 
   if (parsed.data.decision !== "DETAILS_REQUESTED") {
     await notify.leaveDecision(

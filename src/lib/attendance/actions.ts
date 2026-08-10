@@ -5,6 +5,11 @@ import { z } from "zod";
 import { getDb } from "@/lib/db";
 import { recordAuditEvent } from "@/lib/audit";
 import { notify } from "@/lib/notifications";
+import {
+  clearActionRequest,
+  raiseAttendanceException,
+  SUBJECT,
+} from "@/lib/actions/raise";
 import { checkAccess } from "@/lib/authz/guard";
 import { getPolicyVersion } from "@/lib/policies";
 import {
@@ -231,6 +236,13 @@ export async function checkInAction(
         },
       });
       await notify.attendanceException(session, existing.id);
+      await raiseAttendanceException(
+        session,
+        existing.id,
+        session.membership.id,
+        session.user.displayName,
+        "Two different check-in times for this day. Both are on the record.",
+      );
 
       return {
         ok: true,
@@ -325,6 +337,15 @@ export async function checkInAction(
 
   if (needsReview) {
     await notify.attendanceException(session, record.id);
+    await raiseAttendanceException(
+      session,
+      record.id,
+      session.membership.id,
+      session.user.displayName,
+      state.location.outcome === "OUTSIDE"
+        ? `Checked in ${state.location.distanceM ?? "?"} m from ${state.location.branch?.name ?? "the permitted area"}.`
+        : "Checked in with location unavailable.",
+    );
   }
 
   revalidatePath("/home");
@@ -526,6 +547,13 @@ export async function requestCheckOutCorrectionAction(
   });
 
   await notify.attendanceException(session, record.id);
+  await raiseAttendanceException(
+    session,
+    record.id,
+    session.membership.id,
+    session.user.displayName,
+    `Asked to record a check-out at ${parsed.data.checkOutTime}.`,
+  );
 
   revalidatePath("/attendance");
   revalidatePath("/admin/attendance");
@@ -609,6 +637,13 @@ export async function reviewAttendanceAction(
     before,
     after: { reviewStatus: parsed.data.decision },
   });
+
+  await clearActionRequest(
+    session,
+    SUBJECT.attendance,
+    record.id,
+    parsed.data.decision,
+  );
 
   await notify.attendanceDecision(
     session,

@@ -50,6 +50,12 @@ const TENANT_TABLES = [
   "payroll_runs",
   "payroll_lines",
   "payroll_adjustments",
+  "departments",
+  // Invitation tokens are hashed, but the row still says who was invited
+  // to which company and when — tenant data either way.
+  "employee_invites",
+  "action_requests",
+  "action_request_recipients",
   "users",
 ];
 

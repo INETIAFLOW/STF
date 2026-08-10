@@ -356,3 +356,106 @@ be lost and offers to send it, rather than clearing quietly.
 **D-P7-08 · 2026-08-09 · Admin work is never queued** — Approvals, payroll
 and configuration require a connection; the admin bar says so. STF will
 not accept a decision it cannot guarantee (implementation guide §7).
+
+---
+
+## Phase 8 — Employee onboarding and the action queue
+
+**D-P8-01 · 2026-08-10 · STF owns the invitation; Supabase owns the
+password** — Supabase's own invite email would have been less code, but the
+state we need (Pending / Accepted / Expired / Revoked, resend counts,
+cooldown, a copyable link) would live in a system we cannot query, and the
+message would be branded Supabase rather than the employer. So STF issues
+its own token and sends its own email; only the auth account is Supabase's.
+
+**D-P8-02 · 2026-08-10 · Only the hash of a token is stored** — 32 CSPRNG
+bytes, shown once, `sha256` in the database as the unique index. A leaked
+backup yields no working links. Single use is enforced by a conditional
+`updateMany` on status, so two tabs racing produce one acceptance rather
+than two. Resending revokes the previous token — an invitation that leaked
+cannot be revived by asking an admin to send it again.
+
+**D-P8-03 · 2026-08-10 · Expiry is computed, never stored** — A row can say
+PENDING while the clock says expired, and the clock wins. No scheduled job
+exists, so no scheduled job can fail and leave the directory claiming an
+invitation is live when it is not.
+
+**D-P8-04 · 2026-08-10 · A person without an email is still an employee** —
+An SME hires people who have no email address. Their record, attendance and
+payslips work identically; only the login is missing, and the screen says
+so in those words. The alternative — a synthetic address — creates an
+account nobody can reach and a password reset that goes nowhere.
+
+**D-P8-05 · 2026-08-10 · Duplicate messages stop at the tenant boundary** —
+Email and phone are unique platform-wide, which is a way to probe whether
+an address is registered. A clash inside your own company names the
+colleague; a clash anywhere else says only "can't be used here". True,
+actionable, and it confirms nothing about another tenant.
+
+**D-P8-06 · 2026-08-10 · Departments are not Branches** — A branch is a
+place; a department is who reports to whom. One warehouse holds three
+departments and one department spans three warehouses, so folding them
+together would have made both wrong. Departments carry a head, which is the
+only reason they exist in V1.
+
+**D-P8-07 · 2026-08-10 · Being a department head grants no permission** —
+It only adds someone to the audience for their team's decisions, and they
+must already hold the deciding permission for a tile to reach them.
+Sending an Approve button to someone whose role cannot approve produces a
+button that fails when pressed. The department screen states the gap in
+words instead.
+
+**D-P8-08 · 2026-08-10 · Tiles are raised for decisions, not for events** —
+The request was "every task assignment, check in, leave request". As built,
+only work needing a human ruling raises a tile: an out-of-area check-in
+does, an ordinary on-time check-in does not. Thirty daily interruptions get
+notifications muted within a week, and then the exception is missed too.
+Everything else still reaches the bell, so nothing is lost — it is the
+difference between a record and an interruption.
+
+**D-P8-09 · 2026-08-10 · Approve inline only where nothing else is needed**
+— Attendance exceptions and task proof can be approved from the tile.
+Leave cannot, because approving leave means choosing paid or unpaid, which
+changes what someone is paid; a one-tap Approve would be a decision made
+with its consequence off screen. Rejection is never inline: it always needs
+a reason, and the employee reads that reason word for word.
+
+**D-P8-10 · 2026-08-10 · A tile is not a modal** — A decision request
+arrives while someone is doing something else. Blocking the screen to
+demand attention is how a queue gets dismissed reflexively. It is anchored
+above the bottom navigation, shows one at a time with a count of the rest,
+and can be deferred but never dismissed — the only way out is a decision.
+
+**D-P8-11 · 2026-08-10 · Snooze is a stored promise, per person** — "Ask me
+again at 6" that does not survive a restart is not a promise, so
+`snoozedUntil` is a column. It is per recipient, so a supervisor deferring
+something cannot hide it from the owner. Capped at five: ten snoozes is not
+a scheduling preference, it is an unmade decision.
+
+**D-P8-12 · 2026-08-10 · The sound is off until someone turns it on** —
+Browsers refuse audio before a user gesture, so the AudioContext is created
+on the toggle click and the chime plays once so the person hears what they
+enabled. It is synthesised rather than a file: nothing to fetch on a bad
+connection, nothing to 404 after a deploy. It fires once per batch, not
+once per item, and the toggle sits next to the bell rather than in Settings
+— the moment someone wants a sound off is the moment it just went off.
+
+**D-P8-13 · 2026-08-10 · Polling, not Realtime** — RLS denies the anon key
+everything by design. Supabase Realtime would need a hole opened in that
+for a convenience feature. A 30-second poll, paused while the tab is
+hidden, is the cheaper trade.
+
+**D-P8-14 · 2026-08-10 · Approving from a tile calls the same action as the
+screen** — Same permission check, same audit event, same notification.
+There is no second code path, so there is nothing to drift.
+
+**D-P8-15 · 2026-08-10 · Acceptance is audited as SYSTEM** — The person
+accepting has no session yet, and attributing the event to the admin who
+sent the invitation would say that admin did something they did not do.
+
+**D-P8-16 · 2026-08-10 · Neither feature is behind a flag** — FEATURE-FLAGS
+requires a coherent off-state and a retirement path. "Invitation off" is a
+workforce product you cannot add anyone to; "tiles off" leaves the
+notifications and removes only the ability to act on them. Both would be
+born retired. The module and permission checks underneath already govern
+them.

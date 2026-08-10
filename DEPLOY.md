@@ -70,7 +70,7 @@ connect from a cloud machine, that is why — use the session pooler.
 3. Framework preset: **Next.js** (auto-detected). Leave the build and
    output settings alone — the repo already runs `prisma generate` as part
    of its build.
-4. **Environment Variables** — add these four to *Production* **and**
+4. **Environment Variables** — add these to *Production* **and**
    *Preview*:
 
 ```
@@ -78,7 +78,21 @@ NEXT_PUBLIC_SUPABASE_URL=https://mcwuzmzslujnlzagijhc.supabase.co
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_71oQXHaySqLbSXlyUyX-iw_d4u16_er
 DATABASE_URL=<transaction pooler string, port 6543>
 DIRECT_URL=<session pooler string, port 5432>
+SUPABASE_SECRET_KEY=<Settings → API Keys → secret key, sb_secret_…>
+NEXT_PUBLIC_SITE_URL=https://yourdomain.com
 ```
+
+   **`SUPABASE_SECRET_KEY` is what lets you add employees.** Without it,
+   people can be added to the directory but no sign-in account is created,
+   and the invitation page says so. Get it from Supabase → Settings → API
+   Keys → *secret key* (or the legacy `service_role` key).
+
+   ⚠️ That key bypasses Row Level Security and can read every row in the
+   project. It has no `NEXT_PUBLIC_` prefix, and the module that uses it is
+   marked `server-only` so a client component importing it fails the build
+   rather than shipping it to a browser. Treat it like the database
+   password: never in a commit, never in a client component, rotated if
+   exposed.
 
    Do **not** set `STF_DEV_FAKE_SESSION`. It is ignored outside
    development, but there is no reason for it to exist in production.
@@ -136,6 +150,10 @@ supervisor.
 
 ---
 
+Point Supabase's SMTP settings and STF's `SMTP_*` variables at the **same
+provider account** — one set of credentials, two consumers (Supabase sends
+password resets, STF sends invitations).
+
 ## 7. Create the customer's company (15 min)
 
 The database currently holds a **demo tenant with placeholder people**.
@@ -152,9 +170,9 @@ Users → **Add user** → same email → set a password → tick *Auto Confirm*
 The two link by verified email on first sign-in.
 
 Sign in as them and set up the company (locations, shifts, rules,
-modules). `PILOT.md` is written to be handed to the owner for this.
-
-⚠️ **See warning A below about adding the rest of the employees.**
+departments, modules). `PILOT.md` is written to be handed to the owner for
+this. Everyone after the owner is added from the screen — see *Adding the
+rest of the team* below.
 
 ---
 
@@ -169,21 +187,25 @@ modules). `PILOT.md` is written to be handed to the owner for this.
 
 ---
 
-## Warning A — you cannot add employees from the screen yet
+## Adding the rest of the team
 
-The employee directory **edits** people; it does not create them. Adding
-someone today means two manual steps per person: create a Supabase auth
-user in the dashboard, and run a script to create their membership. For
-five people that is tedious. For fifty it is a bad afternoon and a source
-of typos in people's pay.
+Employees → **Add employee**. Name, mobile number and role are the only
+required fields. With an email address they get an invitation and set
+their own password; the directory then shows **Pending**, **Accepted** or
+**Expired**, and you can resend, withdraw or deactivate from their profile.
 
-**This is a code gap, not a configuration one.** An invite flow — admin
-types a name and phone/email, STF sends the invitation, the person sets
-their own password — is roughly half a day of work and is the single
-thing most worth building before a real rollout.
+Two things to know before you start:
 
-Until it exists, the honest version to tell the customer is: "send us your
-staff list and we will load it for you" — and budget the time.
+- **Without `SUPABASE_SECRET_KEY` (step 3) nobody can sign in.** People are
+  still added and their attendance still records — but no sign-in account
+  is created, and the invitation page says so plainly. Set the key first.
+- **Without SMTP (step 6) no invitation is emailed.** STF does not pretend
+  otherwise: it shows you a copyable link to send by WhatsApp instead. That
+  link is also the answer for staff who have no email address at all.
+
+An invitation lasts 7 days and works once. Resending issues a **new** link
+and kills the old one, so a link that leaked cannot be revived by asking
+for another.
 
 ## Warning B — what you are taking on with real employee data
 

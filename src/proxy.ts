@@ -14,6 +14,9 @@ const PUBLIC_PATHS = [
   "/sign-in",
   "/forgot-password",
   "/reset",
+  // Invitation links are opened by people who have no account yet; the
+  // token in the path is the credential, checked server-side.
+  "/invite",
   "/auth",
   "/product",
   "/modules",

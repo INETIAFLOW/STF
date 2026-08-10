@@ -28,3 +28,49 @@ Separate permissions for salary view/edit/approve, bank details view/edit, docum
 
 ## Give this to Claude
 Create a role-and-permission management UX that starts with safe role templates and permits granular overrides. Make record scope and sensitive-data access visible before saving changes.
+
+---
+
+# Amendment 1 — Invitation and department authority
+*Approved 10 August 2026. Appended, not rewritten.*
+
+## Who may invite
+
+`employees.manage` — the existing permission — now also covers inviting,
+resending, withdrawing and deactivating. It is held by Owner, Super Admin,
+Admin and HR in the default templates; Manager and Team Leader do **not**
+hold it, so they cannot create logins.
+
+No new permission was added. Inviting is adding an employee, and splitting
+it would let a tenant grant "can add people" without "can give them
+access", which is not a distinction an SME wants to reason about.
+
+## Department head
+
+A department head is a **membership**, not a role. Being a head does not
+grant any permission; it only adds someone to the audience for their
+team's decisions, and they must already hold the deciding permission for
+the tile to reach them.
+
+That constraint is deliberate. Sending an Approve button to someone whose
+role cannot approve produces a button that fails when pressed. Instead the
+department screen states the gap in words — *"Meera heads Dispatch but
+their role can't approve anything, so requests go to admins only"* — so
+an owner can fix it rather than wonder why nothing arrives.
+
+## Deciding permissions
+
+| Decision | Permission |
+|---|---|
+| Attendance exception | `attendance.review` |
+| Leave request | `leave.approve` |
+| Task proof | `tasks.manage` |
+| Outstanding invitation | `employees.manage` |
+
+## Protections
+
+- Nobody decides their own request, whatever their role — including a
+  department head deciding about themselves.
+- The last active Owner cannot be deactivated. A company must never be
+  left with nobody who can manage it.
+- Nobody can deactivate their own account.

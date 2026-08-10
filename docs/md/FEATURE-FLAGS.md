@@ -22,3 +22,39 @@ Module Management lists modules, dependencies, current scope, users affected, an
 
 ## Give this to Claude
 Design a Module Management panel with clear module cards, feature-level controls, dependency warnings, affected-user counts, confirmation states, and audit history. Do not make switches decorative: document their server-side enforcement contract.
+
+---
+
+# Amendment 1 — Onboarding and action tiles
+*Approved 10 August 2026. Appended, not rewritten.*
+
+## No new flags
+
+Neither employee invitation nor the action queue is behind a flag, and
+that is a decision rather than an omission.
+
+This document requires every flag to have a coherent off-state and a
+retirement path. Neither has one:
+
+- **Invitation off** means a workforce product where you cannot add anyone
+  to the workforce. That is not a configuration, it is a broken install.
+- **Action tiles off** would leave the notifications that already exist and
+  remove only the ability to act on them quickly. Nothing is gated that
+  was not already gated by the module and permission checks underneath.
+
+Both would be born retired, which the lifecycle rules above forbid.
+
+## What governs them instead
+
+The existing evaluation order does all the work, server-side:
+
+- Inviting requires the **EMPLOYEES** module and `employees.manage`.
+- A tile is only raised for a module that is enabled, and only reaches
+  someone whose role holds the deciding permission for that kind.
+- Turning off **LEAVE** stops leave tiles, because it stops leave
+  requests. Nothing separate needs switching.
+
+The one genuinely optional behaviour — the **notification sound** — is a
+per-person preference stored on their own device, off by default. It is
+not a tenant flag, because whether a warehouse is too loud for a chime is
+not a decision an owner should be making for someone else's phone.

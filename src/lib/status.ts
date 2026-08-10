@@ -58,6 +58,14 @@ export const STATUS = {
   enabled: s("enabled", "Enabled", "success"),
   disabled: s("disabled", "Disabled", "neutral"),
   notAvailable: s("not-available", "Not available", "neutral"),
+  /// Invitation lifecycle (Employee Invite & Onboarding).
+  invitePending: s("invite-pending", "Pending", "info"),
+  inviteAccepted: s("invite-accepted", "Accepted", "success"),
+  inviteExpired: s("invite-expired", "Expired", "warning"),
+  inviteRevoked: s("invite-revoked", "Revoked", "neutral"),
+  /// An employee record that exists but cannot yet sign in.
+  inviteNotSent: s("invite-not-sent", "Not invited", "neutral"),
+  snoozed: s("snoozed", "Snoozed", "neutral"),
 } as const;
 
 /** Parameterised fixed labels (copy-deck.md §1). */

@@ -112,6 +112,31 @@ Legend: **Met** · **Partly met** · **Not met** · **N/A**
 | Server time authoritative, echoed back | **Met** — for online actions. Offline actions are device-timed **by design** (edge-cases.md), flagged `offlineCaptured`, with the clock skew recorded for review. |
 | Signing out does not silently discard queued work | **Met** — it names what would be lost and offers to send it first. |
 
+## L. Employee invitation and the action queue
+
+*Added 10 August 2026 with the onboarding work.*
+
+| Item | Result |
+|---|---|
+| Admin creates an employee from the UI | **Met** — name, mobile, email, employee ID, department, designation, reporting manager, joining date, employment type and role. Three required. |
+| Auth account created without exposing admin credentials | **Met** — `server-only` module, no `NEXT_PUBLIC_` prefix, key never reaches a client bundle. |
+| Invitation email, and password set by the employee | **Partly met** — the flow is built and the invitation page is verified in-browser. **The password-set → sign-in leg has not been run end to end**, because it needs `SUPABASE_SECRET_KEY` and an SMTP account, neither of which is configured yet. |
+| Profile and membership linked automatically | **Met** — one transaction; verified by smoke test. |
+| Role and permissions assigned | **Met** — chosen at invite, enforced by the existing evaluator. |
+| Duplicate email / mobile / employee ID prevented | **Met** — normalised before comparison, so `+91 98765 43210` and `09876543210` are one person. Database constraint backs the check. |
+| Resend invitation | **Met** — new token, old one revoked, 2-minute cooldown, capped at 5. |
+| Status Pending / Accepted / Expired | **Met** — computed against the clock, so no job is needed to keep it true. |
+| Deactivate an employee | **Met** — reason required and kept; sessions revoked; records untouched; last owner protected. |
+| Audit for invite, acceptance, resend, deactivation | **Met** — acceptance is recorded as SYSTEM, since the invitee has no session and attributing it to the admin would be false. |
+| Tenant isolation at every step | **Met** — every query filtered by session tenant; cross-tenant messages reveal nothing. Verified by smoke test. |
+| Action tile with approve / reject / snooze | **Partly met** — approve is inline where approving needs no further input; **reject and leave-approval open the full screen by design**, because a rejection needs a reason and approving leave needs a paid/unpaid choice. A one-tap version of either would hide the consequence. |
+| Snooze with a time option | **Met** — 15 min, 1 hour, this evening, tomorrow morning, each naming the resolved wall-clock time. Per person, capped at 5. |
+| Notification sound | **Met** — WebAudio chime, off by default, unlocked on a user gesture as browsers require, once per batch rather than once per item. |
+| Notification bell | **Met** — counts decisions first, unread notices second; the accessible name states both. |
+| Reaches admin and the department head | **Met** — and a head whose role cannot approve is excluded rather than given a button that fails, with the gap stated on the department screen. |
+| Automated tests | **Met** — 69 unit tests plus a 20-check database smoke suite. |
+| Mobile-first loading / success / error states | **Met** — verified at 375px: no horizontal scroll, disabled controls state their reason. |
+
 ## I. Scope discipline
 
 | Item | Result |

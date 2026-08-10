@@ -9,9 +9,21 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { StatusChip } from "@/components/ui/StatusChip";
 import { STATUS, statusLate, type Status } from "@/lib/status";
 import { formatClockTime } from "@/lib/attendance/policy";
+import { computeInviteStatus } from "@/lib/invites/policy";
 import { EmployeeForm } from "./EmployeeForm";
 import { DocumentsPanel } from "./DocumentsPanel";
 import { SensitivePanel } from "./SensitivePanel";
+import { InvitePanel } from "./InvitePanel";
+
+/** "7 Aug 2026" in the tenant's timezone (copy-deck.md §1). */
+function formatDay(at: Date, timeZone: string): string {
+  return new Intl.DateTimeFormat("en-IN", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    timeZone,
+  }).format(at);
+}
 
 export const metadata: Metadata = { title: "Employee" };
 
@@ -51,9 +63,12 @@ export default async function EmployeeProfilePage({
       shift: true,
       reportingTo: { include: { user: true } },
       documents: { orderBy: { uploadedAt: "desc" } },
+      invites: { orderBy: { createdAt: "desc" }, take: 1 },
     },
   });
   if (!member) notFound();
+
+  const latestInvite = member.invites[0];
 
   const canManage = session.permissions.has("employees.manage");
   const canSeeDocuments = session.permissions.has("documents.view");
@@ -105,6 +120,34 @@ export default async function EmployeeProfilePage({
           {member.branch && ` · ${member.branch.name}`}
         </p>
       </div>
+
+      <InvitePanel
+        membershipId={member.id}
+        employeeName={member.user.displayName}
+        email={member.user.email}
+        inviteStatus={
+          member.status === "DEACTIVATED"
+            ? STATUS.inactive
+            : member.status === "ACTIVE" && !latestInvite
+              ? STATUS.active
+              : computeInviteStatus(latestInvite ?? null, new Date())
+        }
+        sentAt={
+          latestInvite?.sentAt
+            ? formatDay(latestInvite.sentAt, tz)
+            : null
+        }
+        expiresAt={
+          latestInvite?.acceptedAt
+            ? formatDay(latestInvite.acceptedAt, tz)
+            : latestInvite
+              ? formatDay(latestInvite.expiresAt, tz)
+              : null
+        }
+        resendCount={latestInvite?.resendCount ?? 0}
+        isDeactivated={member.status === "DEACTIVATED"}
+        canManage={canManage}
+      />
 
       <EmployeeForm
         canManage={canManage}
