@@ -24,10 +24,42 @@ const PUBLIC_PATHS = [
   "/demo",
 ];
 
+/**
+ * Pages with no notion of a viewer. These skip the auth check entirely, so
+ * the public site stays up even when Supabase does not.
+ */
+const MARKETING_PATHS = ["/product", "/modules", "/pricing", "/demo"];
+
 function isPublic(pathname: string): boolean {
   return PUBLIC_PATHS.some(
     (p) => pathname === p || pathname.startsWith(`${p}/`),
   );
+}
+
+/** How long to wait for the auth server before giving up on this request. */
+const AUTH_TIMEOUT_MS = 3000;
+
+const TIMED_OUT = Symbol("auth-timeout");
+
+async function withTimeout<T>(
+  promise: Promise<T>,
+  ms: number,
+): Promise<T | typeof TIMED_OUT> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      promise,
+      new Promise<typeof TIMED_OUT>((resolve) => {
+        timer = setTimeout(() => resolve(TIMED_OUT), ms);
+      }),
+    ]);
+  } catch {
+    // A rejected auth call is the same situation as a slow one: we do not
+    // know who this is, so let the page's own guard decide.
+    return TIMED_OUT;
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
 }
 
 function devFixtureActive(): boolean {
@@ -54,6 +86,13 @@ export default async function proxy(request: NextRequest) {
     return NextResponse.redirect(marketing);
   }
 
+  // Marketing pages belong to nobody, so they must not wait on an identity
+  // provider to be served. Skipping the call here also means a Supabase
+  // outage cannot take the public site down with it.
+  if (MARKETING_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`))) {
+    return NextResponse.next();
+  }
+
   let response = NextResponse.next({ request });
   const supabase = createServerClient(url, key, {
     cookies: {
@@ -72,9 +111,21 @@ export default async function proxy(request: NextRequest) {
     },
   });
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // `getUser()` is a network call to Supabase, and it has no timeout of its
+  // own. Without this bound, one slow or unreachable auth server hangs
+  // EVERY request — including a host's health check, which then restarts
+  // the app, which changes nothing, forever. Learned the hard way.
+  //
+  // On timeout we fail OPEN rather than closed. That is safe here and only
+  // here: this layer answers "is anyone signed in?" as an optimisation, and
+  // every page and server action re-checks with requireSession() against
+  // the database (src/lib/authz/guard.ts). Failing closed would sign
+  // everyone out during a blip; failing open lets the real guard decide.
+  const user = await withTimeout(
+    supabase.auth.getUser().then((result) => result.data.user),
+    AUTH_TIMEOUT_MS,
+  );
+  if (user === TIMED_OUT) return response;
 
   // The root path routes signed-out visitors to marketing, not sign-in.
   if (!user && !isPublic(pathname) && pathname !== "/") {
