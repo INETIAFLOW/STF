@@ -329,6 +329,44 @@ export const ROLE_TEMPLATES: ReadonlyArray<{
   },
 ];
 
+/**
+ * The order roles are offered in when adding someone, least powerful
+ * first, and what each one means in one line.
+ *
+ * Alphabetical order put **Admin** at the top, and a form that defaults to
+ * its first option therefore handed the most privileged non-owner role to
+ * anyone added without touching the dropdown. Least-privilege-first is the
+ * only safe default for a control that grants access.
+ */
+export const ROLE_PICKER_ORDER: readonly string[] = [
+  "EMPLOYEE",
+  "TEAM_LEADER",
+  "MANAGER",
+  "HR",
+  "ADMIN",
+  "SUPER_ADMIN",
+  "VIEWER",
+  "OWNER",
+];
+
+/** Stated under the role picker so the grant is never silent. */
+export const ROLE_CONSEQUENCE: Record<string, string> = {
+  EMPLOYEE:
+    "Sees only their own attendance, leave, tasks and payslips. No admin area.",
+  TEAM_LEADER:
+    "Assigns and reviews work in their team. No admin area, no approvals.",
+  MANAGER:
+    "Opens the admin area. Approves leave and attendance, manages tasks. No salary or bank details.",
+  HR: "Opens the admin area. Manages people, documents and leave, and can view salary amounts.",
+  ADMIN:
+    "Opens the admin area and runs people operations for the whole company.",
+  SUPER_ADMIN:
+    "Opens the admin area with near-full control, including roles and company settings.",
+  VIEWER: "Read-only. Sees employees and reports, changes nothing.",
+  OWNER:
+    "Full control of the company, including payroll approval. Give this sparingly.",
+};
+
 /** V1 modules enabled for a new tenant by default. */
 export const DEFAULT_ENABLED_MODULES: ModuleKey[] = [
   "EMPLOYEES",

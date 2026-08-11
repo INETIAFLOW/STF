@@ -19,6 +19,11 @@ import {
   normaliseMobile,
   RESEND_COOLDOWN_MS,
 } from "@/lib/invites/policy";
+import {
+  ROLE_CONSEQUENCE,
+  ROLE_PICKER_ORDER,
+  ROLE_TEMPLATES,
+} from "@/lib/catalog";
 
 const NOW = new Date("2026-08-10T10:00:00.000Z");
 const later = (ms: number) => new Date(NOW.getTime() + ms);
@@ -328,5 +333,48 @@ describe("sign-in readiness is stated, not implied", () => {
 
   it("treats whitespace as no email", () => {
     expect(describeSignInReadiness("   ").canInvite).toBe(false);
+  });
+});
+
+describe("the role picker defaults to the least it can", () => {
+  it("offers Employee first, not Admin", () => {
+    // Alphabetical order put Admin first, and a form that defaults to its
+    // first option therefore granted Admin to anyone added without opening
+    // the dropdown. Reached production; a new hire was created as HR/Admin
+    // rather than Employee.
+    expect(ROLE_PICKER_ORDER[0]).toBe("EMPLOYEE");
+  });
+
+  it("never offers an admin-area role before a non-admin one", () => {
+    const opensAdmin = new Set(["MANAGER", "HR", "ADMIN", "SUPER_ADMIN", "OWNER"]);
+    const firstAdmin = ROLE_PICKER_ORDER.findIndex((k) => opensAdmin.has(k));
+    const lastPlain = ROLE_PICKER_ORDER.reduce(
+      (acc, k, i) => (!opensAdmin.has(k) && k !== "VIEWER" ? i : acc),
+      -1,
+    );
+    expect(firstAdmin).toBeGreaterThan(lastPlain);
+  });
+
+  it("puts Owner last — the most powerful role is never a default", () => {
+    expect(ROLE_PICKER_ORDER[ROLE_PICKER_ORDER.length - 1]).toBe("OWNER");
+  });
+
+  it("explains every role it offers", () => {
+    for (const key of ROLE_PICKER_ORDER) {
+      expect(ROLE_CONSEQUENCE[key], `no consequence line for ${key}`).toBeTruthy();
+    }
+  });
+
+  it("covers every role template the catalog defines", () => {
+    for (const tpl of ROLE_TEMPLATES) {
+      expect(ROLE_PICKER_ORDER, `${tpl.key} missing from the picker order`).toContain(tpl.key);
+    }
+  });
+
+  it("says plainly which roles open the admin area", () => {
+    for (const key of ["MANAGER", "HR", "ADMIN", "SUPER_ADMIN"]) {
+      expect(ROLE_CONSEQUENCE[key].toLowerCase()).toContain("admin area");
+    }
+    expect(ROLE_CONSEQUENCE.EMPLOYEE.toLowerCase()).toContain("no admin area");
   });
 });

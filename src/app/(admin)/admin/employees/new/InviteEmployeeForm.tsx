@@ -29,6 +29,8 @@ import { describeSignInReadiness } from "@/lib/invites/policy";
 export interface Option {
   value: string;
   label: string;
+  /** For roles: one line on what this grants, shown under the picker. */
+  consequence?: string;
 }
 
 const EMPLOYMENT_TYPES: Option[] = [
@@ -281,7 +283,10 @@ export function InviteEmployeeForm({
             options={roles}
             value={form.roleId}
             onChange={(e) => set("roleId")(e.target.value)}
-            helper="Decides what they can see and do. You can change it later."
+            helper={
+              roles.find((r) => r.value === form.roleId)?.consequence ??
+              "Decides what they can see and do."
+            }
           />
           <Select
             label="Work location"

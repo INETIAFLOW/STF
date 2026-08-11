@@ -7,6 +7,7 @@ import { getDb } from "@/lib/db";
 import { devFixtureOffline } from "@/lib/auth/fixture";
 import { emailConfigured } from "@/lib/email/send";
 import { supabaseAdminConfigured } from "@/lib/supabase/admin";
+import { ROLE_CONSEQUENCE, ROLE_PICKER_ORDER } from "@/lib/catalog";
 import { Alert } from "@/components/ui/Alert";
 import { InviteEmployeeForm } from "./InviteEmployeeForm";
 
@@ -52,6 +53,20 @@ export default async function NewEmployeePage() {
 
   const canSignIn = supabaseAdminConfigured();
 
+  /**
+   * Least powerful first. Alphabetical order put Admin at the top, and the
+   * form defaults to its first option — so adding someone without opening
+   * the dropdown granted them Admin. A picker that grants access must
+   * default to the least it can.
+   */
+  const orderedRoles = [...roles].sort((a, b) => {
+    const rank = (key: string) => {
+      const i = ROLE_PICKER_ORDER.indexOf(key);
+      return i === -1 ? ROLE_PICKER_ORDER.length : i;
+    };
+    return rank(a.key) - rank(b.key) || a.name.localeCompare(b.name);
+  });
+
   return (
     <div className="flex max-w-[720px] flex-col gap-5">
       <div>
@@ -79,7 +94,11 @@ export default async function NewEmployeePage() {
       )}
 
       <InviteEmployeeForm
-        roles={roles.map((r) => ({ value: r.id, label: r.name }))}
+        roles={orderedRoles.map((r) => ({
+          value: r.id,
+          label: r.name,
+          consequence: ROLE_CONSEQUENCE[r.key],
+        }))}
         departments={departments.map((d) => ({ value: d.id, label: d.name }))}
         managers={managers.map((m) => ({
           value: m.id,
