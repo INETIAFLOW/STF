@@ -42,40 +42,59 @@ Everything below uses the new password.
 
 ## 2. Get the two connection strings (5 min)
 
-Supabase → **Connect** (top bar) → *ORMs* / *Prisma*. Copy the strings
-from the dashboard rather than editing the old ones by hand — the pooler
-hostname contains your region and differs from the direct host.
+**Use the pooler. Never the direct host.** This is not a tuning
+preference — `db.<ref>.supabase.co` has *zero* A records, only AAAA.
+Hostinger's containers are IPv4-only, so Prisma cannot open a socket to it
+at all. Confirmed on this project, 10 August 2026.
 
-| Variable | Which string | Port |
+The failure is nastier than an outage, because the site keeps working:
+marketing pages render, sign-in renders, redirects redirect — and every
+database query throws a 500. It reads like an application bug.
+
+The pooler hostnames do have IPv4. Verified working for this project:
+
+| Variable | Host | Port |
 |---|---|---|
-| `DATABASE_URL` | **Transaction pooler** | 6543 |
-| `DIRECT_URL` | **Session pooler** | 5432 |
+| `DATABASE_URL` | `aws-0-ap-south-1.pooler.supabase.com` | **5432** |
+| `DIRECT_URL` | `aws-0-ap-south-1.pooler.supabase.com` | **5432** |
 
-This matters. The app runs as serverless functions: every request can open
-its own connection, and the direct connection will run out of them under a
-real workload. The pooler exists for exactly this. Add
-`?pgbouncer=true&connection_limit=1` to `DATABASE_URL` if the dashboard
-has not already.
+Both on the **session pooler (5432)**, not the transaction pooler (6543).
+Hostinger runs one long-lived Node process, so it does not need
+transaction pooling — and session mode supports prepared statements, which
+avoids a whole class of Prisma-behind-PgBouncer problems. Use 6543 only on
+serverless.
 
-**The direct host is IPv6-only, and that will bite you.**
-`db.<ref>.supabase.co` has *zero* A records — only AAAA. Plenty of hosts
-(Hostinger's containers among them) are IPv4-only, so Prisma cannot open a
-socket to it at all.
+Shape (copy from Supabase → **Connect** → ORMs → Prisma, do not type it):
 
-The failure is nastier than an outage because the site keeps working:
-pages render, sign-in renders, redirects redirect — and every query throws
-a 500. Verified on this project the hard way, 10 August 2026.
+```
+postgresql://postgres.<project-ref>:<password>@aws-0-ap-south-1.pooler.supabase.com:5432/postgres
+```
 
-The pooler hostnames (`aws-0-<region>.pooler.supabase.com`) do have IPv4.
-Use them unless you have specifically confirmed your host has IPv6 egress.
+**Three ways this goes wrong, all seen on this project:**
 
-Quick check before you deploy anywhere:
+1. **The username is different for the pooler.** It is
+   `postgres.<project-ref>`, not `postgres`. The wrong one fails with
+   *"Tenant or user not found"*.
+2. **The region must match your project.** A wrong region gives the same
+   *"Tenant or user not found"*, which is misleading. `ap-south-1` is
+   correct here.
+3. **Paste it as one unbroken line.** If the value arrives with a line
+   break in it — easy when copying from a wrapped display — Prisma reports
+   `Can't reach database server at 'base'`, because the hostname was cut
+   through the middle of `supa|base.com`. That exact error means a
+   malformed string, not a network problem.
+
+If the password contains `@ : / ? # [ ] %`, URL-encode it (`@` → `%40`),
+or rotate to one without them. An unencoded character silently changes
+where the parser thinks the host starts.
+
+Verify before deploying:
 
 ```bash
 nslookup -type=A db.<ref>.supabase.co
 ```
 
-No answer means direct will not work from an IPv4-only host.
+No answer confirms direct will not work from an IPv4-only host.
 
 ---
 
@@ -263,12 +282,32 @@ payroll, not after.
 
 ## If something breaks
 
-- **Build failed on Vercel** — read the log; it is almost always a missing
+- **Build failed** — read the log; it is almost always a missing
   environment variable.
 - **App loads but every screen is empty** — `DATABASE_URL` is wrong, or
   RLS was applied to a new table. `npx tsx scripts/setup-rls.ts --status`.
-- **"Too many connections"** — `DATABASE_URL` is pointing at the direct
-  connection instead of the transaction pooler (step 2).
+- **Pages work but every query 500s** — the database is unreachable. Check
+  the runtime log for the Prisma error; the host it names tells you which
+  of the three mistakes in step 2 you made.
+- **`Can't reach database server at 'base'`** — the connection string has
+  a line break in it. Re-paste as one line.
+- **`Tenant or user not found`** — wrong pooler region, or the username is
+  `postgres` instead of `postgres.<project-ref>`.
+- **"Too many connections"** — switch `DATABASE_URL` to the transaction
+  pooler (6543); you are opening connections faster than session mode
+  releases them.
+- **Everything 503s for a few minutes after a deploy** — the app restarts
+  while it settles. It has recovered on its own every time so far; check
+  the runtime log for a repeating startup banner before assuming worse.
+
+Verify the database independently of the app at any time:
+
+```bash
+npx tsx scripts/verify-production.ts check
+```
+
+It reports connectivity, tenant isolation and RLS coverage, and never
+prints a credential.
 - **Password reset email never arrives** — step 6 was skipped.
 - **Reset link 404s** — the redirect allow-list in step 5 is missing.
 
