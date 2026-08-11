@@ -57,9 +57,25 @@ real workload. The pooler exists for exactly this. Add
 `?pgbouncer=true&connection_limit=1` to `DATABASE_URL` if the dashboard
 has not already.
 
-Also note: on newer Supabase projects the **direct** host
-(`db.<ref>.supabase.co`) is IPv6-only. If a migration ever fails to
-connect from a cloud machine, that is why — use the session pooler.
+**The direct host is IPv6-only, and that will bite you.**
+`db.<ref>.supabase.co` has *zero* A records — only AAAA. Plenty of hosts
+(Hostinger's containers among them) are IPv4-only, so Prisma cannot open a
+socket to it at all.
+
+The failure is nastier than an outage because the site keeps working:
+pages render, sign-in renders, redirects redirect — and every query throws
+a 500. Verified on this project the hard way, 10 August 2026.
+
+The pooler hostnames (`aws-0-<region>.pooler.supabase.com`) do have IPv4.
+Use them unless you have specifically confirmed your host has IPv6 egress.
+
+Quick check before you deploy anywhere:
+
+```bash
+nslookup -type=A db.<ref>.supabase.co
+```
+
+No answer means direct will not work from an IPv4-only host.
 
 ---
 
