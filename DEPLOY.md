@@ -51,18 +51,17 @@ The failure is nastier than an outage, because the site keeps working:
 marketing pages render, sign-in renders, redirects redirect — and every
 database query throws a 500. It reads like an application bug.
 
-The pooler hostnames do have IPv4. Verified working for this project:
+The pooler hostnames do have IPv4. **This is the configuration running in
+production, verified end to end on 11 August 2026:**
 
-| Variable | Host | Port |
+| Variable | Pooler | Port |
 |---|---|---|
-| `DATABASE_URL` | `aws-0-ap-south-1.pooler.supabase.com` | **5432** |
-| `DIRECT_URL` | `aws-0-ap-south-1.pooler.supabase.com` | **5432** |
+| `DATABASE_URL` | Transaction | **6543** (with `?pgbouncer=true`) |
+| `DIRECT_URL` | Session | **5432** |
 
-Both on the **session pooler (5432)**, not the transaction pooler (6543).
-Hostinger runs one long-lived Node process, so it does not need
-transaction pooling — and session mode supports prepared statements, which
-avoids a whole class of Prisma-behind-PgBouncer problems. Use 6543 only on
-serverless.
+That split is Supabase's own recommendation on the Connect → ORM → Prisma
+tab, and it is what the app is running on. Take both strings from that
+tab rather than editing one into the other.
 
 Shape (copy from Supabase → **Connect** → ORMs → Prisma, do not type it):
 
@@ -100,10 +99,31 @@ host="aws-0-ap-south-1.pooler.supabase.com"  <- a real string
 ```
 
 **If you see `base`, stop debugging the network and go look at the
-variable.** And note the trap that produced it here: editing the values in
-the panel shows them in the table immediately, but they are not applied
-until **Save** is pressed — watch for an "Unsaved changes" badge before
-redeploying.
+variable.**
+
+### Set the variables at creation, with Import .env — do not edit them later
+
+The placeholders above survived three separate attempts to correct them in
+the panel. Edited values appear in the table immediately, but the save
+does not stick: reload, and the old value is back. Every redeploy in
+between shipped the stale value while the panel showed the new one, which
+is what made it so hard to see.
+
+**Import .env at app-creation time is the path that actually persists.**
+So the reliable procedure is:
+
+1. Build a complete `.env` file locally with real values — every variable,
+   no placeholders. Test the connection strings *before* uploading
+   (`scripts/verify-production.ts check` proves them).
+2. Create the Web App and use **Import .env** on the environment step.
+3. Deploy.
+
+If a value later needs changing and editing does not hold, delete the Web
+App and recreate it with a corrected file. That sounds heavy-handed; it
+took ten minutes and was faster than the alternative.
+
+Deleting a Web App destroys nothing that matters — every record lives in
+Supabase, so an app container is only a build and a process.
 
 If the password contains `@ : / ? # [ ] %`, URL-encode it (`@` → `%40`),
 or rotate to one without them. An unencoded character silently changes
