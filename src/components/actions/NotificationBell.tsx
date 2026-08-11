@@ -44,11 +44,11 @@ export function NotificationBell({
     <div className="flex items-center gap-1">
       {soundSupported() && (
         <IconButton
-          label={
-            soundOn
-              ? "Notification sound is on. Turn it off"
-              : "Notification sound is off. Turn it on"
-          }
+          // Kept short deliberately: the tooltip is centred on the button,
+          // and this button sits at the right edge of a 375px screen, so a
+          // long label renders off-screen. The icon already carries the
+          // current state; the label says what pressing it does.
+          label={soundOn ? "Turn sound off" : "Turn sound on"}
           onClick={toggleSound}
         >
           {soundOn ? <Volume2 /> : <VolumeX />}

@@ -53,19 +53,38 @@ export async function fixtureSession(
   if (hasDatabaseConfig()) {
     try {
       const db = getDb();
-      const membership = await db.tenantMembership.findFirst({
-        where: {
-          status: "ACTIVE",
-          role: { key: template.key },
-          tenant: { slug: FIXTURE_TENANT.slug, status: "ACTIVE" },
-        },
-        orderBy: { createdAt: "asc" },
-        include: {
-          user: true,
-          tenant: true,
-          role: { include: { permissions: { include: { permission: true } } } },
-        },
-      });
+      // Prefer the seeded demo tenant, but fall back to any active one.
+      // The demo tenant is deleted from a production database before a real
+      // customer arrives (scripts/delete-tenant.ts), and without this the
+      // preview session silently degrades to placeholders whose tenant id
+      // matches no row — so every screen renders empty and looks broken.
+      const membership =
+        (await db.tenantMembership.findFirst({
+          where: {
+            status: "ACTIVE",
+            role: { key: template.key },
+            tenant: { slug: FIXTURE_TENANT.slug, status: "ACTIVE" },
+          },
+          orderBy: { createdAt: "asc" },
+          include: {
+            user: true,
+            tenant: true,
+            role: { include: { permissions: { include: { permission: true } } } },
+          },
+        })) ??
+        (await db.tenantMembership.findFirst({
+          where: {
+            status: "ACTIVE",
+            role: { key: template.key },
+            tenant: { status: "ACTIVE" },
+          },
+          orderBy: { createdAt: "asc" },
+          include: {
+            user: true,
+            tenant: true,
+            role: { include: { permissions: { include: { permission: true } } } },
+          },
+        }));
 
       if (membership) {
         return {

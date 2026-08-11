@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CircleUser, Clock, House, ListChecks } from "lucide-react";
+import { isActiveNav, type NavItem } from "@/lib/shell/nav";
+import { NAV_ICONS } from "./nav-icons";
 import { cn } from "@/lib/cn";
 
 /**
@@ -10,28 +11,14 @@ import { cn } from "@/lib/cn";
  * - Max 4 items, labels ALWAYS visible, no centre FAB.
  * - Active = colour + 3px top indicator (never colour alone).
  * - Items for disabled modules are absent — the bar re-balances.
- * - Hidden at md and above.
+ * - Hidden at md and above, where the sidebar takes over.
+ *
+ * The cap is applied by `bottomBarItems` in lib/shell/nav.ts, not here:
+ * it is a property of this bar, and everything that does not fit is still
+ * reachable from the menu drawer and the sidebar.
  */
-export interface BottomNavProps {
-  /** Enabled module keys for the tenant — drives which items exist. */
-  showTasks: boolean;
-  showAttendance: boolean;
-}
-
-export function BottomNav({ showTasks, showAttendance }: BottomNavProps) {
+export function BottomNav({ items }: { items: NavItem[] }) {
   const pathname = usePathname();
-
-  const items = [
-    { href: "/home", label: "Home", icon: House, show: true },
-    { href: "/tasks", label: "Tasks", icon: ListChecks, show: showTasks },
-    {
-      href: "/attendance",
-      label: "Attendance",
-      icon: Clock,
-      show: showAttendance,
-    },
-    { href: "/profile", label: "Profile", icon: CircleUser, show: true },
-  ].filter((item) => item.show);
 
   return (
     <nav
@@ -46,9 +33,8 @@ export function BottomNav({ showTasks, showAttendance }: BottomNavProps) {
         style={{ gridTemplateColumns: `repeat(${items.length}, 1fr)` }}
       >
         {items.map((item) => {
-          const active =
-            pathname === item.href || pathname.startsWith(`${item.href}/`);
-          const Icon = item.icon;
+          const active = isActiveNav(item.href, pathname);
+          const Icon = NAV_ICONS[item.icon];
           return (
             <li key={item.href} className="relative">
               {/* 3px top indicator: state is never colour alone. */}

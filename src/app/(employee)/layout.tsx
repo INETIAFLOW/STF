@@ -1,18 +1,25 @@
 import { requireSession } from "@/lib/authz/guard";
 import { loadEntitlements } from "@/lib/authz/entitlements";
+import { enabledModuleKeys } from "@/lib/authz/flags";
+import { unreadNotificationCount } from "@/lib/notifications";
+import { bottomBarItems, employeeNavItems } from "@/lib/shell/nav";
 import { BottomNav } from "@/components/shell/BottomNav";
+import { Sidebar } from "@/components/shell/Sidebar";
 import { EmployeeTopBar } from "@/components/shell/TopBar";
 import { ToastProvider } from "@/components/ui/Toast";
 import { OfflineProvider } from "@/lib/offline/OfflineProvider";
 import { OfflineBar } from "@/components/offline/OfflineBar";
-import { unreadNotificationCount } from "@/lib/notifications";
 import { ActionQueueProvider } from "@/lib/actions/ActionQueueProvider";
 import { ActionTiles } from "@/components/actions/ActionTiles";
 
 /**
- * Employee mobile shell: warm surface, top bar, bottom navigation.
- * Nav items exist only for enabled modules — the bar re-balances when a
- * module is off (Constitution §5; the server guards stay authoritative).
+ * Employee shell: warm surface, top bar, bottom navigation on a phone and a
+ * sidebar from md up — an employee on a laptop previously had no navigation
+ * at all, because the bottom bar is `md:hidden` and there was no sidebar.
+ *
+ * Nav items exist only for enabled modules (Constitution §5; the server
+ * guards stay authoritative). The bottom bar takes at most four of them;
+ * the sidebar and the drawer carry the rest.
  */
 export default async function EmployeeLayout({
   children,
@@ -29,37 +36,46 @@ export default async function EmployeeLayout({
     session.user.id,
   );
 
+  const items = employeeNavItems({
+    enabledModules: enabledModuleKeys(entitlements),
+  });
+  const barItems = bottomBarItems(items);
+  const nav = {
+    items,
+    userName: session.user.displayName,
+    roleName: session.membership.roleName,
+  };
+
   return (
-    <div data-surface="employee" className="min-h-dvh">
+    <div data-surface="employee" className="flex min-h-dvh">
       <ToastProvider>
+        <a
+          href="#main"
+          className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:rounded-md focus:bg-surface-default focus:px-3 focus:py-2"
+        >
+          Skip to content
+        </a>
+        <Sidebar {...nav} label="Your STF" />
         <OfflineProvider>
-        <ActionQueueProvider enabled={session.source === "supabase"}>
-          <a
-            href="#main"
-            className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:rounded-md focus:bg-surface-default focus:px-3 focus:py-2"
-          >
-            Skip to content
-          </a>
-          <EmployeeTopBar
-            title={session.tenant.name}
-            notificationCount={unread}
-          />
-          {/* Persistent while offline, and not dismissible. */}
-          <OfflineBar />
-          <main
-            id="main"
-            className="mx-auto w-full max-w-[640px] px-5 pt-4 pb-[calc(var(--stf-layout-bottom-nav-height)+env(safe-area-inset-bottom)+var(--stf-space-6))]"
-          >
-            {children}
-          </main>
-          <BottomNav
-            showTasks={entitlements.modules.TASKS === true}
-            showAttendance={entitlements.modules.ATTENDANCE === true}
-          />
-          {/* Leave lives under Profile — the bottom bar is capped at four
-              items with permanent labels (decision D-015). */}
-          <ActionTiles />
-        </ActionQueueProvider>
+          <ActionQueueProvider enabled={session.source === "supabase"}>
+            <div className="flex min-w-0 flex-1 flex-col">
+              <EmployeeTopBar
+                title={session.tenant.name}
+                notificationCount={unread}
+                nav={nav}
+              />
+              {/* Persistent while offline, and not dismissible. */}
+              <OfflineBar />
+              <main
+                id="main"
+                className="mx-auto w-full max-w-[640px] flex-1 px-4 pt-4 pb-[calc(var(--stf-layout-bottom-nav-height)+env(safe-area-inset-bottom)+var(--stf-space-6))] sm:px-5 md:pb-6"
+              >
+                {children}
+              </main>
+            </div>
+            <BottomNav items={barItems} />
+            <ActionTiles />
+          </ActionQueueProvider>
         </OfflineProvider>
       </ToastProvider>
     </div>

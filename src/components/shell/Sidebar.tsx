@@ -3,113 +3,50 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import {
-  Building2,
-  CalendarDays,
-  ChartNoAxesColumn,
-  Clock,
-  FileClock,
-  History,
-  LayoutDashboard,
-  ListChecks,
-  LogOut,
-  ReceiptIndianRupee,
-  ScrollText,
-  ShieldCheck,
-  ToggleRight,
-  Users,
-} from "lucide-react";
-import type { ModuleKey } from "@/lib/catalog";
+import { LogOut } from "lucide-react";
+import { isActiveNav, type NavItem } from "@/lib/shell/nav";
+import { NAV_ICONS } from "./nav-icons";
 import { cn } from "@/lib/cn";
 
 /**
- * Admin desktop sidebar (component-specifications.md §16).
+ * Left navigation (component-specifications.md §16).
  * - Light surface, 1px right border — not a dark rail.
- * - Only ENABLED modules appear; a module the role cannot access is
- *   absent, not greyed. Server-side guards remain the enforcement.
- * - 240px at lg+, 72px icon rail at md, drawer below (via [data-rail]).
- * - Active item: primarySubtle bg + primary text + 3px left indicator.
+ * - 240px at lg+, 72px icon rail at md, hidden below md where `MobileNav`
+ *   takes over.
+ * - Active item: primarySubtle bg + primary text + 3px left indicator, so
+ *   state is never colour alone.
+ *
+ * Takes its items as props rather than computing them, because BOTH
+ * surfaces use it: admin, and — since employees previously had no
+ * navigation at all above md — the employee shell too.
  */
 export interface SidebarProps {
-  enabledModules: ModuleKey[];
-  /** Permission keys of the current session (already resolved server-side). */
-  can: {
-    modules: boolean;
-    roles: boolean;
-    settings: boolean;
-    audit: boolean;
-  };
+  items: NavItem[];
+  /** Second group under a "Configuration" heading. Empty for employees. */
+  configItems?: NavItem[];
   userName: string;
   roleName: string;
+  /** Names the landmark, e.g. "Modules" or "Your STF". */
+  label?: string;
 }
 
-const MODULE_NAV: Array<{
-  module: ModuleKey | null;
-  href: string;
-  label: string;
-  icon: typeof Clock;
-}> = [
-  { module: null, href: "/admin", label: "Dashboard", icon: LayoutDashboard },
-  { module: "ATTENDANCE", href: "/admin/attendance", label: "Attendance", icon: Clock },
-  { module: "EMPLOYEES", href: "/admin/employees", label: "Employees", icon: Users },
-  { module: "LEAVE", href: "/admin/leave", label: "Leave", icon: CalendarDays },
-  { module: "TASKS", href: "/admin/tasks", label: "Tasks", icon: ListChecks },
-  { module: "PAYROLL", href: "/admin/payroll", label: "Payroll", icon: ReceiptIndianRupee },
-  { module: "DAILY_REPORTING", href: "/admin/daily-report", label: "Daily report", icon: FileClock },
-  { module: null, href: "/admin/reports", label: "Reports", icon: ChartNoAxesColumn },
-];
-
-export function Sidebar({ enabledModules, can, userName, roleName }: SidebarProps) {
+export function Sidebar({
+  items,
+  configItems = [],
+  userName,
+  roleName,
+  label = "Modules",
+}: SidebarProps) {
   const pathname = usePathname();
 
-  const configItems = [
-    can.modules && {
-      href: "/admin/modules",
-      label: "Module Management",
-      icon: ToggleRight,
-    },
-    can.roles && {
-      href: "/admin/roles",
-      label: "Roles & permissions",
-      icon: ShieldCheck,
-    },
-    can.settings && {
-      href: "/admin/settings/attendance",
-      label: "Attendance & pay rules",
-      icon: ScrollText,
-    },
-    can.settings && {
-      href: "/admin/settings",
-      label: "Company settings",
-      icon: Building2,
-    },
-    can.audit && {
-      href: "/admin/activity",
-      label: "Activity log",
-      icon: History,
-    },
-  ].filter(Boolean) as Array<{ href: string; label: string; icon: typeof Clock }>;
-
-  const navItems = MODULE_NAV.filter(
-    (item) => item.module === null || enabledModules.includes(item.module),
-  );
-
-  function NavLink({
-    href,
-    label,
-    icon: Icon,
-  }: {
-    href: string;
-    label: string;
-    icon: typeof Clock;
-  }) {
-    const active =
-      href === "/admin" ? pathname === "/admin" : pathname.startsWith(href);
+  function NavLink({ href, label: itemLabel, icon }: NavItem) {
+    const active = isActiveNav(href, pathname);
+    const Icon = NAV_ICONS[icon];
     return (
       <Link
         href={href}
         aria-current={active ? "page" : undefined}
-        title={label}
+        title={itemLabel}
         className={cn(
           "relative flex h-10 items-center gap-3 rounded-md px-3 text-secondary",
           "md:justify-center lg:justify-start",
@@ -125,17 +62,17 @@ export function Sidebar({ enabledModules, can, userName, roleName }: SidebarProp
           />
         )}
         <Icon aria-hidden="true" className="size-5 shrink-0" />
-        <span className="truncate md:hidden lg:inline">{label}</span>
+        <span className="truncate md:hidden lg:inline">{itemLabel}</span>
       </Link>
     );
   }
 
   return (
     <nav
-      aria-label="Modules"
+      aria-label={label}
       className={cn(
         "hidden h-dvh shrink-0 flex-col border-r border-border-default bg-surface-default",
-        "md:flex md:w-[var(--stf-layout-sidebar-width-collapsed)]",
+        "md:sticky md:top-0 md:flex md:w-[var(--stf-layout-sidebar-width-collapsed)]",
         "lg:w-[var(--stf-layout-sidebar-width)]",
       )}
     >
@@ -154,7 +91,7 @@ export function Sidebar({ enabledModules, can, userName, roleName }: SidebarProp
 
       <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto px-3 py-2">
         <ul className="flex flex-col gap-0.5">
-          {navItems.map((item) => (
+          {items.map((item) => (
             <li key={item.href}>
               <NavLink {...item} />
             </li>
