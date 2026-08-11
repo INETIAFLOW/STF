@@ -78,11 +78,32 @@ postgresql://postgres.<project-ref>:<password>@aws-0-ap-south-1.pooler.supabase.
 2. **The region must match your project.** A wrong region gives the same
    *"Tenant or user not found"*, which is misleading. `ap-south-1` is
    correct here.
-3. **Paste it as one unbroken line.** If the value arrives with a line
-   break in it — easy when copying from a wrapped display — Prisma reports
-   `Can't reach database server at 'base'`, because the hostname was cut
-   through the middle of `supa|base.com`. That exact error means a
-   malformed string, not a network problem.
+3. **Paste it as one unbroken line**, with no surrounding quotes. The
+   panel has separate Key and Value fields; the value is everything
+   between the quotes in Supabase's snippet, nothing more.
+
+### `Can't reach database server at 'base'` means the placeholder is still there
+
+This error cost hours, so it is worth stating exactly. It does **not**
+mean a network problem, a wrong region or a line break. It means the
+variable still contains placeholder text such as
+`<paste connection string>`.
+
+Postgres connection strings without a `://` scheme are parsed as
+keyword/value pairs, and any such placeholder resolves to a host named
+literally `base`. Reproduced directly:
+
+```
+host="base"   <- "<paste connection string>"
+host="base"   <- "<transaction pooler string, port 6543>"
+host="aws-0-ap-south-1.pooler.supabase.com"  <- a real string
+```
+
+**If you see `base`, stop debugging the network and go look at the
+variable.** And note the trap that produced it here: editing the values in
+the panel shows them in the table immediately, but they are not applied
+until **Save** is pressed — watch for an "Unsaved changes" badge before
+redeploying.
 
 If the password contains `@ : / ? # [ ] %`, URL-encode it (`@` → `%40`),
 or rotate to one without them. An unencoded character silently changes
