@@ -349,6 +349,29 @@ export const ROLE_PICKER_ORDER: readonly string[] = [
   "OWNER",
 ];
 
+/**
+ * How much authority each role carries, for one rule: **nobody may grant a
+ * role more powerful than their own.** Without it, anyone who can add
+ * employees could create an Owner and then be managed by them — an
+ * escalation path that looks like ordinary admin work.
+ *
+ * Viewer sits at the bottom with Employee: it is read-only.
+ */
+export const PRIVILEGE_RANK: Record<string, number> = {
+  VIEWER: 0,
+  EMPLOYEE: 0,
+  TEAM_LEADER: 1,
+  MANAGER: 2,
+  HR: 2,
+  ADMIN: 3,
+  SUPER_ADMIN: 4,
+  OWNER: 5,
+};
+
+export function privilegeRank(roleKey: string): number {
+  return PRIVILEGE_RANK[roleKey] ?? 0;
+}
+
 /** Stated under the role picker so the grant is never silent. */
 export const ROLE_CONSEQUENCE: Record<string, string> = {
   EMPLOYEE:

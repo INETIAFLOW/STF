@@ -5,6 +5,7 @@ import { z } from "zod";
 import { getDb } from "@/lib/db";
 import { recordAuditEvent } from "@/lib/audit";
 import { checkAccess } from "@/lib/authz/guard";
+import { privilegeRank } from "@/lib/catalog";
 
 /**
  * Employee records (MODULES.md → Employee Management).
@@ -273,5 +274,125 @@ export async function revealSensitiveAction(
             : `₹${Number(line.amount).toLocaleString("en-IN")}`,
       })),
     ],
+  };
+}
+
+// ------------------------------------------------------------ role change
+
+const roleChangeSchema = z.object({
+  membershipId: z.string().uuid(),
+  roleId: z.string().uuid("Choose a role."),
+  reason: z.string().trim().max(500).optional(),
+});
+
+/**
+ * Change what someone is allowed to do.
+ *
+ * Separate from `saveEmployeeAction` on purpose: this is the only field on
+ * the profile that changes what a person can SEE, so it carries its own
+ * guards, its own audit action, and its own confirmation in the UI.
+ *
+ * Four refusals, each a real way this goes wrong:
+ *
+ * 1. **Not your own role.** Otherwise an admin can quietly promote
+ *    themselves, and the audit trail shows them approving it.
+ * 2. **Not above your own rank.** Anyone who can add employees could
+ *    otherwise mint an Owner — escalation dressed as ordinary admin work.
+ * 3. **Not the last Owner.** A company must never be left with nobody who
+ *    can manage it (edge-cases.md → "last owner").
+ * 4. **Not a role from another tenant.** The id arrives from a form.
+ */
+export async function changeEmployeeRoleAction(
+  input: z.input<typeof roleChangeSchema>,
+): Promise<ActionResult> {
+  const parsed = roleChangeSchema.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, error: parsed.error.issues[0]?.message ?? "Check the details." };
+  }
+
+  const { session, decision } = await checkAccess({
+    module: "EMPLOYEES",
+    permission: "employees.manage",
+  });
+  if (!decision.allowed) {
+    return { ok: false, error: decision.message ?? "You don't have access to this." };
+  }
+
+  const db = getDb();
+  const membership = await db.tenantMembership.findFirst({
+    where: { id: parsed.data.membershipId, tenantId: session.tenant.id },
+    include: { user: true, role: true },
+  });
+  if (!membership) return { ok: false, error: "That employee is no longer available." };
+
+  const nextRole = await db.role.findFirst({
+    where: { id: parsed.data.roleId, tenantId: session.tenant.id },
+  });
+  if (!nextRole) return { ok: false, error: "That role is no longer available." };
+
+  if (nextRole.id === membership.roleId) {
+    return { ok: false, error: `${membership.user.displayName} already has that role.` };
+  }
+
+  if (membership.userId === session.user.id) {
+    return {
+      ok: false,
+      error:
+        "You can't change your own role. Ask another owner or admin to do it.",
+    };
+  }
+
+  const myRank = privilegeRank(session.membership.roleKey);
+  if (privilegeRank(nextRole.key) > myRank) {
+    return {
+      ok: false,
+      error: `You can't give someone more authority than you have. ${nextRole.name} is above your own role.`,
+    };
+  }
+
+  // Losing the last owner locks everyone out of company management.
+  if (membership.role.key === "OWNER" && nextRole.key !== "OWNER") {
+    const otherOwners = await db.tenantMembership.count({
+      where: {
+        tenantId: session.tenant.id,
+        status: "ACTIVE",
+        role: { key: "OWNER" },
+        id: { not: membership.id },
+      },
+    });
+    if (otherOwners === 0) {
+      return {
+        ok: false,
+        error:
+          "This is the only owner. Make someone else an owner first, or the company would be left with nobody who can manage it.",
+      };
+    }
+  }
+
+  await db.tenantMembership.update({
+    where: { id: membership.id },
+    data: { roleId: nextRole.id },
+  });
+
+  await recordAuditEvent(session, {
+    action: "employee.role_changed",
+    entityType: "tenant_membership",
+    entityId: membership.id,
+    reason: parsed.data.reason,
+    before: { role: membership.role.key, roleName: membership.role.name },
+    after: { role: nextRole.key, roleName: nextRole.name },
+    metadata: { employee: membership.user.displayName },
+  });
+
+  revalidatePath("/admin/employees");
+  revalidatePath(`/admin/employees/${membership.id}`);
+
+  const opensAdmin = privilegeRank(nextRole.key) >= 2;
+  return {
+    ok: true,
+    message: `${membership.user.displayName} is now ${nextRole.name}.`,
+    detail: opensAdmin
+      ? "They can open the admin area. It takes effect the next time they load a page."
+      : "They see only their own records now. It takes effect the next time they load a page.",
   };
 }

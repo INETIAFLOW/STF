@@ -23,6 +23,8 @@ import {
   ROLE_CONSEQUENCE,
   ROLE_PICKER_ORDER,
   ROLE_TEMPLATES,
+  PRIVILEGE_RANK,
+  privilegeRank,
 } from "@/lib/catalog";
 
 const NOW = new Date("2026-08-10T10:00:00.000Z");
@@ -376,5 +378,47 @@ describe("the role picker defaults to the least it can", () => {
       expect(ROLE_CONSEQUENCE[key].toLowerCase()).toContain("admin area");
     }
     expect(ROLE_CONSEQUENCE.EMPLOYEE.toLowerCase()).toContain("no admin area");
+  });
+});
+
+describe("nobody may grant more authority than they hold", () => {
+  it("ranks every role the catalog defines", () => {
+    for (const tpl of ROLE_TEMPLATES) {
+      expect(PRIVILEGE_RANK[tpl.key], `${tpl.key} has no rank`).toBeDefined();
+    }
+  });
+
+  it("puts Owner strictly above every other role", () => {
+    const owner = privilegeRank("OWNER");
+    for (const tpl of ROLE_TEMPLATES) {
+      if (tpl.key === "OWNER") continue;
+      expect(privilegeRank(tpl.key)).toBeLessThan(owner);
+    }
+  });
+
+  it("treats Viewer as low authority despite reading a lot", () => {
+    // Viewer sees employees and reports but changes nothing, so it must
+    // never be treated as senior to Manager or HR.
+    expect(privilegeRank("VIEWER")).toBeLessThan(privilegeRank("MANAGER"));
+    expect(privilegeRank("VIEWER")).toBeLessThan(privilegeRank("HR"));
+  });
+
+  it("stops an Admin creating an Owner", () => {
+    expect(privilegeRank("OWNER")).toBeGreaterThan(privilegeRank("ADMIN"));
+  });
+
+  it("stops HR promoting someone to Super Admin", () => {
+    expect(privilegeRank("SUPER_ADMIN")).toBeGreaterThan(privilegeRank("HR"));
+  });
+
+  it("lets a Manager assign roles at or below their own", () => {
+    const manager = privilegeRank("MANAGER");
+    for (const key of ["EMPLOYEE", "TEAM_LEADER", "VIEWER"]) {
+      expect(privilegeRank(key)).toBeLessThanOrEqual(manager);
+    }
+  });
+
+  it("gives an unknown role the lowest rank rather than trusting it", () => {
+    expect(privilegeRank("NOT_A_REAL_ROLE")).toBe(0);
   });
 });

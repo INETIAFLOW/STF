@@ -10,10 +10,12 @@ import { StatusChip } from "@/components/ui/StatusChip";
 import { STATUS, statusLate, type Status } from "@/lib/status";
 import { formatClockTime } from "@/lib/attendance/policy";
 import { computeInviteStatus } from "@/lib/invites/policy";
+import { ROLE_CONSEQUENCE, ROLE_PICKER_ORDER, privilegeRank } from "@/lib/catalog";
 import { EmployeeForm } from "./EmployeeForm";
 import { DocumentsPanel } from "./DocumentsPanel";
 import { SensitivePanel } from "./SensitivePanel";
 import { InvitePanel } from "./InvitePanel";
+import { RolePanel } from "./RolePanel";
 
 /** "7 Aug 2026" in the tenant's timezone (copy-deck.md §1). */
 function formatDay(at: Date, timeZone: string): string {
@@ -71,6 +73,29 @@ export default async function EmployeeProfilePage({
   const latestInvite = member.invites[0];
 
   const canManage = session.permissions.has("employees.manage");
+
+  // Roles offered least-powerful-first, each labelled with what it grants,
+  // and anything above the viewer's own authority marked so the ceiling is
+  // visible rather than discovered by being refused.
+  const myRank = privilegeRank(session.membership.roleKey);
+  const roleOptions = (
+    devFixtureOffline()
+      ? []
+      : await db.role.findMany({ where: { tenantId: session.tenant.id } })
+  )
+    .sort((a, b) => {
+      const rank = (key: string) => {
+        const i = ROLE_PICKER_ORDER.indexOf(key);
+        return i === -1 ? ROLE_PICKER_ORDER.length : i;
+      };
+      return rank(a.key) - rank(b.key) || a.name.localeCompare(b.name);
+    })
+    .map((r) => ({
+      value: r.id,
+      label: r.name,
+      consequence: ROLE_CONSEQUENCE[r.key] ?? "Decides what they can see and do.",
+      aboveYou: privilegeRank(r.key) > myRank,
+    }));
   const canSeeDocuments = session.permissions.has("documents.view");
   const tz = session.tenant.timezone;
 
@@ -147,6 +172,16 @@ export default async function EmployeeProfilePage({
         resendCount={latestInvite?.resendCount ?? 0}
         isDeactivated={member.status === "DEACTIVATED"}
         canManage={canManage}
+      />
+
+      <RolePanel
+        membershipId={member.id}
+        employeeName={member.user.displayName}
+        currentRoleId={member.roleId}
+        currentRoleName={member.role.name}
+        roles={roleOptions}
+        canManage={canManage}
+        isSelf={member.userId === session.user.id}
       />
 
       <EmployeeForm
