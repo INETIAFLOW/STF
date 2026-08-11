@@ -6,6 +6,10 @@ import { getDb } from "@/lib/db";
 import { recordAuditEvent } from "@/lib/audit";
 import { checkAccess } from "@/lib/authz/guard";
 import { setPolicy } from "@/lib/policies";
+// Values live in constants.ts, not here: a "use server" module may only
+// export async functions, and exporting one to a client component fails at
+// render time rather than at build time.
+import { TIMEZONES } from "./constants";
 
 /**
  * Company settings (screen A24) and notification preferences (A18).
@@ -15,14 +19,6 @@ import { setPolicy } from "@/lib/policies";
 export type ActionResult =
   | { ok: true; message: string; detail?: string }
   | { ok: false; error: string };
-
-/** IANA zones STF supports today; India first (V1 market). */
-export const TIMEZONES = [
-  "Asia/Kolkata",
-  "Asia/Dubai",
-  "Asia/Singapore",
-  "UTC",
-] as const;
 
 const companySchema = z.object({
   name: z.string().trim().min(1, "Give your company a name.").max(160),
@@ -78,31 +74,6 @@ export async function saveCompanySettingsAction(
         ? "Times already recorded keep the moment they happened; only how they are shown changes."
         : undefined,
   };
-}
-
-/** Notification settings (screen A18): event × channel, plus quiet hours. */
-export const NOTIFICATION_EVENTS = [
-  { key: "attendance_exception", label: "Attendance needs review" },
-  { key: "leave_request", label: "Leave requested" },
-  { key: "leave_decision", label: "Leave approved or rejected" },
-  { key: "task_assigned", label: "Task assigned" },
-  { key: "proof_submitted", label: "Proof submitted for review" },
-  { key: "proof_decision", label: "Proof reviewed" },
-  { key: "payslip_ready", label: "Payslip ready" },
-] as const;
-
-export const NOTIFICATION_CHANNELS = [
-  { key: "in_app", label: "In-app", alwaysOn: true },
-  { key: "push", label: "Push", alwaysOn: false },
-  { key: "email", label: "Email", alwaysOn: false },
-  { key: "whatsapp", label: "WhatsApp", alwaysOn: false },
-  { key: "sms", label: "SMS", alwaysOn: false },
-] as const;
-
-export interface NotificationPolicy {
-  /** "event.channel" → enabled. Absent means off. */
-  matrix: Record<string, boolean>;
-  quietHours: { enabled: boolean; fromMinutes: number; toMinutes: number };
 }
 
 const notificationSchema = z.object({

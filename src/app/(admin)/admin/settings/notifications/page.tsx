@@ -6,7 +6,7 @@ import { loadEntitlements } from "@/lib/authz/entitlements";
 import { evaluateAccess } from "@/lib/authz/flags";
 import { getPolicy, getPolicyVersion } from "@/lib/policies";
 import { Alert } from "@/components/ui/Alert";
-import type { NotificationPolicy } from "@/lib/settings/actions";
+import type { NotificationPolicy } from "@/lib/settings/constants";
 import { NotificationMatrix } from "./NotificationMatrix";
 
 export const metadata: Metadata = { title: "Notifications" };

@@ -7,12 +7,12 @@ import { Card, CardHeader } from "@/components/ui/Card";
 import { Checkbox } from "@/components/ui/Checkbox";
 import { Input } from "@/components/ui/Input";
 import { useToast } from "@/components/ui/Toast";
+import { saveNotificationSettingsAction } from "@/lib/settings/actions";
 import {
   NOTIFICATION_CHANNELS,
   NOTIFICATION_EVENTS,
-  saveNotificationSettingsAction,
   type NotificationPolicy,
-} from "@/lib/settings/actions";
+} from "@/lib/settings/constants";
 
 /**
  * Event × channel matrix (screen A18).

@@ -8,7 +8,8 @@ import { Card, CardHeader } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { useToast } from "@/components/ui/Toast";
-import { TIMEZONES, saveCompanySettingsAction } from "@/lib/settings/actions";
+import { saveCompanySettingsAction } from "@/lib/settings/actions";
+import { TIMEZONES } from "@/lib/settings/constants";
 
 /** Company name and timezone (screen A24). */
 export function CompanyForm({
