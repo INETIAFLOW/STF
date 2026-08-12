@@ -259,7 +259,29 @@ rest of the team* below.
 - [ ] Turn the phone to aeroplane mode, check in, restore signal, confirm
       it syncs with the original time
 - [ ] Confirm the demo tenant's data is invisible from the customer's login
+- [ ] Add it to the home screen (below) and open it from there
 - [ ] Take a database backup: `pg_dump "$DIRECT_URL" -Fc -f pre-pilot.dump`
+
+---
+
+## Putting STF on the home screen
+
+STF installs like an app — a real icon, and no address bar taking up the
+top of the screen. There is nothing to publish and no app store involved;
+it is a one-time thing each person does on their own phone.
+
+- **Android (Chrome):** ⋮ menu → **Add to Home screen** → **Install**.
+- **iPhone (Safari):** Share → **Add to Home Screen**. It must be Safari;
+  Chrome on iPhone cannot install it.
+
+Worth telling staff on day one. A phone-first product that lives in a
+browser tab gets closed like a browser tab.
+
+**What it does not do yet:** without signal, opening it cold shows the
+browser's offline page. Check-ins made *while it is already open* are still
+queued and sync later — that part works (see the aeroplane-mode check
+above). Closing the gap needs a service worker; it is recorded as D-P9-10
+in DECISIONS.md rather than half-built.
 
 ---
 

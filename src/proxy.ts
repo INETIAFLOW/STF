@@ -147,7 +147,14 @@ export default async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // Everything except Next internals and static files.
-    "/((?!_next/static|_next/image|favicon.ico|brand/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|woff2?)$).*)",
+    // Everything except Next internals, static files, and the install
+    // assets.
+    //
+    // The manifest and app icons must be excluded, not merely public: a
+    // browser fetches them WITHOUT credentials, so this layer would see no
+    // signed-in user and redirect them to /sign-in. The browser would then
+    // read sign-in HTML as the manifest and quietly refuse to install,
+    // giving no error anywhere.
+    "/((?!_next/static|_next/image|favicon.ico|brand/|manifest.webmanifest|icons/|apple-icon|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|woff2?)$).*)",
   ],
 };

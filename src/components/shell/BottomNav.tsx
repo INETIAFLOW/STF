@@ -25,7 +25,9 @@ export function BottomNav({ items }: { items: NavItem[] }) {
       aria-label="Main"
       className={cn(
         "fixed inset-x-0 bottom-0 z-40 border-t border-border-default bg-surface-default",
-        "pb-[env(safe-area-inset-bottom)] md:hidden",
+        // Fixed, so it sits outside body's inset padding and has to repeat
+        // it — otherwise a tab lands under the notch in landscape.
+        "pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)] md:hidden",
       )}
     >
       <ul

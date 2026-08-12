@@ -459,3 +459,71 @@ workforce product you cannot add anyone to; "tiles off" leaves the
 notifications and removes only the ability to act on them. Both would be
 born retired. The module and permission checks underneath already govern
 them.
+
+---
+
+## Phase 9 — Navigation at every width, and installing the app
+
+**D-P9-01 · 2026-08-12 · The nav model is a pure module, not a component**
+— `src/lib/shell/nav.ts` decides what each role can reach, given enabled
+modules and permissions; it holds icon *names*, not components, so it stays
+importable from a test with no DOM. The bug that started this phase was an
+Owner on a phone concluding "Add employee" did not exist. That is a
+question about a list, and a list can be unit-tested; it had been trapped
+inside a `hidden md:flex` div where nothing could ask it anything.
+
+**D-P9-02 · 2026-08-12 · One Sidebar, two surfaces** — Admin and employee
+navigation differ only in their items, so `Sidebar` now takes items as
+props rather than computing admin's internally. A second sidebar component
+would have drifted the way the hand-rolled tables did (D-P9-05).
+
+**D-P9-03 · 2026-08-12 · The four-item cap belongs to the bottom bar, not
+to the product** — D-015 caps the bottom bar at four, and that cap had
+quietly become the employee's entire information architecture: Leave and
+Payslips were reachable only by going through Profile. The drawer and the
+sidebar have no such constraint and now list all seven. `bottomBarItems()`
+applies the cap at the one place it is a real constraint.
+
+**D-P9-04 · 2026-08-12 · The drawer reuses `ui/Drawer`** — It already has
+dialog semantics, `showModal`, ESC-to-close and focus handling. A bespoke
+sheet would have been a second accessibility surface to get right, on a
+product whose accessibility audit is still outstanding (ACCEPTANCE §K).
+
+**D-P9-05 · 2026-08-12 · The broken table adopts `ui/Table`; the working
+ones do not** — `Table` already implemented the mobile pattern with a
+*required* `renderMobileCard`, and was imported nowhere: every admin table
+was hand-rolled, and `/admin/payroll/structures` had drifted to
+`overflow-hidden`, which clips salary figures rather than scrolling them.
+Adopting `Table` there makes the omission a type error. Migrating the five
+tables that already work would be churn with no behaviour change.
+
+**D-P9-06 · 2026-08-12 · No horizontal scrolling for a data matrix** — The
+notification settings grid scrolled its event names out of view while you
+toggled their channels. Below `md` it is one card per event. The rule this
+follows is `Table.tsx`'s own: a phone scrolls in one direction.
+
+**D-P9-07 · 2026-08-12 · Icons are generated, not committed** — The repo
+had zero PNGs, and neither Safari's `apple-touch-icon` nor Chrome's
+installability check accepts SVG. `next/og` redraws the existing mark at
+request time, so there is no new dependency and no binary in git. The
+geometry lives in one module with the source SVG's coordinates, so the two
+cannot drift apart unnoticed.
+
+**D-P9-08 · 2026-08-12 · The manifest and icons are excluded from the proxy,
+not merely public** — Browsers fetch both *without credentials*. Left in
+the matcher, the auth layer sees no user, redirects to `/sign-in`, and the
+browser reads sign-in HTML as a manifest and declines to install — with no
+error in any log. Being on the public list would not have helped; the
+request had to not reach it.
+
+**D-P9-09 · 2026-08-12 · `start_url: "/"`** — `src/app/page.tsx` already
+routes by role, so one installed app serves both surfaces and an employee
+later made a supervisor does not have to reinstall.
+
+**D-P9-10 · 2026-08-12 · No service worker — a stated gap, not an
+oversight** — Installed with no service worker, a cold start with no signal
+shows the browser's offline page, which reads as "the app is broken" and
+undercuts the offline queue (Phase 7) sitting right behind it. Caching bugs
+are their own category of production incident and serve stale screens to a
+live pilot; this change was already broad enough. The gap is recorded here
+rather than half-closed.
