@@ -219,8 +219,9 @@ export function PayrollControls({
             After this, changes need an auditable adjustment.
           </Alert>
 
-          {/* 2) the figures */}
-          <div className="grid grid-cols-2 gap-3">
+          {/* 2) the figures. Stacked on a phone: a lakh-scale rupee amount
+              at text-data-lg is about 130px, which is the whole tile. */}
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="rounded-md bg-surface-sunken p-3">
               <p className="text-caption text-text-secondary">Net payable</p>
               <p className="font-mono text-data-lg font-semibold text-text-primary tabular-nums">

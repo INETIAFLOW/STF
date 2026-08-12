@@ -8,9 +8,26 @@ import { Alert } from "@/components/ui/Alert";
 import { Card, CardHeader } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { StatusChip } from "@/components/ui/StatusChip";
-import { STATUS } from "@/lib/status";
+import { Table } from "@/components/ui/Table";
+import { STATUS, type Status } from "@/lib/status";
 import { formatRupees } from "@/lib/payroll/engine";
 import { ComponentEditor, StructureEditor } from "./Editors";
+
+/** Same wording in the table and the mobile card — one source, not two. */
+function structureStatus(hasStructure: boolean): Status {
+  return hasStructure
+    ? STATUS.ready
+    : { key: "no-structure", label: "No salary structure", tone: "neutral" };
+}
+
+function formatEffectiveFrom(date: Date): string {
+  return new Intl.DateTimeFormat("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(date);
+}
 
 export const metadata: Metadata = { title: "Salary structures" };
 
@@ -173,80 +190,95 @@ export default async function SalaryStructuresPage() {
           Employees ({members.length})
         </h2>
 
-        <div className="overflow-hidden rounded-surface-card border border-border-default bg-surface-default shadow-elevation-1">
-          <table className="w-full border-collapse">
-            <caption className="sr-only">
-              Salary structure per employee
-            </caption>
-            <thead>
-              <tr className="bg-surface-sunken">
-                <th scope="col" className="micro-label px-4 py-2.5 text-left text-text-tertiary">
-                  Employee
-                </th>
-                <th scope="col" className="micro-label px-4 py-2.5 text-right text-text-tertiary">
-                  Base
-                </th>
-                <th scope="col" className="micro-label px-4 py-2.5 text-right text-text-tertiary">
-                  Components
-                </th>
-                <th scope="col" className="micro-label px-4 py-2.5 text-left text-text-tertiary">
-                  Effective from
-                </th>
-                <th scope="col" className="micro-label px-4 py-2.5 text-left text-text-tertiary">
-                  Status
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {members.map((member) => {
+        {/*
+          Uses the shared Table, whose `renderMobileCard` is REQUIRED. This
+          table previously had none and sat inside `overflow-hidden`, which
+          clips rather than scrolls — so on a phone the Effective-from and
+          Status columns were cut off with no way to reach them, on a screen
+          whose entire payload is salary figures.
+        */}
+        <Table
+          caption="Salary structure per employee"
+          rows={members}
+          rowKey={(member) => member.id}
+          columns={[
+            {
+              key: "employee",
+              header: "Employee",
+              rowHeader: true,
+              render: (member) => member.user.displayName,
+            },
+            {
+              key: "base",
+              header: "Base",
+              numeric: true,
+              render: (member) => {
                 const structure = latestByMember.get(member.id);
-                return (
-                  <tr
-                    key={member.id}
-                    className="border-t border-border-subtle hover:bg-surface-sunken"
-                  >
-                    <th
-                      scope="row"
-                      className="px-4 py-2.5 text-left text-body font-semibold text-text-primary"
-                    >
-                      {member.user.displayName}
-                    </th>
-                    <td className="px-4 py-2.5 text-right font-mono text-data tabular-nums">
+                return structure
+                  ? formatRupees(Number(structure.baseAmount))
+                  : "—";
+              },
+            },
+            {
+              key: "components",
+              header: "Components",
+              numeric: true,
+              render: (member) =>
+                latestByMember.get(member.id)?.lines.length ?? "—",
+            },
+            {
+              key: "effectiveFrom",
+              header: "Effective from",
+              render: (member) => {
+                const structure = latestByMember.get(member.id);
+                return structure ? formatEffectiveFrom(structure.effectiveFrom) : "—";
+              },
+            },
+            {
+              key: "status",
+              header: "Status",
+              render: (member) => (
+                <StatusChip
+                  status={structureStatus(latestByMember.has(member.id))}
+                  size="sm"
+                />
+              ),
+            },
+          ]}
+          renderMobileCard={(member) => {
+            const structure = latestByMember.get(member.id);
+            return (
+              <Card>
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <p className="text-body font-semibold text-text-primary">
+                    {member.user.displayName}
+                  </p>
+                  <StatusChip status={structureStatus(Boolean(structure))} size="sm" />
+                </div>
+                <dl className="mt-2 flex flex-col gap-1 text-secondary">
+                  <div className="flex justify-between gap-3">
+                    <dt className="text-text-secondary">Base</dt>
+                    <dd className="font-mono text-data text-text-primary tabular-nums">
                       {structure ? formatRupees(Number(structure.baseAmount)) : "—"}
-                    </td>
-                    <td className="px-4 py-2.5 text-right font-mono text-data tabular-nums">
+                    </dd>
+                  </div>
+                  <div className="flex justify-between gap-3">
+                    <dt className="text-text-secondary">Components</dt>
+                    <dd className="font-mono text-data text-text-primary tabular-nums">
                       {structure ? structure.lines.length : "—"}
-                    </td>
-                    <td className="px-4 py-2.5 font-mono text-data tabular-nums">
-                      {structure
-                        ? new Intl.DateTimeFormat("en-GB", {
-                            day: "numeric",
-                            month: "short",
-                            year: "numeric",
-                            timeZone: "UTC",
-                          }).format(structure.effectiveFrom)
-                        : "—"}
-                    </td>
-                    <td className="px-4 py-2.5">
-                      <StatusChip
-                        status={
-                          structure
-                            ? STATUS.ready
-                            : {
-                                key: "no-structure",
-                                label: "No salary structure",
-                                tone: "neutral",
-                              }
-                        }
-                        size="sm"
-                      />
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+                    </dd>
+                  </div>
+                  <div className="flex justify-between gap-3">
+                    <dt className="text-text-secondary">Effective from</dt>
+                    <dd className="font-mono text-data text-text-primary tabular-nums">
+                      {structure ? formatEffectiveFrom(structure.effectiveFrom) : "—"}
+                    </dd>
+                  </div>
+                </dl>
+              </Card>
+            );
+          }}
+        />
 
         {canEdit && components.length > 0 && (
           <div className="mt-4">

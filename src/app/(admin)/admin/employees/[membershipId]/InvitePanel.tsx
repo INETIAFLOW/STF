@@ -99,7 +99,9 @@ export function InvitePanel({
         <StatusChip status={inviteStatus} size="sm" />
       </div>
 
-      <dl className="mt-4 grid grid-cols-2 gap-3 text-secondary">
+      {/* One column on a phone: "Link works until" plus a date does not fit
+          in half of 360px without wrapping mid-label. */}
+      <dl className="mt-4 grid grid-cols-1 gap-3 text-secondary sm:grid-cols-2">
         <div>
           <dt className="text-text-tertiary">Invitation sent</dt>
           <dd className="text-text-primary">{sentAt ?? "Not sent"}</dd>

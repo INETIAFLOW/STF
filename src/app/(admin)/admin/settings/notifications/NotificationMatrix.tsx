@@ -69,7 +69,61 @@ export function NotificationMatrix({
             meta={`Version ${version}`}
           />
         </div>
-        <div className="overflow-x-auto p-5 pt-0">
+        {/*
+          Below md: one card per event, channels stacked beneath it.
+          A 6-column matrix in a horizontal scroller means the event name
+          scrolls out of view while you are toggling its channels, so you
+          lose track of which row you are changing — exactly the fallback
+          the design system rules out (Table.tsx docblock).
+        */}
+        <ul className="flex flex-col gap-3 p-5 pt-0 md:hidden">
+          {NOTIFICATION_EVENTS.map((event) => (
+            <li
+              key={event.key}
+              className="rounded-surface-card border border-border-default p-4"
+            >
+              <p className="text-body font-medium text-text-primary">
+                {event.label}
+              </p>
+              <div className="mt-2 flex flex-col gap-1">
+                {NOTIFICATION_CHANNELS.map((channel) => {
+                  const locked = channel.alwaysOn || !available[channel.key];
+                  return (
+                    <label
+                      key={channel.key}
+                      className="flex min-h-11 items-center justify-between gap-3"
+                    >
+                      <span className="text-secondary text-text-secondary">
+                        {channel.label}
+                        {channel.alwaysOn && " — always on"}
+                        {!channel.alwaysOn && !available[channel.key] && (
+                          <span className="block text-caption text-text-tertiary">
+                            No provider configured
+                          </span>
+                        )}
+                      </span>
+                      <input
+                        type="checkbox"
+                        className="size-5 shrink-0 accent-[var(--stf-color-brand-primary)] disabled:cursor-not-allowed"
+                        checked={isOn(event.key, channel.key)}
+                        disabled={locked}
+                        aria-label={`${event.label} by ${channel.label}`}
+                        onChange={(e) =>
+                          setMatrix((prev) => ({
+                            ...prev,
+                            [`${event.key}.${channel.key}`]: e.target.checked,
+                          }))
+                        }
+                      />
+                    </label>
+                  );
+                })}
+              </div>
+            </li>
+          ))}
+        </ul>
+
+        <div className="hidden p-5 pt-0 md:block">
           <table className="w-full border-collapse">
             <caption className="sr-only">
               Notification events by delivery channel
