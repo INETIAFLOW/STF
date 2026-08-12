@@ -50,6 +50,15 @@ export default function MarketingLayout({
             >
               Pricing
             </Link>
+            {/* Unlike Product and Pricing, this stays visible on a phone.
+                Someone who already has an account is not browsing — they
+                are trying to get in, and the header is where they look. */}
+            <Link
+              href="/sign-in"
+              className="inline-flex h-10 items-center rounded-button px-3 font-heading text-label text-text-primary hover:bg-surface-sunken"
+            >
+              Sign in
+            </Link>
             <Link
               href="/demo"
               className="inline-flex h-10 items-center rounded-button bg-brand-primary px-4 font-heading text-label text-text-on-primary hover:bg-brand-primary-hover"
@@ -90,12 +99,6 @@ export default function MarketingLayout({
               className="text-secondary text-text-secondary underline-offset-2 hover:underline"
             >
               Pricing
-            </Link>
-            <Link
-              href="/sign-in"
-              className="text-secondary text-text-secondary underline-offset-2 hover:underline"
-            >
-              Sign in
             </Link>
           </nav>
         </div>
