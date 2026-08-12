@@ -22,6 +22,55 @@ export type LocationOutcome =
 /** Worst GPS accuracy that can still confirm a permitted area. */
 export const MAX_ACCURACY_M = 200;
 
+/** What a check-in tap should do, given how the day already stands. */
+export type CheckInIntent =
+  | "open-day" // nothing recorded yet — first punch of the day
+  | "already-open" // checked in and still in; the tap is a repeat
+  | "new-punch" // day was closed and multiple punches are allowed
+  | "day-closed"; // day was closed and they are not
+
+/**
+ * One decision, in one place, for "can they check in right now?".
+ *
+ * It used to be implied by a UI branch that simply omitted the button and
+ * a server action that silently returned "already recorded". Neither said
+ * no, and neither said why — which edge-cases.md rules out: a blocked
+ * second check-in is "blocked with an explanation, not a silent no-op".
+ */
+export function checkInIntent(input: {
+  checkedIn: boolean;
+  checkedOut: boolean;
+  multiplePunchAllowed: boolean;
+}): CheckInIntent {
+  if (!input.checkedIn) return "open-day";
+  if (!input.checkedOut) return "already-open";
+  return input.multiplePunchAllowed ? "new-punch" : "day-closed";
+}
+
+/** An in/out pair. Open pairs (no check-out yet) count up to `now`. */
+export interface WorkedPunch {
+  checkInAt: Date;
+  checkOutAt: Date | null;
+}
+
+/**
+ * Minutes actually worked across a day's punches.
+ *
+ * Deliberately NOT last-out minus first-in: with more than one punch that
+ * counts the gap between them — lunch, a delivery run, a trip home — as
+ * time at work. Summing the pairs is the only version that stays true once
+ * a day can be left and returned to.
+ */
+export function workedMinutes(punches: readonly WorkedPunch[], now: Date): number {
+  let total = 0;
+  for (const punch of punches) {
+    const end = punch.checkOutAt ?? now;
+    const ms = end.getTime() - punch.checkInAt.getTime();
+    if (ms > 0) total += ms / 60_000;
+  }
+  return total;
+}
+
 export interface ShiftPolicy {
   startMinutes: number;
   endMinutes: number;
@@ -355,6 +404,8 @@ export interface TodayAttendance {
   checkInOutcome: LocationOutcome | null;
   checkInDistanceM: number | null;
   offlineCaptured: boolean;
+  /** Every in/out pair today, in order. Hours are summed from these. */
+  punches?: WorkedPunch[];
 }
 
 export interface AttendanceContext {
@@ -368,6 +419,8 @@ export interface AttendanceContext {
   branchMissing: boolean;
   shift: ShiftPolicy & { name: string };
   locationRequired: boolean;
+  /** ATTENDANCE.multiple_punch — may they come back after checking out? */
+  multiplePunchAllowed: boolean;
   today: TodayAttendance | null;
 }
 

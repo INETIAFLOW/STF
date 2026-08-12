@@ -4,12 +4,14 @@ import {
   assessLocation,
   checkInButtonLabel,
   checkInConsequence,
+  checkInIntent,
   distanceMetres,
   formatDistance,
   formatDuration,
   lateMinutes,
   minutesInTimezone,
   workDateInTimezone,
+  workedMinutes,
 } from "@/lib/attendance/policy";
 
 const BRANCH = {
@@ -37,6 +39,96 @@ describe("late calculation", () => {
 
   it("reports the full minutes late, not minutes past grace", () => {
     expect(lateMinutes(9 * 60 + 42, SHIFT)).toBe(12);
+  });
+});
+
+describe("checking in again the same day", () => {
+  const day = (checkedIn: boolean, checkedOut: boolean, allowed: boolean) =>
+    checkInIntent({ checkedIn, checkedOut, multiplePunchAllowed: allowed });
+
+  it("opens the day when nothing is recorded yet", () => {
+    expect(day(false, false, false)).toBe("open-day");
+    expect(day(false, false, true)).toBe("open-day");
+  });
+
+  it("treats a repeat tap while still in as already open", () => {
+    // Idempotency: a double tap, or a queued action retried after signal
+    // returned, must not open a second visit.
+    expect(day(true, false, true)).toBe("already-open");
+    expect(day(true, false, false)).toBe("already-open");
+  });
+
+  it("allows a return after check-out only where the feature is on", () => {
+    expect(day(true, true, true)).toBe("new-punch");
+    expect(day(true, true, false)).toBe("day-closed");
+  });
+
+  it("distinguishes 'closed' from 'already open' so the refusal can differ", () => {
+    // The whole point: "day-closed" is a NO that owes an explanation,
+    // "already-open" is a silent success. Collapsing them is what made a
+    // blocked second check-in look like a broken button.
+    expect(day(true, true, false)).not.toBe(day(true, false, false));
+  });
+});
+
+describe("hours across a day with more than one visit", () => {
+  const at = (h: number, m = 0) => new Date(Date.UTC(2026, 7, 12, h, m));
+
+  it("sums the pairs rather than measuring first-in to last-out", () => {
+    // 09:00–13:00 and 14:00–18:00 is eight hours worked, not the nine
+    // hours between arriving and leaving. The hour of lunch is the whole
+    // difference, and it is the difference someone gets paid for.
+    const worked = workedMinutes(
+      [
+        { checkInAt: at(9), checkOutAt: at(13) },
+        { checkInAt: at(14), checkOutAt: at(18) },
+      ],
+      at(20),
+    );
+    expect(worked).toBe(8 * 60);
+    expect(worked).not.toBe(at(18).getTime() - at(9).getTime());
+  });
+
+  it("counts an open visit up to now, so the clock runs while working", () => {
+    expect(
+      workedMinutes([{ checkInAt: at(9), checkOutAt: null }], at(11, 30)),
+    ).toBe(150);
+  });
+
+  it("adds a finished visit to one still open", () => {
+    expect(
+      workedMinutes(
+        [
+          { checkInAt: at(9), checkOutAt: at(13) },
+          { checkInAt: at(14), checkOutAt: null },
+        ],
+        at(15),
+      ),
+    ).toBe(5 * 60);
+  });
+
+  it("matches the old single-pair answer for a day recorded before punches", () => {
+    expect(
+      workedMinutes([{ checkInAt: at(9), checkOutAt: at(17, 30) }], at(20)),
+    ).toBe(8 * 60 + 30);
+  });
+
+  it("ignores a pair that would count backwards", () => {
+    // A corrected check-out earlier than the check-in must not subtract
+    // from a day's total.
+    expect(
+      workedMinutes(
+        [
+          { checkInAt: at(9), checkOutAt: at(8) },
+          { checkInAt: at(10), checkOutAt: at(11) },
+        ],
+        at(12),
+      ),
+    ).toBe(60);
+  });
+
+  it("is zero for a day with no visits", () => {
+    expect(workedMinutes([], at(12))).toBe(0);
   });
 });
 

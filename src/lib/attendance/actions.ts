@@ -11,8 +11,12 @@ import {
   SUBJECT,
 } from "@/lib/actions/raise";
 import { checkAccess } from "@/lib/authz/guard";
+import { loadEntitlements } from "@/lib/authz/entitlements";
+import { evaluateAccess } from "@/lib/authz/flags";
 import { getPolicyVersion } from "@/lib/policies";
+import type { AppSession } from "@/lib/auth/types";
 import {
+  checkInIntent,
   computeCheckInState,
   workDateInTimezone,
   formatClockTime,
@@ -22,6 +26,22 @@ import {
   type CheckInState,
 } from "./policy";
 import { loadAttendanceContext } from "./service";
+
+/**
+ * May this person open a second visit today?
+ *
+ * Evaluated rather than guarded: a "no" here is not a refusal of the whole
+ * action, it is one of the answers the action has to give properly.
+ */
+async function multiplePunchIsOn(session: AppSession): Promise<boolean> {
+  const entitlements = await loadEntitlements(session.tenant.id, session.user.id);
+  return evaluateAccess({
+    session,
+    entitlements,
+    module: "ATTENDANCE",
+    feature: "multiple_punch",
+  }).allowed;
+}
 
 /**
  * What was true when the record was written, captured by value so a later
@@ -202,6 +222,108 @@ export async function checkInAction(
     },
   });
 
+  const multiplePunchAllowed = await multiplePunchIsOn(session);
+  const intent = checkInIntent({
+    checkedIn: Boolean(existing?.checkInAt),
+    checkedOut: Boolean(existing?.checkOutAt),
+    multiplePunchAllowed,
+  });
+
+  // The day is finished and this company records one visit per day. Say so.
+  // Returning ok:true "already recorded" here was the silent no-op:
+  // the tap did nothing and nothing explained why.
+  if (intent === "day-closed" && existing) {
+    return {
+      ok: false,
+      error: `You already checked out at ${formatClockTime(existing.checkOutAt!, session.tenant.timezone)}. Your company records one check-in per day, so this one can't be added. Ask your manager if you worked again today.`,
+    };
+  }
+
+  // Day was closed, but this company allows coming back — lunch, a
+  // delivery, a second shift. A new pair opens and the day re-opens with
+  // it; the record keeps its FIRST check-in, because lateness was decided
+  // on arrival and must not be re-judged by a later return.
+  if (intent === "new-punch" && existing) {
+    const nextSequence =
+      (await db.attendancePunch.count({ where: { recordId: existing.id } })) + 1;
+
+    await db.$transaction([
+      db.attendancePunch.create({
+        data: {
+          tenantId: session.tenant.id,
+          recordId: existing.id,
+          sequence: nextSequence,
+          checkInAt: effectiveAt,
+          checkInClientAt: captured.at,
+          checkInLat: parsed.data.coords?.lat,
+          checkInLng: parsed.data.coords?.lng,
+          checkInAccuracyM: parsed.data.coords?.accuracyM ?? null,
+          checkInDistanceM: state.location.distanceM,
+          checkInOutcome: state.location.outcome,
+          checkInReason: reason,
+          offlineCaptured: isOffline,
+          branchId: state.location.branch?.id ?? context.homeBranch?.id,
+        },
+      }),
+      db.attendanceRecord.update({
+        where: { id: existing.id },
+        data: {
+          // The day is open again, so the summary's last-out is no longer
+          // true. It is set again on the next check-out.
+          checkOutAt: null,
+          checkOutClientAt: null,
+          checkOutLat: null,
+          checkOutLng: null,
+          checkOutOutcome: null,
+          reviewStatus:
+            state.location.outcome === "OUTSIDE" ||
+            state.location.outcome === "UNCONFIRMED"
+              ? "PENDING"
+              : existing.reviewStatus,
+        },
+      }),
+    ]);
+
+    await recordAuditEvent(session, {
+      action: "attendance.checkin",
+      entityType: "attendance_record",
+      entityId: existing.id,
+      reason,
+      after: {
+        punch: nextSequence,
+        checkInAt: effectiveAt.toISOString(),
+        outcome: state.location.outcome,
+        distanceM: state.location.distanceM,
+        branch: state.location.branch?.name ?? null,
+      },
+    });
+
+    if (
+      state.location.outcome === "OUTSIDE" ||
+      state.location.outcome === "UNCONFIRMED"
+    ) {
+      await notify.attendanceException(session, existing.id);
+      await raiseAttendanceException(
+        session,
+        existing.id,
+        session.membership.id,
+        session.user.displayName,
+        state.location.outcome === "OUTSIDE"
+          ? `Checked in again ${state.location.distanceM ?? "?"} m from ${state.location.branch?.name ?? "the permitted area"}.`
+          : "Checked in again with location unavailable.",
+      );
+    }
+
+    revalidatePath("/home");
+    revalidatePath("/attendance");
+
+    return {
+      ok: true,
+      message: `Checked in at ${formatClockTime(effectiveAt, session.tenant.timezone)}`,
+      detail: `This is visit ${nextSequence} today. Your earlier hours are kept.`,
+    };
+  }
+
   // Idempotent: a second tap — or a queued action retried after the
   // connection returned — produces no second record and no error.
   if (existing?.checkInAt) {
@@ -309,6 +431,40 @@ export async function checkInAction(
       branchId: matchedBranchId,
       offlineCaptured: isOffline,
       policySnapshot: snapshot,
+    },
+  });
+
+  // The day's first pair. Every day has one, whether or not the company
+  // allows a second — so hours are always summed from punches and never
+  // from the summary, which would count breaks as work.
+  await db.attendancePunch.upsert({
+    where: { recordId_sequence: { recordId: record.id, sequence: 1 } },
+    update: {
+      checkInAt: effectiveAt,
+      checkInClientAt: captured.at,
+      checkInLat: parsed.data.coords?.lat,
+      checkInLng: parsed.data.coords?.lng,
+      checkInAccuracyM: parsed.data.coords?.accuracyM ?? null,
+      checkInDistanceM: state.location.distanceM,
+      checkInOutcome: state.location.outcome,
+      checkInReason: reason,
+      offlineCaptured: isOffline,
+      branchId: matchedBranchId,
+    },
+    create: {
+      tenantId: session.tenant.id,
+      recordId: record.id,
+      sequence: 1,
+      checkInAt: effectiveAt,
+      checkInClientAt: captured.at,
+      checkInLat: parsed.data.coords?.lat,
+      checkInLng: parsed.data.coords?.lng,
+      checkInAccuracyM: parsed.data.coords?.accuracyM ?? null,
+      checkInDistanceM: state.location.distanceM,
+      checkInOutcome: state.location.outcome,
+      checkInReason: reason,
+      offlineCaptured: isOffline,
+      branchId: matchedBranchId,
     },
   });
 
@@ -440,16 +596,40 @@ export async function checkOutAction(
   const context = await loadAttendanceContext(session);
   const state = computeCheckInState(context, parsed.data.coords ?? null, effectiveAt);
 
-  await db.attendanceRecord.update({
-    where: { id: record.id },
-    data: {
-      checkOutAt: effectiveAt,
-      checkOutClientAt: captured.at,
-      checkOutLat: parsed.data.coords?.lat,
-      checkOutLng: parsed.data.coords?.lng,
-      checkOutOutcome: state.location.outcome,
-    },
+  // Close the open pair as well as the day summary. The summary carries
+  // the LAST check-out; the pair carries this one, which is what hours are
+  // actually summed from.
+  const openPunch = await db.attendancePunch.findFirst({
+    where: { recordId: record.id, checkOutAt: null },
+    orderBy: { sequence: "desc" },
   });
+
+  await db.$transaction([
+    db.attendanceRecord.update({
+      where: { id: record.id },
+      data: {
+        checkOutAt: effectiveAt,
+        checkOutClientAt: captured.at,
+        checkOutLat: parsed.data.coords?.lat,
+        checkOutLng: parsed.data.coords?.lng,
+        checkOutOutcome: state.location.outcome,
+      },
+    }),
+    ...(openPunch
+      ? [
+          db.attendancePunch.update({
+            where: { id: openPunch.id },
+            data: {
+              checkOutAt: effectiveAt,
+              checkOutClientAt: captured.at,
+              checkOutLat: parsed.data.coords?.lat,
+              checkOutLng: parsed.data.coords?.lng,
+              checkOutOutcome: state.location.outcome,
+            },
+          }),
+        ]
+      : []),
+  ]);
 
   await recordAuditEvent(session, {
     action: "attendance.checkout",

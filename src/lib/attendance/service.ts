@@ -128,6 +128,13 @@ export async function loadAttendanceContext(
       where: { tenantId: session.tenant.id, isActive: true },
     })) > 0;
 
+  const multiplePunchAllowed = evaluateAccess({
+    session,
+    entitlements,
+    module: "ATTENDANCE",
+    feature: "multiple_punch",
+  }).allowed;
+
   const workDate = workDateInTimezone(new Date(), session.tenant.timezone);
   const record = await db.attendanceRecord.findUnique({
     where: {
@@ -137,6 +144,9 @@ export async function loadAttendanceContext(
         workDate,
       },
     },
+    // Hours come from the pairs, never from first-in/last-out, which would
+    // count a lunch break as work once a day can have more than one visit.
+    include: { punches: { orderBy: { sequence: "asc" } } },
   });
 
   return {
@@ -157,6 +167,7 @@ export async function loadAttendanceContext(
       graceMinutes: resolvedShift.graceMinutes,
     },
     locationRequired,
+    multiplePunchAllowed,
     today: record
       ? {
           recordId: record.id,
@@ -168,6 +179,10 @@ export async function loadAttendanceContext(
           checkInOutcome: record.checkInOutcome,
           checkInDistanceM: record.checkInDistanceM,
           offlineCaptured: record.offlineCaptured,
+          punches: record.punches.map((p) => ({
+            checkInAt: p.checkInAt,
+            checkOutAt: p.checkOutAt,
+          })),
         }
       : null,
   };

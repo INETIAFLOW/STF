@@ -12,9 +12,11 @@ import { STATUS, statusLate, type Status } from "@/lib/status";
 import { cn } from "@/lib/cn";
 import {
   checkInButtonLabel,
+  checkInIntent,
   computeCheckInState,
   formatDuration,
   formatShiftTime,
+  workedMinutes,
   type AttendanceContext,
 } from "@/lib/attendance/policy";
 import { checkInAction, checkOutAction } from "@/lib/attendance/actions";
@@ -153,7 +155,18 @@ export function AttendanceActionCard({ context, firstName }: Props) {
 
   const location = state?.location ?? null;
   const lateBy = state?.lateBy ?? 0;
-  const consequence = state && !checkedIn ? state.consequence : null;
+  const intent = checkInIntent({
+    checkedIn,
+    checkedOut,
+    multiplePunchAllowed: context.multiplePunchAllowed,
+  });
+  // The consequence belongs to a check-in that can actually happen —
+  // which now includes returning after a check-out, so the reason box
+  // appears for a second visit that starts outside the permitted area.
+  const consequence =
+    state && (intent === "open-day" || intent === "new-punch")
+      ? state.consequence
+      : null;
 
   const reasonMissing = Boolean(consequence?.requiresReason) && !reason.trim();
 
@@ -280,12 +293,26 @@ export function AttendanceActionCard({ context, firstName }: Props) {
     });
   }
 
-  const elapsedMinutes =
-    today?.checkInAt && now
-      ? (Math.min(now.getTime(), today.checkOutAt?.getTime() ?? now.getTime()) -
-          new Date(today.checkInAt).getTime()) /
-        60000
-      : 0;
+  // Summed across the day's pairs, not last-out minus first-in: once
+  // someone can leave and come back, the gap between visits is not work.
+  // Falls back to the single pair for a day recorded before punches
+  // existed, so history keeps reading correctly.
+  const elapsedMinutes = !today?.checkInAt || !now
+    ? 0
+    : workedMinutes(
+        today.punches?.length
+          ? today.punches.map((p) => ({
+              checkInAt: new Date(p.checkInAt),
+              checkOutAt: p.checkOutAt ? new Date(p.checkOutAt) : null,
+            }))
+          : [
+              {
+                checkInAt: new Date(today.checkInAt),
+                checkOutAt: today.checkOutAt ? new Date(today.checkOutAt) : null,
+              },
+            ],
+        now,
+      );
 
   // Warm confirmation panel — the one warm element on this screen.
   if (confirmation) {
@@ -455,10 +482,40 @@ export function AttendanceActionCard({ context, firstName }: Props) {
             Check Out
           </Button>
         ) : (
-          <div className="rounded-md bg-surface-sunken p-4">
-            <p className="text-body text-text-primary">
-              Today is complete · {formatDuration(elapsedMinutes)} recorded
-            </p>
+          <div className="flex flex-col gap-3">
+            <div className="rounded-md bg-surface-sunken p-4">
+              <p className="text-body text-text-primary">
+                Today is complete · {formatDuration(elapsedMinutes)} recorded
+              </p>
+              {/* Says WHY there is no button, rather than leaving a person
+                  who genuinely worked again to conclude the app is broken.
+                  edge-cases.md: blocked "with an explanation, not a silent
+                  no-op". */}
+              {!context.multiplePunchAllowed && (
+                <p className="mt-1 text-caption text-text-secondary">
+                  Your company records one check-in per day. Ask your manager
+                  if you worked again today.
+                </p>
+              )}
+            </div>
+            {/* Lunch, a delivery, a second shift — the day re-opens and the
+                earlier hours are kept. */}
+            {context.multiplePunchAllowed && location && (
+              <Button
+                size="xl"
+                loading={pending}
+                onClick={handleCheckIn}
+                disabled={reasonMissing}
+                disabledReason={
+                  reasonMissing
+                    ? "Add a reason to send this for approval."
+                    : undefined
+                }
+                leadingIcon={<LogIn aria-hidden="true" className="size-5" />}
+              >
+                Check in again
+              </Button>
+            )}
           </div>
         )}
       </div>

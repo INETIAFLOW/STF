@@ -4,7 +4,7 @@ import { z } from "zod";
 import { getDb } from "@/lib/db";
 import { recordAuditEvent } from "@/lib/audit";
 import { checkAccess } from "@/lib/authz/guard";
-import { formatClockTime } from "@/lib/attendance/policy";
+import { formatClockTime, workedMinutes } from "@/lib/attendance/policy";
 
 /**
  * Report export (screen A17).
@@ -94,7 +94,11 @@ export async function exportReportAction(
         workDate: { gte: from, lte: to },
         ...(branchId ? { branchId } : {}),
       },
-      include: { membership: { include: { user: true } }, branch: true },
+      include: {
+        membership: { include: { user: true } },
+        branch: true,
+        punches: { orderBy: { sequence: "asc" } },
+      },
       orderBy: [{ workDate: "asc" }],
     });
     headers = [
@@ -103,6 +107,7 @@ export async function exportReportAction(
       "Employee code",
       "Check in",
       "Check out",
+      "Visits",
       "Hours",
       "Late minutes",
       "Location outcome",
@@ -110,16 +115,30 @@ export async function exportReportAction(
       "Branch",
     ];
     rows = records.map((r) => {
-      const hours =
-        r.checkInAt && r.checkOutAt
-          ? ((r.checkOutAt.getTime() - r.checkInAt.getTime()) / 3_600_000).toFixed(2)
-          : "";
+      // Summed across visits. Last-out minus first-in would bill the gap
+      // between them — a lunch break, a trip home — as time worked, and
+      // this file is what a payroll conversation is settled from.
+      const closed = r.punches.filter((p) => p.checkOutAt);
+      const hours = closed.length
+        ? (
+            workedMinutes(
+              closed.map((p) => ({
+                checkInAt: p.checkInAt,
+                checkOutAt: p.checkOutAt,
+              })),
+              new Date(0), // unused: every pair here is closed
+            ) / 60
+          ).toFixed(2)
+        : "";
       return [
         r.workDate.toISOString().slice(0, 10),
         r.membership.user.displayName,
         r.membership.employeeCode ?? "",
         r.checkInAt ? formatClockTime(r.checkInAt, tz) : "",
         r.checkOutAt ? formatClockTime(r.checkOutAt, tz) : "",
+        // Named so a reader knows the Check in / Check out columns are the
+        // day's first and last, not the whole story.
+        r.punches.length,
         hours,
         r.lateMinutes,
         r.checkInOutcome ?? "",

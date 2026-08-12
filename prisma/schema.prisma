@@ -81,6 +81,7 @@ model Tenant {
   branches          Branch[]
   shifts            Shift[]
   attendanceRecords AttendanceRecord[]
+  attendancePunches AttendancePunch[]
   leaveRequests     LeaveRequest[]
   tasks             Task[]
   taskProofs        TaskProof[]
@@ -200,6 +201,7 @@ model Branch {
   tenant            Tenant             @relation(fields: [tenantId], references: [id])
   memberships       TenantMembership[]
   attendanceRecords AttendanceRecord[]
+  attendancePunches AttendancePunch[]
 
   @@index([tenantId, isActive])
   @@map("branches")
@@ -312,11 +314,66 @@ model AttendanceRecord {
   membership TenantMembership @relation(fields: [membershipId], references: [id])
   branch     Branch?          @relation(fields: [branchId], references: [id])
 
+  punches AttendancePunch[]
+
   @@unique([tenantId, membershipId, workDate])
   @@index([tenantId, workDate])
   @@index([tenantId, reviewStatus])
   @@index([tenantId, branchId, workDate])
   @@map("attendance_records")
+}
+
+/// One in-and-out pair inside a work day.
+///
+/// The day record above stays the summary — first check-in, lateness,
+/// review status — because payroll counts DAYS PRESENT and must not change
+/// shape when someone steps out for lunch. This table carries the detail,
+/// so a break is not counted as worked time and each return to work keeps
+/// its own location.
+///
+/// A day always has at least one punch. Additional ones exist only where
+/// ATTENDANCE.multiple_punch is on; the feature is the gate, this is the
+/// storage (Constitution §5).
+model AttendancePunch {
+  id       String @id @default(uuid()) @db.Uuid
+  tenantId String @db.Uuid
+  recordId String @db.Uuid
+  /// 1 for the day's first pair, then 2, 3 — the order they happened.
+  sequence Int
+
+  checkInAt        DateTime
+  /// Original device capture time, as on the day record.
+  checkInClientAt  DateTime?
+  checkInLat       Float?
+  checkInLng       Float?
+  checkInAccuracyM Float?
+  checkInDistanceM Float?
+  checkInOutcome   LocationOutcome?
+  /// Required when this pair started outside the permitted area.
+  checkInReason    String?
+  offlineCaptured  Boolean          @default(false)
+
+  /// Null while this pair is open — the person is working right now.
+  checkOutAt       DateTime?
+  checkOutClientAt DateTime?
+  checkOutLat      Float?
+  checkOutLng      Float?
+  checkOutOutcome  LocationOutcome?
+
+  /// Assessed against this location, which can differ between punches for
+  /// roaming staff.
+  branchId String? @db.Uuid
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant Tenant           @relation(fields: [tenantId], references: [id])
+  record AttendanceRecord @relation(fields: [recordId], references: [id], onDelete: Cascade)
+  branch Branch?          @relation(fields: [branchId], references: [id])
+
+  @@unique([recordId, sequence])
+  @@index([tenantId, checkInAt])
+  @@map("attendance_punches")
 }
 
 // ------------------------------------------------------------------ leave
