@@ -15,6 +15,26 @@ import type { AppSession } from "./types";
  *
  * Cached per request via React cache().
  */
+/**
+ * Does Supabase recognise this visitor, regardless of STF access?
+ *
+ * The gap between this and `getAppSession()` is the whole point: someone
+ * can hold a perfectly valid auth cookie and still have no usable account
+ * here — deactivated, membership removed, tenant closed, or invited but
+ * not yet linked. Callers that only check `getAppSession()` treat all of
+ * those as "signed out", which is how a stale cookie turns into a silent
+ * bounce back to the marketing page.
+ */
+export const hasSupabaseUser = cache(async (): Promise<boolean> => {
+  if (devFixtureRole()) return true;
+  const supabase = await createSupabaseServerClient();
+  if (!supabase) return false;
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  return Boolean(user);
+});
+
 export const getAppSession = cache(async (): Promise<AppSession | null> => {
   const fixtureRole = devFixtureRole();
   if (fixtureRole) return await fixtureSession(fixtureRole);

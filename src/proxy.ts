@@ -135,12 +135,21 @@ export default async function proxy(request: NextRequest) {
     return NextResponse.redirect(signIn);
   }
 
-  if (user && pathname === "/sign-in") {
-    const home = request.nextUrl.clone();
-    home.pathname = "/";
-    home.search = "";
-    return NextResponse.redirect(home);
-  }
+  // Deliberately NOT redirecting an authenticated visitor away from
+  // /sign-in. This layer only knows that Supabase recognises someone; it
+  // cannot know whether they still have a usable STF account, and the two
+  // come apart routinely — a deactivated employee, a membership removed, a
+  // tenant closed, an invited user not yet linked. For all of those,
+  // getAppSession() is null while getUser() is not.
+  //
+  // Bouncing them to "/" made that a trap: "/" found no app session and
+  // sent them to marketing, whose Sign in link came straight back here.
+  // A round trip to the front page, no error, no way in, and no way to
+  // sign out either — sign-out lives behind the same guard.
+  //
+  // The redirect belongs on the sign-in page, which can ask the database
+  // the question this layer cannot. Same rule as the docblock above:
+  // tenant-aware decisions are not made here.
 
   return response;
 }

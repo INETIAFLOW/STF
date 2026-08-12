@@ -1,8 +1,11 @@
 import { Suspense } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import type { Metadata } from "next";
+import { Alert } from "@/components/ui/Alert";
 import { Skeleton } from "@/components/ui/Loading";
+import { getAppSession } from "@/lib/auth/session";
 import { SignInForm } from "./SignInForm";
 
 export const metadata: Metadata = { title: "Sign in" };
@@ -12,8 +15,22 @@ export const metadata: Metadata = { title: "Sign in" };
  * Note: the approved design specifies phone-number sign-in; Phase 1 ships
  * email + password until the SMS/OTP provider decision is approved
  * (DECISIONS.md D-P1-05, raised in the completion report).
+ *
+ * The "already signed in, go to your surface" redirect lives here rather
+ * than in the proxy because it is only correct if the person actually has
+ * an STF account, and only the database knows that.
  */
-export default function SignInPage() {
+export default async function SignInPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>;
+}) {
+  const session = await getAppSession();
+  if (session) redirect("/");
+
+  const { error } = await searchParams;
+  const noAccess = error === "no-access";
+
   return (
     <main
       data-surface="employee"
@@ -33,6 +50,34 @@ export default function SignInPage() {
         <p className="mt-1 text-body text-text-secondary">
           Use the email your company registered.
         </p>
+
+        {noAccess && (
+          <div className="mt-6">
+            <Alert
+              variant="warning"
+              title="That account can't open STF right now."
+              live
+            >
+              <p>
+                Your password was accepted, so the account exists — but it
+                has no active company here. Usually that means it was
+                deactivated, or the company was closed. Your admin or owner
+                can tell you which, and put it back.
+              </p>
+              {/* The escape hatch. Without this, someone holding a stale
+                  session cannot even reach the form as a different person:
+                  sign-out otherwise lives inside the app they can't open. */}
+              <form action="/auth/sign-out" method="post" className="mt-3">
+                <button
+                  type="submit"
+                  className="inline-flex min-h-11 items-center text-label text-brand-primary underline underline-offset-2"
+                >
+                  Sign out and use a different account
+                </button>
+              </form>
+            </Alert>
+          </div>
+        )}
 
         <div className="mt-7">
           {/* Suspense: useSearchParams (the ?next redirect) opts the form
