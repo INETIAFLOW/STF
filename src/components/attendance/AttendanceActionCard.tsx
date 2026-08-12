@@ -43,6 +43,13 @@ interface Props {
   firstName: string;
 }
 
+/**
+ * How long the card will wait for a position before giving up and letting
+ * the person check in anyway. Longer than the browser's own 10s timeout so
+ * a slow but working GPS fix is not cut off early.
+ */
+const GEO_DEADLINE_MS = 15_000;
+
 type GeoState =
   | { phase: "resolving" }
   | { phase: "ready"; coords: { lat: number; lng: number; accuracyM: number | null } }
@@ -83,11 +90,30 @@ export function AttendanceActionCard({ context, firstName }: Props) {
   useEffect(() => {
     if (!context.locationRequired) return;
     let cancelled = false;
+    let watchdog: ReturnType<typeof setTimeout> | undefined;
     const request = requestAnimationFrame(() => {
       if (!("geolocation" in navigator)) {
         setGeo({ phase: "denied" });
         return;
       }
+
+      // `getCurrentPosition`'s own `timeout` does NOT cover the time the
+      // browser spends waiting for someone to answer the permission
+      // prompt. Leave that prompt unanswered — tap past it, background the
+      // app, or have it suppressed by device policy — and NEITHER callback
+      // ever fires. The card then sits on `resolving` for good, and since
+      // the Check In button only renders once a location assessment
+      // exists, the employee is left staring at a grey placeholder where
+      // the button should be, with nothing explaining why.
+      //
+      // So the wait gets a deadline of its own. Falling through to the
+      // same state as a refusal is right: not knowing where someone is is
+      // exactly what UNCONFIRMED means, and the product already handles
+      // it — check in, give a reason, manager approves.
+      watchdog = setTimeout(() => {
+        if (!cancelled) setGeo((g) => (g.phase === "resolving" ? { phase: "denied" } : g));
+      }, GEO_DEADLINE_MS);
+
       navigator.geolocation.getCurrentPosition(
         (position) => {
           if (cancelled) return;
@@ -109,6 +135,7 @@ export function AttendanceActionCard({ context, firstName }: Props) {
     return () => {
       cancelled = true;
       cancelAnimationFrame(request);
+      if (watchdog) clearTimeout(watchdog);
     };
   }, [context.locationRequired]);
 
@@ -459,11 +486,16 @@ export function AttendanceActionCard({ context, firstName }: Props) {
         )}
       </div>
 
+      {/* Said what the product does NOT do: "Turn on location to check in"
+          reads as a precondition, and it is not one. Attendance is never
+          refused for a missing or wrong location — it is recorded and sent
+          for approval. Telling someone otherwise is how a person who is
+          genuinely at work decides they cannot mark it. */}
       {geo.phase === "denied" && (
         <p className="mt-3 inline-flex items-start gap-2 text-caption text-text-secondary">
           <MapPinOff aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
-          Location is off. Turn on location to check in, or ask your manager
-          to record it for you.
+          Location isn&apos;t available. You can still check in — it goes to
+          your manager for approval. Turning location on avoids that.
         </p>
       )}
 
