@@ -2,7 +2,11 @@ import { requireAdminArea } from "@/lib/authz/guard";
 import { loadEntitlements } from "@/lib/authz/entitlements";
 import { enabledModuleKeys } from "@/lib/authz/flags";
 import { unreadNotificationCount } from "@/lib/notifications";
-import { adminConfigItems, adminNavItems } from "@/lib/shell/nav";
+import {
+  adminConfigItems,
+  adminCrossLinks,
+  adminNavItems,
+} from "@/lib/shell/nav";
 import { Sidebar } from "@/components/shell/Sidebar";
 import { AdminTopBar } from "@/components/shell/TopBar";
 import { ToastProvider } from "@/components/ui/Toast";
@@ -41,7 +45,9 @@ export default async function AdminLayout({
       audit: session.permissions.has("audit.view"),
     },
   };
-  const items = adminNavItems(navInput);
+  // An admin has attendance, leave and payslips of their own, and nothing
+  // here pointed at them. The way back was the URL bar.
+  const items = [...adminNavItems(navInput), ...adminCrossLinks()];
   const configItems = adminConfigItems(navInput);
   const nav = {
     items,

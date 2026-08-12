@@ -27,11 +27,13 @@ import { cn } from "@/lib/cn";
 export function MobileNav({
   items,
   configItems = [],
+  configLabel = "Configuration",
   userName,
   roleName,
 }: {
   items: NavItem[];
   configItems?: NavItem[];
+  configLabel?: string;
   userName: string;
   roleName: string;
 }) {
@@ -102,7 +104,7 @@ export function MobileNav({
           {configItems.length > 0 && (
             <div className="mt-6">
               <p className="micro-label mb-1.5 px-3 text-text-tertiary">
-                Configuration
+                {configLabel}
               </p>
               <ul className="flex flex-col gap-0.5">
                 {configItems.map((item) => (

@@ -1,10 +1,12 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Bell, Volume2, VolumeX } from "lucide-react";
 import { IconButton } from "@/components/ui/IconButton";
 import { useActionQueue } from "@/lib/actions/ActionQueueProvider";
 import { soundSupported } from "@/lib/actions/chime";
+import { cn } from "@/lib/cn";
 
 /**
  * The bell, and the control for the sound.
@@ -25,6 +27,8 @@ export function NotificationBell({
   initialUnread?: number;
 }) {
   const { tiles, unread, soundOn, toggleSound } = useActionQueue();
+  const pathname = usePathname();
+  const onNotifications = pathname === "/notifications";
 
   const decisions = tiles.length;
   // Before the first poll returns, the server-rendered count is the truth.
@@ -55,10 +59,21 @@ export function NotificationBell({
         </IconButton>
       )}
 
+      {/* On /notifications this link goes nowhere, which reads as a broken
+          button — it was reported as one. It now says "you are here"
+          instead: the same answer a nav item gives, in colour AND in the
+          accessible name, never colour alone. */}
       <Link
         href="/notifications"
-        aria-label={label}
-        className="relative inline-flex size-11 items-center justify-center rounded-button text-text-secondary hover:bg-surface-sunken focus-visible:outline-none focus-visible:[box-shadow:var(--stf-shadow-focus-ring)]"
+        aria-label={onNotifications ? `${label} — you are here` : label}
+        aria-current={onNotifications ? "page" : undefined}
+        className={cn(
+          "relative inline-flex size-11 items-center justify-center rounded-button",
+          "focus-visible:outline-none focus-visible:[box-shadow:var(--stf-shadow-focus-ring)]",
+          onNotifications
+            ? "bg-brand-primary-subtle text-brand-primary"
+            : "text-text-secondary hover:bg-surface-sunken",
+        )}
       >
         <Bell aria-hidden="true" />
         {badge > 0 && (

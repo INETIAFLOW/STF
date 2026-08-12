@@ -2,7 +2,11 @@ import { requireSession } from "@/lib/authz/guard";
 import { loadEntitlements } from "@/lib/authz/entitlements";
 import { enabledModuleKeys } from "@/lib/authz/flags";
 import { unreadNotificationCount } from "@/lib/notifications";
-import { bottomBarItems, employeeNavItems } from "@/lib/shell/nav";
+import {
+  bottomBarItems,
+  employeeCrossLinks,
+  employeeNavItems,
+} from "@/lib/shell/nav";
 import { BottomNav } from "@/components/shell/BottomNav";
 import { Sidebar } from "@/components/shell/Sidebar";
 import { EmployeeTopBar } from "@/components/shell/TopBar";
@@ -42,6 +46,13 @@ export default async function EmployeeLayout({
   const barItems = bottomBarItems(items);
   const nav = {
     items,
+    // Without this an owner who lands here — from /home, or from the bell,
+    // since /notifications is an employee route — has no way to any admin
+    // screen at all, including the one that adds a work location.
+    configItems: employeeCrossLinks({
+      canAccessAdmin: session.permissions.has("admin.access"),
+    }),
+    configLabel: "Manage the company",
     userName: session.user.displayName,
     roleName: session.membership.roleName,
   };

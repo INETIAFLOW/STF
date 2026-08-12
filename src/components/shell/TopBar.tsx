@@ -17,6 +17,7 @@ import type { NavItem } from "@/lib/shell/nav";
 interface NavProps {
   items: NavItem[];
   configItems?: NavItem[];
+  configLabel?: string;
   userName: string;
   roleName: string;
 }

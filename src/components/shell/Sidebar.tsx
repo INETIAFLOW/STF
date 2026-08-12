@@ -22,8 +22,10 @@ import { cn } from "@/lib/cn";
  */
 export interface SidebarProps {
   items: NavItem[];
-  /** Second group under a "Configuration" heading. Empty for employees. */
+  /** Second group. Admin configuration, or the link to the other surface. */
   configItems?: NavItem[];
+  /** Heading for that group — it is not always "Configuration". */
+  configLabel?: string;
   userName: string;
   roleName: string;
   /** Names the landmark, e.g. "Modules" or "Your STF". */
@@ -33,6 +35,7 @@ export interface SidebarProps {
 export function Sidebar({
   items,
   configItems = [],
+  configLabel = "Configuration",
   userName,
   roleName,
   label = "Modules",
@@ -101,7 +104,7 @@ export function Sidebar({
         {configItems.length > 0 && (
           <div>
             <p className="micro-label mb-1.5 px-3 text-text-tertiary md:hidden lg:block">
-              Configuration
+              {configLabel}
             </p>
             <ul className="flex flex-col gap-0.5">
               {configItems.map((item) => (

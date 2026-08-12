@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
   adminConfigItems,
+  adminCrossLinks,
   adminNavItems,
   bottomBarItems,
   BOTTOM_BAR_MAX,
+  employeeCrossLinks,
   employeeNavItems,
   isActiveNav,
 } from "@/lib/shell/nav";
@@ -120,6 +122,55 @@ describe("the bottom bar cap belongs to the bar, not the product", () => {
   it("re-balances rather than leaving a gap when modules are off", () => {
     const bar = bottomBarItems(employeeNavItems({ enabledModules: ["ATTENDANCE"] }));
     expect(bar.map((i) => i.href)).toEqual(["/home", "/attendance", "/profile"]);
+  });
+});
+
+describe("the two surfaces are reachable from each other", () => {
+  /**
+   * Reported as three separate problems by the tenant's own owner: the
+   * notification bell "does not work", there is no Settings button, and
+   * there is nowhere to add work locations. One cause. /notifications is
+   * an employee route, so tapping the bell moved an owner into the
+   * employee shell — which listed only Home, Attendance, Tasks, Leave,
+   * Payslips, documents and Profile, with no route back to /admin.
+   */
+  it("offers an admin the way into the admin area", () => {
+    expect(employeeCrossLinks({ canAccessAdmin: true }).map((i) => i.href)).toEqual(
+      ["/admin"],
+    );
+  });
+
+  it("offers a plain employee nothing of the sort", () => {
+    expect(employeeCrossLinks({ canAccessAdmin: false })).toEqual([]);
+  });
+
+  it("offers the way back to your own screens from admin", () => {
+    expect(adminCrossLinks().map((i) => i.href)).toEqual(["/home"]);
+  });
+
+  it("keeps the cross-link out of the four-slot bottom bar", () => {
+    // The bar is for an employee's own destinations. A tenant with almost
+    // no modules on has few enough items that "Admin area" could take a
+    // thumb slot if it were ever merged into the main list.
+    const items = employeeNavItems({ enabledModules: [] });
+    const bar = bottomBarItems(items);
+    const crossHrefs = employeeCrossLinks({ canAccessAdmin: true }).map(
+      (i) => i.href,
+    );
+    expect(bar.map((i) => i.href)).not.toContain(crossHrefs[0]);
+    expect(items.map((i) => i.href)).not.toContain(crossHrefs[0]);
+  });
+
+  it("highlights Admin area only inside the admin area", () => {
+    const [admin] = employeeCrossLinks({ canAccessAdmin: true });
+    expect(isActiveNav(admin.href, "/home")).toBe(false);
+    expect(isActiveNav(admin.href, "/admin")).toBe(true);
+  });
+
+  it("does not light My workspace up on every employee screen", () => {
+    const [home] = adminCrossLinks();
+    expect(isActiveNav(home.href, "/home")).toBe(true);
+    expect(isActiveNav(home.href, "/attendance")).toBe(false);
   });
 });
 

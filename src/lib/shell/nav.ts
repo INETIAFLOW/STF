@@ -138,6 +138,38 @@ export function employeeNavItems({ enabledModules }: EmployeeNavInput): NavItem[
 }
 
 /**
+ * The way between the two surfaces.
+ *
+ * They were sealed off from each other. An owner who opened `/home` — or
+ * who tapped the bell, since `/notifications` is an employee route — landed
+ * in the employee shell, which lists only Home, Attendance, Tasks, Leave,
+ * Payslips, documents and Profile. No Employees, no Payroll, no Settings,
+ * no way back except editing the URL. The company's own owner could not
+ * reach the screen that adds a location.
+ *
+ * The reverse was just as sealed: an admin has attendance and payslips of
+ * their own, and nothing in the admin shell pointed at them.
+ *
+ * These go in the sidebar's second group rather than the item list, which
+ * keeps them structurally out of the four-slot bottom bar — that bar is for
+ * an employee's own destinations, and a tenant with few modules enabled
+ * would otherwise let "Admin area" take a thumb slot.
+ */
+export function employeeCrossLinks({
+  canAccessAdmin,
+}: {
+  canAccessAdmin: boolean;
+}): NavItem[] {
+  if (!canAccessAdmin) return [];
+  return [{ href: "/admin", label: "Admin area", icon: "dashboard" }];
+}
+
+/** The way back to your own screens — check-in, payslips, leave. */
+export function adminCrossLinks(): NavItem[] {
+  return [{ href: "/home", label: "My workspace", icon: "home" }];
+}
+
+/**
  * The bottom bar takes at most four, and Profile is always the last of them
  * — it is where sign-out and everything not on the bar lives, so dropping it
  * to fit another module would strand the rest.
