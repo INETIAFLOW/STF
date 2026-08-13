@@ -33,6 +33,27 @@ export async function requireSession(): Promise<AppSession> {
   return session;
 }
 
+/**
+ * Require the Platform Super Admin, who operates the SaaS across companies.
+ *
+ * This is the ONLY guard in the codebase that admits someone to data
+ * belonging to more than one tenant, so it is deliberately narrow: a single
+ * boolean on the user record, set in the database, with no permission or
+ * role that can grant it. A tenant Owner cannot reach it however many
+ * permissions they collect.
+ *
+ * It does NOT confer the right to act inside a company. There is no
+ * impersonation here — that needs a time bound, a reason, and the visible
+ * "Support session" band (SECURITY-NOTES.md), and none of those exist yet.
+ * What this allows is the operator's own work: listing companies, creating
+ * one, suspending one, reading enquiries.
+ */
+export async function requirePlatformAdmin(): Promise<AppSession> {
+  const session = await requireSession();
+  if (!session.user.isPlatformAdmin) redirect("/unauthorized");
+  return session;
+}
+
 /** Require the admin area entry permission or show the unauthorized state. */
 export async function requireAdminArea(): Promise<AppSession> {
   const session = await requireSession();

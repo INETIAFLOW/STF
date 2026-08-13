@@ -170,6 +170,22 @@ export function adminCrossLinks(): NavItem[] {
 }
 
 /**
+ * The operator's own area, offered only to a Platform Super Admin.
+ *
+ * Not a permission and not a role: a boolean on the user record that no
+ * amount of tenant configuration can grant. A customer's Owner collecting
+ * every permission in the catalog still never sees this.
+ */
+export function platformCrossLinks({
+  isPlatformAdmin,
+}: {
+  isPlatformAdmin: boolean;
+}): NavItem[] {
+  if (!isPlatformAdmin) return [];
+  return [{ href: "/platform", label: "Platform", icon: "company" }];
+}
+
+/**
  * The bottom bar takes at most four, and Profile is always the last of them
  * — it is where sign-out and everything not on the bar lives, so dropping it
  * to fit another module would strand the rest.

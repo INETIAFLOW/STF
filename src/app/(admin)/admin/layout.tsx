@@ -6,6 +6,7 @@ import {
   adminConfigItems,
   adminCrossLinks,
   adminNavItems,
+  platformCrossLinks,
 } from "@/lib/shell/nav";
 import { Sidebar } from "@/components/shell/Sidebar";
 import { AdminTopBar } from "@/components/shell/TopBar";
@@ -47,7 +48,11 @@ export default async function AdminLayout({
   };
   // An admin has attendance, leave and payslips of their own, and nothing
   // here pointed at them. The way back was the URL bar.
-  const items = [...adminNavItems(navInput), ...adminCrossLinks()];
+  const items = [
+    ...adminNavItems(navInput),
+    ...adminCrossLinks(),
+    ...platformCrossLinks({ isPlatformAdmin: session.user.isPlatformAdmin }),
+  ];
   const configItems = adminConfigItems(navInput);
   const nav = {
     items,

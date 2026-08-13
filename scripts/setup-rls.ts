@@ -58,6 +58,10 @@ const TENANT_TABLES = [
   "action_requests",
   "action_request_recipients",
   "users",
+  // Not tenant-owned — a prospect has no company here yet — but it holds
+  // the name and phone number of people who are not even customers. If
+  // anything on this list deserves a second fence, it is this.
+  "demo_requests",
 ];
 
 const connectionString = process.env.DIRECT_URL ?? process.env.DATABASE_URL;

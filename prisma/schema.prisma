@@ -48,6 +48,7 @@ model User {
   featureExceptions  UserFeatureException[] @relation("exceptionUser")
   auditEvents        AuditEvent[]           @relation("auditActor")
   notifications      Notification[]         @relation("notificationUser")
+  demoRequestsHandled DemoRequest[]         @relation("demoRequestHandler")
 
   @@map("users")
 }
@@ -58,6 +59,47 @@ enum TenantStatus {
   ACTIVE
   SUSPENDED
   ARCHIVED
+}
+
+enum DemoRequestStatus {
+  NEW
+  CONTACTED
+  CONVERTED
+  CLOSED
+}
+
+/// An enquiry from the marketing site.
+///
+/// Deliberately NOT tenant-owned: a prospect has no company here yet, and
+/// pretending otherwise would mean inventing a tenant for someone who has
+/// not agreed to anything. It is platform data, visible only to a platform
+/// admin.
+///
+/// Only the fields the form already asks for. A prospect gave these to be
+/// called back, not to be profiled, so there is no email, no IP, no
+/// referrer and no tracking — see the notice on the form itself.
+model DemoRequest {
+  id       String  @id @default(uuid()) @db.Uuid
+  name     String
+  company  String
+  phone    String
+  teamSize String?
+  notes    String?
+
+  status      DemoRequestStatus @default(NEW)
+  /// Who picked it up, and when. Platform user, so no tenant membership.
+  handledById String?           @db.Uuid
+  handledAt   DateTime?
+  /// What the platform admin recorded about the outcome.
+  handledNote String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  handledBy User? @relation("demoRequestHandler", fields: [handledById], references: [id])
+
+  @@index([status, createdAt])
+  @@map("demo_requests")
 }
 
 model Tenant {
