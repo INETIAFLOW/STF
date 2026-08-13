@@ -8,6 +8,8 @@ import {
   distanceMetres,
   formatDistance,
   formatDuration,
+  hasUnrecordedCheckOut,
+  isVisitStale,
   lateMinutes,
   minutesInTimezone,
   workDateInTimezone,
@@ -129,6 +131,64 @@ describe("hours across a day with more than one visit", () => {
 
   it("is zero for a day with no visits", () => {
     expect(workedMinutes([], at(12))).toBe(0);
+  });
+});
+
+describe("a visit that crosses midnight", () => {
+  const at = (day: number, h: number, m = 0) =>
+    new Date(Date.UTC(2026, 7, day, h, m));
+
+  it("is still open eight hours into a night shift", () => {
+    // 22:00 Tuesday to 06:00 Wednesday. Checking out here used to be
+    // refused with "You haven't checked in today", because the lookup used
+    // the calendar date of the check-OUT.
+    expect(isVisitStale(at(11, 22), at(12, 6))).toBe(false);
+  });
+
+  it("counts those hours as worked, across the date boundary", () => {
+    expect(
+      workedMinutes([{ checkInAt: at(11, 22), checkOutAt: at(12, 6) }], at(12, 9)),
+    ).toBe(8 * 60);
+  });
+
+  it("holds right up to the deadline and gives way just after", () => {
+    const start = at(11, 22);
+    expect(isVisitStale(start, at(12, 16))).toBe(false); // exactly 18h
+    expect(isVisitStale(start, new Date(at(12, 16).getTime() + 1))).toBe(true);
+  });
+
+  it("stops a forgotten check-out counting for ever", () => {
+    // The case that prompted this: checked in 00:11, still open a day
+    // later. Nobody worked 26 hours, and recording it would put a day of
+    // overtime on a payslip.
+    const punches = [{ checkInAt: at(13, 0, 11), checkOutAt: null }];
+    expect(workedMinutes(punches, at(14, 2))).toBe(0);
+    expect(hasUnrecordedCheckOut(punches, at(14, 2))).toBe(true);
+  });
+
+  it("still runs the clock for someone genuinely at work", () => {
+    const punches = [{ checkInAt: at(13, 9), checkOutAt: null }];
+    expect(workedMinutes(punches, at(13, 12, 30))).toBe(210);
+    expect(hasUnrecordedCheckOut(punches, at(13, 12, 30))).toBe(false);
+  });
+
+  it("does not let a stale visit erase the hours around it", () => {
+    // A forgotten Tuesday must not subtract from a properly recorded one.
+    const punches = [
+      { checkInAt: at(13, 9), checkOutAt: at(13, 13) },
+      { checkInAt: at(13, 14), checkOutAt: null }, // forgotten
+    ];
+    expect(workedMinutes(punches, at(14, 20))).toBe(4 * 60);
+    expect(hasUnrecordedCheckOut(punches, at(14, 20))).toBe(true);
+  });
+
+  it("reports nothing unrecorded when every visit is closed", () => {
+    expect(
+      hasUnrecordedCheckOut(
+        [{ checkInAt: at(13, 9), checkOutAt: at(13, 17) }],
+        at(20, 9),
+      ),
+    ).toBe(false);
   });
 });
 

@@ -16,7 +16,9 @@ import {
   computeCheckInState,
   formatDuration,
   formatShiftTime,
+  hasUnrecordedCheckOut,
   workedMinutes,
+  MAX_OPEN_VISIT_HOURS,
   type AttendanceContext,
 } from "@/lib/attendance/policy";
 import { checkInAction, checkOutAction } from "@/lib/attendance/actions";
@@ -297,22 +299,23 @@ export function AttendanceActionCard({ context, firstName }: Props) {
   // someone can leave and come back, the gap between visits is not work.
   // Falls back to the single pair for a day recorded before punches
   // existed, so history keeps reading correctly.
-  const elapsedMinutes = !today?.checkInAt || !now
-    ? 0
-    : workedMinutes(
-        today.punches?.length
-          ? today.punches.map((p) => ({
-              checkInAt: new Date(p.checkInAt),
-              checkOutAt: p.checkOutAt ? new Date(p.checkOutAt) : null,
-            }))
-          : [
-              {
-                checkInAt: new Date(today.checkInAt),
-                checkOutAt: today.checkOutAt ? new Date(today.checkOutAt) : null,
-              },
-            ],
-        now,
-      );
+  const pairs =
+    !today?.checkInAt
+      ? []
+      : today.punches?.length
+        ? today.punches.map((p) => ({
+            checkInAt: new Date(p.checkInAt),
+            checkOutAt: p.checkOutAt ? new Date(p.checkOutAt) : null,
+          }))
+        : [
+            {
+              checkInAt: new Date(today.checkInAt),
+              checkOutAt: today.checkOutAt ? new Date(today.checkOutAt) : null,
+            },
+          ];
+
+  const elapsedMinutes = now ? workedMinutes(pairs, now) : 0;
+  const unrecordedCheckOut = now ? hasUnrecordedCheckOut(pairs, now) : false;
 
   // Warm confirmation panel — the one warm element on this screen.
   if (confirmation) {
@@ -472,6 +475,19 @@ export function AttendanceActionCard({ context, firstName }: Props) {
           ) : (
             <Skeleton className="h-14 w-full rounded-button-mobile-primary" />
           )
+        ) : unrecordedCheckOut ? (
+          /* The visit was never closed and is now too old to close as one
+             stretch of work. Offering "Check Out" here would be a button
+             the server refuses — say what happened and who fixes it. */
+          <Alert
+            variant="warning"
+            title="Your check-out wasn't recorded for that day."
+          >
+            You checked in more than {MAX_OPEN_VISIT_HOURS} hours ago and
+            never checked out, so those hours aren&apos;t counted. Ask your
+            manager to correct that day — they can set the time you actually
+            left.
+          </Alert>
         ) : !checkedOut ? (
           <Button
             size="xl"

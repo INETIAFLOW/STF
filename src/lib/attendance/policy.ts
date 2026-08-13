@@ -54,16 +54,48 @@ export interface WorkedPunch {
 }
 
 /**
+ * How long a visit may stay open before it stops being "at work".
+ *
+ * Long enough for any real shift including night work, so someone who
+ * started at 22:00 can still check out at 06:00 the next morning — the case
+ * that was broken. Short enough that a forgotten check-out becomes a
+ * missed punch needing a correction, rather than a 26-hour day recorded as
+ * fact.
+ */
+export const MAX_OPEN_VISIT_HOURS = 18;
+
+/** Has this visit been open so long that it is a forgotten check-out? */
+export function isVisitStale(checkInAt: Date, now: Date): boolean {
+  return now.getTime() - checkInAt.getTime() > MAX_OPEN_VISIT_HOURS * 3_600_000;
+}
+
+/** Is a day carrying a visit nobody closed? */
+export function hasUnrecordedCheckOut(
+  punches: readonly WorkedPunch[],
+  now: Date,
+): boolean {
+  return punches.some((p) => !p.checkOutAt && isVisitStale(p.checkInAt, now));
+}
+
+/**
  * Minutes actually worked across a day's punches.
  *
  * Deliberately NOT last-out minus first-in: with more than one punch that
  * counts the gap between them — lunch, a delivery run, a trip home — as
  * time at work. Summing the pairs is the only version that stays true once
  * a day can be left and returned to.
+ *
+ * A visit left open past the deadline contributes NOTHING, rather than
+ * climbing for ever. Someone who forgot to check out on Tuesday did not
+ * work forty hours on Tuesday, and edge-cases.md forbids the alternative
+ * of quietly inventing an end time: "No automatic check-out time is
+ * invented." Zero and a visible "not recorded" is the honest answer; the
+ * correction flow is how a real number gets there.
  */
 export function workedMinutes(punches: readonly WorkedPunch[], now: Date): number {
   let total = 0;
   for (const punch of punches) {
+    if (!punch.checkOutAt && isVisitStale(punch.checkInAt, now)) continue;
     const end = punch.checkOutAt ?? now;
     const ms = end.getTime() - punch.checkInAt.getTime();
     if (ms > 0) total += ms / 60_000;

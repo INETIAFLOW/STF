@@ -18,9 +18,11 @@ import type { AppSession } from "@/lib/auth/types";
 import {
   checkInIntent,
   computeCheckInState,
+  isVisitStale,
   workDateInTimezone,
   formatClockTime,
   formatDistance,
+  MAX_OPEN_VISIT_HOURS,
   type AttendanceContext,
   type AttendanceSnapshot,
   type CheckInState,
@@ -567,42 +569,70 @@ export async function checkOutAction(
   const captured = resolveCapturedAt(parsed.data.clientCapturedAt, now);
   if (captured.rejected) return { ok: false, error: captured.rejected };
   const effectiveAt = captured.at ?? now;
-  const workDate = workDateInTimezone(effectiveAt, session.tenant.timezone);
 
-  const record = await db.attendanceRecord.findUnique({
+  /**
+   * Check out of the visit that is actually OPEN — not of today's date.
+   *
+   * This used to look up the record for the calendar day the check-out
+   * happened on, which quietly broke every shift crossing midnight. Someone
+   * who started at 22:00, or at 00:11 on a 24x7 shift, found their visit
+   * belonged to yesterday and got told "You haven't checked in today" —
+   * false, with their own check-in sitting in the database. Their visit
+   * then stayed open for ever. edge-cases.md already said the record
+   * belongs to the shift's START date; the lookup did not.
+   */
+  const openPunch = await db.attendancePunch.findFirst({
     where: {
-      tenantId_membershipId_workDate: {
+      checkOutAt: null,
+      record: {
         tenantId: session.tenant.id,
         membershipId: session.membership.id,
-        workDate,
       },
     },
+    orderBy: { checkInAt: "desc" },
+    include: { record: true },
   });
 
-  if (!record?.checkInAt) {
+  if (!openPunch) {
+    // Nothing open. Either they never checked in, or they already left.
+    const today = await db.attendanceRecord.findUnique({
+      where: {
+        tenantId_membershipId_workDate: {
+          tenantId: session.tenant.id,
+          membershipId: session.membership.id,
+          workDate: workDateInTimezone(effectiveAt, session.tenant.timezone),
+        },
+      },
+    });
+    if (today?.checkOutAt) {
+      return {
+        ok: true,
+        message: `Checked out at ${formatClockTime(today.checkOutAt, session.tenant.timezone)}`,
+        detail: "This is already recorded for today.",
+      };
+    }
     return {
       ok: false,
-      error: "You haven't checked in today. Check in first, or ask your manager to record it.",
-    };
-  }
-  if (record.checkOutAt) {
-    return {
-      ok: true,
-      message: `Checked out at ${formatClockTime(record.checkOutAt, session.tenant.timezone)}`,
-      detail: "This is already recorded for today.",
+      error:
+        "You haven't checked in, so there's nothing to check out of. Check in first, or ask your manager to record it.",
     };
   }
 
+  // Open far too long to be a shift. Recording it as one would put a day
+  // of overtime on a payslip that nobody worked, so it goes to the
+  // correction flow instead — which asks for a time and a reason, and
+  // shows the manager the hours before they approve.
+  if (isVisitStale(openPunch.checkInAt, effectiveAt)) {
+    const since = formatClockTime(openPunch.checkInAt, session.tenant.timezone);
+    return {
+      ok: false,
+      error: `Your last check-in was at ${since}, more than ${MAX_OPEN_VISIT_HOURS} hours ago, so this can't be recorded as one stretch of work. Ask your manager to correct that day — they can set the time you actually left.`,
+    };
+  }
+
+  const record = openPunch.record;
   const context = await loadAttendanceContext(session);
   const state = computeCheckInState(context, parsed.data.coords ?? null, effectiveAt);
-
-  // Close the open pair as well as the day summary. The summary carries
-  // the LAST check-out; the pair carries this one, which is what hours are
-  // actually summed from.
-  const openPunch = await db.attendancePunch.findFirst({
-    where: { recordId: record.id, checkOutAt: null },
-    orderBy: { sequence: "desc" },
-  });
 
   await db.$transaction([
     db.attendanceRecord.update({
