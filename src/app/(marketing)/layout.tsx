@@ -45,6 +45,12 @@ export default function MarketingLayout({
               Product
             </Link>
             <Link
+              href="/modules"
+              className="hidden rounded-button px-3 py-2 text-label text-text-secondary hover:bg-surface-sunken hover:text-text-primary sm:inline-flex"
+            >
+              Modules
+            </Link>
+            <Link
               href="/pricing"
               className="hidden rounded-button px-3 py-2 text-label text-text-secondary hover:bg-surface-sunken hover:text-text-primary sm:inline-flex"
             >
@@ -81,26 +87,10 @@ export default function MarketingLayout({
               Designed for Indian SMEs.
             </p>
           </div>
-          <nav aria-label="Footer" className="flex flex-wrap gap-4">
-            <Link
-              href="/product"
-              className="text-secondary text-text-secondary underline-offset-2 hover:underline"
-            >
-              Product
-            </Link>
-            <Link
-              href="/modules"
-              className="text-secondary text-text-secondary underline-offset-2 hover:underline"
-            >
-              Modules
-            </Link>
-            <Link
-              href="/pricing"
-              className="text-secondary text-text-secondary underline-offset-2 hover:underline"
-            >
-              Pricing
-            </Link>
-          </nav>
+          {/* Navigation lives in the header, in one place. Repeating the
+              same three links at the bottom made the page look like it had
+              two different menus and left "Sign in" reading as a footer
+              item long after it moved up. */}
         </div>
       </footer>
     </div>
