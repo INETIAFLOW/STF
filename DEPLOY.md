@@ -230,25 +230,67 @@ Point Supabase's SMTP settings and STF's `SMTP_*` variables at the **same
 provider account** — one set of credentials, two consumers (Supabase sends
 password resets, STF sends invitations).
 
-## 7. Create the customer's company (15 min)
+## 7. Create the customer's company (10 min)
 
-The database currently holds a **demo tenant with placeholder people**.
-Create the real one, and do not let demo data reach the customer.
+### First time only: give yourself the platform area
 
-Run from your machine, with `.env.local` pointing at production:
+Companies are created from **`/platform`**, which is reachable only by a
+Platform Super Admin. That is a single flag on your user record, and
+nothing inside the product can grant it — no role, no permission, no
+screen. Sign in to STF once so your user exists, then:
 
 ```bash
-npx tsx scripts/provision-user.ts owner@customer.com OWNER "Owner Name"
+npx tsx scripts/grant-platform-admin.ts --email you@yourcompany.com
 ```
 
-Then create their Supabase auth account: Supabase → Authentication →
-Users → **Add user** → same email → set a password → tick *Auto Confirm*.
-The two link by verified email on first sign-in.
+`--list` shows who has it, `--revoke` takes it away. Keep the number of
+people holding it small: it is the only privilege in STF that sees across
+companies.
 
-Sign in as them and set up the company (locations, shifts, rules,
-departments, modules). `PILOT.md` is written to be handed to the owner for
-this. Everyone after the owner is added from the screen — see *Adding the
-rest of the team* below.
+### Every customer after that
+
+Open **`/platform` → Add a company**. Fill in the company name, the
+owner's name and the owner's email. You get back a **one-time invitation
+link, valid 7 days** — send it to the owner however suits (email,
+WhatsApp).
+
+That single step creates the company, its roles and their permissions, and
+its module and feature entitlements from the catalog.
+
+**Nobody's password is set, by you or by anyone.** The owner chooses their
+own on the invitation page, and their Supabase auth account is created at
+that moment. There is no step here where you create an auth user by hand
+and no step where a password passes through you — which is the point: you
+cannot leak what you never hold, and the owner is onboarded through
+exactly the flow their staff will use.
+
+If you would rather not use the browser, the same thing from a terminal:
+
+```bash
+npx tsx scripts/create-tenant.ts --name "Acme Hardware" --owner-email owner@acme.example --owner-name "Priya Shah"
+```
+
+Add `--dry-run` to see what it would do first. Both routes run the same
+code (`src/lib/platform/provision.ts`), so they cannot drift apart.
+
+### Then hand over
+
+The owner signs in and sets up locations, shifts, rules, departments and
+modules themselves. `PILOT.md` is written to be handed to them for this.
+Everyone after the owner is added from the screen — see *Adding the rest
+of the team* below.
+
+**Watch for demo data.** If this database was ever seeded for development,
+delete the demo tenant before the customer signs in. Placeholder people
+appearing in a real company's directory is the kind of thing a customer
+never forgets.
+
+```bash
+npx tsx scripts/delete-tenant.ts --slug demo-co --confirm demo-co
+```
+
+Without `--confirm` it only reports what it would delete. The slug is
+typed twice on purpose — this removes a company and everything in it.
 
 ---
 

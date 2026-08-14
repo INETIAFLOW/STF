@@ -65,6 +65,10 @@ dev preview session — is in `SETUP.md`.
 | `npm run db:generate` | Generate the Prisma client |
 | `npm run db:migrate` | Apply migrations (needs `DIRECT_URL`) |
 | `npm run db:seed` | Seed catalog + fictional demo tenant |
+| `npx tsx scripts/create-tenant.ts --name … --owner-email … --owner-name …` | Create a **real customer company** and get the owner's invitation link. Same code path as `/platform` → Add a company |
+| `npx tsx scripts/grant-platform-admin.ts --email … [--revoke\|--list]` | Grant the cross-company operator area at `/platform`. Not grantable from inside the product |
+| `npx tsx scripts/delete-tenant.ts --slug … --confirm …` | Remove a company and everything in it. Dry run without `--confirm` |
+| `npx tsx scripts/setup-rls.ts [--status\|--rollback]` | Row Level Security on every tenant table |
 | `npx tsx scripts/provision-user.ts <email> [ROLE]` | Give a login a role in the demo tenant (dev) |
 | `npx tsx scripts/demo-data.ts [--clear]` | Create/remove placeholder activity for review (dev) |
 | `npx tsx scripts/demo-payroll.ts [--clear]` | Placeholder salary components, structures and attendance (dev) |
