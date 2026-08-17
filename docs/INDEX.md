@@ -14,5 +14,7 @@ Version 0.1 | 07 August 2026
 - SYSTEM-ARCHITECTURE: System Architecture
 - USER-ROLES: User Roles and Access Model
 - ROADMAP: Product Roadmap
+- CLAUDE-CODE-NEW-PROJECT-PLAYBOOK: Spec-driven instructions for Claude Code on new projects
+- CLAUDE-CODE-SECURITY-AUDIT-GUIDE: Authorized security-audit instructions for existing codebases
 
 Master sources are in `md/`; formatted deliverables are in `docx/` and `pdf/`.
