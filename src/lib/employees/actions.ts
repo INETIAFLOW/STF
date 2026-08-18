@@ -6,6 +6,7 @@ import { getDb } from "@/lib/db";
 import { recordAuditEvent } from "@/lib/audit";
 import { checkAccess } from "@/lib/authz/guard";
 import { privilegeRank } from "@/lib/catalog";
+import { isSimpleStructure } from "@/lib/payroll/simple";
 
 /**
  * Employee records (MODULES.md → Employee Management).
@@ -251,7 +252,26 @@ export async function revealSensitiveAction(
   if (!structure) {
     return {
       ok: true,
-      lines: [{ label: "Salary structure", value: "Not set" }],
+      lines: [{ label: "Salary", value: "Not set" }],
+    };
+  }
+
+  // The simple one-line shape reads as the one fact it is. Listing
+  // "Base amount" and a "Monthly salary" line with the same figure would
+  // make one number look like two.
+  if (isSimpleStructure(structure.lines)) {
+    return {
+      ok: true,
+      lines: [
+        {
+          label: "Monthly salary",
+          value: `₹${Number(structure.lines[0].amount).toLocaleString("en-IN")}`,
+        },
+        {
+          label: "Effective from",
+          value: structure.effectiveFrom.toISOString().slice(0, 10),
+        },
+      ],
     };
   }
 

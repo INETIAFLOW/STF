@@ -19,7 +19,7 @@ const lineStatus: Record<string, Status> = {
   READY: STATUS.ready,
   NO_SALARY_STRUCTURE: {
     key: "no-structure",
-    label: "No salary structure",
+    label: "No salary set",
     tone: "neutral",
   },
   BLOCKED: { key: "blocked", label: "Needs review", tone: "error" },
@@ -65,7 +65,7 @@ export default async function AdminPayrollPage({
   const periodValue = periodMonth.toISOString().slice(0, 7);
   const label = periodLabel(periodMonth, tz);
 
-  const [run, preview, componentCount] = await Promise.all([
+  const [run, preview, structureCount] = await Promise.all([
     getDb().payrollRun.findUnique({
       where: {
         tenantId_periodMonth: { tenantId: session.tenant.id, periodMonth },
@@ -73,8 +73,11 @@ export default async function AdminPayrollPage({
       include: { lines: { include: { adjustments: true } } },
     }),
     buildPayrollPreview(session, periodMonth),
-    getDb().salaryComponent.count({
-      where: { tenantId: session.tenant.id, isActive: true },
+    // Gate on STRUCTURES, not components: a simple-mode tenant legitimately
+    // has zero components until the first salary is saved, and a tenant
+    // with components but no salaries still cannot run payroll.
+    getDb().salaryStructure.count({
+      where: { tenantId: session.tenant.id },
     }),
   ]);
 
@@ -92,25 +95,24 @@ export default async function AdminPayrollPage({
   const canApprove = session.permissions.has("payroll.approve");
   const canEdit = session.permissions.has("payroll.edit");
 
-  if (componentCount === 0) {
+  if (structureCount === 0) {
     return (
       <div className="flex flex-col gap-5">
         <h1 className="font-heading text-h1 text-text-primary">Payroll</h1>
-        <Alert variant="info" title="Set up your salary components first">
-          STF does not supply statutory rules. You define your own earnings
-          and deductions — including anything your accountant requires —
-          then give each employee a salary structure.
+        <Alert variant="info" title="Set salaries first">
+          Tell STF what each person is paid per month. Payroll is calculated
+          from that, your attendance records and approved leave.
         </Alert>
         <Card flush>
           <EmptyState
-            title="No salary components yet."
-            body="Define what your company pays and deducts before running payroll."
+            title="No salaries set yet."
+            body="One amount per person is enough to start."
             action={
               <Link
-                href="/admin/payroll/structures"
+                href="/admin/payroll/salaries"
                 className="inline-flex h-11 items-center rounded-button bg-brand-primary px-5 font-heading text-label text-text-on-primary hover:bg-brand-primary-hover"
               >
-                Set up payroll
+                Set salaries
               </Link>
             }
           />
@@ -124,10 +126,10 @@ export default async function AdminPayrollPage({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="font-heading text-h1 text-text-primary">Payroll</h1>
         <Link
-          href="/admin/payroll/structures"
+          href="/admin/payroll/salaries"
           className="text-label text-brand-primary underline-offset-2 hover:underline"
         >
-          Salary structures
+          Salaries
         </Link>
       </div>
 

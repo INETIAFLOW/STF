@@ -16,6 +16,9 @@ import { DocumentsPanel } from "./DocumentsPanel";
 import { SensitivePanel } from "./SensitivePanel";
 import { InvitePanel } from "./InvitePanel";
 import { RolePanel } from "./RolePanel";
+import { SetSalaryCard } from "@/components/payroll/SetSalaryCard";
+import { getPolicy } from "@/lib/policies";
+import { resolvePayMode, type PaySetupPolicy } from "@/lib/payroll/simple";
 
 /** "7 Aug 2026" in the tenant's timezone (copy-deck.md §1). */
 function formatDay(at: Date, timeZone: string): string {
@@ -99,7 +102,16 @@ export default async function EmployeeProfilePage({
   const canSeeDocuments = session.permissions.has("documents.view");
   const tz = session.tenant.timezone;
 
-  const [branches, shifts, managers, recentAttendance] = await Promise.all([
+  // The salary card only renders for someone who could already edit
+  // payroll, and only in the simple/pack setups where one number IS the
+  // salary. Custom setups get a pointer to the Salaries page instead.
+  const payrollAccess = await checkAccess({
+    module: "PAYROLL",
+    permission: "payroll.edit",
+  });
+  const canSetSalary = payrollAccess.decision.allowed;
+
+  const [branches, shifts, managers, recentAttendance, payPolicy, payComponents] = await Promise.all([
     db.branch.findMany({
       where: { tenantId: session.tenant.id, isActive: true },
       select: { id: true, name: true },
@@ -125,7 +137,18 @@ export default async function EmployeeProfilePage({
       orderBy: { workDate: "desc" },
       take: 10,
     }),
+    canSetSalary
+      ? getPolicy<PaySetupPolicy>(session.tenant.id, "pay_setup")
+      : Promise.resolve(null),
+    canSetSalary
+      ? db.salaryComponent.findMany({
+          where: { tenantId: session.tenant.id, isActive: true },
+          select: { key: true, kind: true, calculation: true, prorated: true },
+        })
+      : Promise.resolve([]),
   ]);
+
+  const payMode = resolvePayMode(payPolicy, payComponents);
 
   return (
     <div className="flex flex-col gap-5">
@@ -209,6 +232,14 @@ export default async function EmployeeProfilePage({
           name: m.user.displayName,
         }))}
       />
+
+      {canSetSalary && (
+        <SetSalaryCard
+          membershipId={member.id}
+          employeeName={member.user.displayName}
+          isCustomSetup={payMode.mode === "CUSTOM"}
+        />
+      )}
 
       <SensitivePanel
         membershipId={member.id}

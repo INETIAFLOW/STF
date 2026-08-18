@@ -13,7 +13,15 @@ import {
   saveSalaryStructureAction,
 } from "@/lib/payroll/structure-actions";
 
-/** Add or update a salary component (tenant-defined, never shipped by STF). */
+/**
+ * The advanced path: tenant-defined pay items and per-item salaries.
+ *
+ * Most companies never open these — the one-number salary forms cover
+ * them. These editors exist for pay that genuinely has parts, and adding
+ * an item here is what moves a tenant into the custom setup.
+ */
+
+/** Add or update a pay item (tenant-defined, never shipped by STF). */
 export function ComponentEditor() {
   const router = useRouter();
   const { show } = useToast();
@@ -24,7 +32,6 @@ export function ComponentEditor() {
   const [calculation, setCalculation] = useState<
     "FIXED" | "PERCENT_OF_BASE" | "PER_DAY"
   >("FIXED");
-  const [isStatutory, setIsStatutory] = useState(false);
   const [prorated, setProrated] = useState(true);
 
   const key = name
@@ -34,12 +41,12 @@ export function ComponentEditor() {
     .replace(/^_+|_+$/g, "");
 
   if (!open) {
-    return <Button onClick={() => setOpen(true)}>Add component</Button>;
+    return <Button onClick={() => setOpen(true)}>Add pay item</Button>;
   }
 
   return (
     <Card>
-      <CardHeader title="Add a salary component" />
+      <CardHeader title="Add a pay item" />
       <div className="flex flex-col gap-1">
         <Input
           label="Name"
@@ -68,17 +75,11 @@ export function ComponentEditor() {
             { value: "PER_DAY", label: "Amount per payable day" },
           ]}
         />
-        <div className="mt-2 flex flex-col gap-2">
+        <div className="mt-2">
           <Checkbox
             checked={prorated}
             onChange={(e) => setProrated(e.target.checked)}
             label="Reduce this for unpaid days"
-          />
-          <Checkbox
-            checked={isStatutory}
-            onChange={(e) => setIsStatutory(e.target.checked)}
-            label="Defined by our accountant (statutory)"
-            helper="STF does not calculate statutory amounts. Your accountant gives you the figure."
           />
         </div>
       </div>
@@ -87,7 +88,7 @@ export function ComponentEditor() {
         <Button
           loading={pending}
           disabled={!key}
-          disabledReason={!key ? "Give the component a name." : undefined}
+          disabledReason={!key ? "Give the pay item a name." : undefined}
           onClick={() =>
             startTransition(async () => {
               const result = await saveSalaryComponentAction({
@@ -95,7 +96,6 @@ export function ComponentEditor() {
                 name: name.trim(),
                 kind,
                 calculation,
-                isStatutory,
                 prorated,
               });
               if (result.ok) {
@@ -109,7 +109,7 @@ export function ComponentEditor() {
             })
           }
         >
-          Save component
+          Save pay item
         </Button>
         <Button variant="outline" onClick={() => setOpen(false)}>
           Cancel
@@ -126,7 +126,7 @@ interface ComponentOption {
   calculation: string;
 }
 
-/** Set an employee's salary structure, effective from a date. */
+/** Set an employee's salary item by item, effective from a date. */
 export function StructureEditor({
   members,
   components,
@@ -149,14 +149,14 @@ export function StructureEditor({
   });
 
   if (!open) {
-    return <Button onClick={() => setOpen(true)}>Set salary structure</Button>;
+    return <Button onClick={() => setOpen(true)}>Set a custom salary</Button>;
   }
 
   return (
     <Card>
       <CardHeader
-        title="Set salary structure"
-        meta="A new effective date supersedes the previous structure; history is kept."
+        title="Set a custom salary"
+        meta="A new effective date supersedes the previous salary; history is kept."
       />
       <div className="flex flex-col gap-1">
         <Select
@@ -180,14 +180,14 @@ export function StructureEditor({
           inputMode="numeric"
           required
           prefix="₹"
-          helper="Percentage components are calculated from this."
+          helper="Percentage items are calculated from this."
           value={baseAmount}
           onChange={(e) => setBaseAmount(e.target.value)}
         />
       </div>
 
       <div className="mt-4 border-t border-border-subtle pt-3">
-        <p className="micro-label mb-2 text-text-tertiary">Components</p>
+        <p className="micro-label mb-2 text-text-tertiary">Pay items</p>
         <ul className="flex flex-col gap-2">
           {components.map((component) => (
             <li
@@ -236,7 +236,7 @@ export function StructureEditor({
               : !effectiveFrom
                 ? "Choose an effective date."
                 : selected.length === 0
-                  ? "Give at least one component a value."
+                  ? "Give at least one pay item a value."
                   : undefined
           }
           onClick={() =>
@@ -265,7 +265,7 @@ export function StructureEditor({
             })
           }
         >
-          Save structure
+          Save salary
         </Button>
         <Button variant="outline" onClick={() => setOpen(false)}>
           Cancel

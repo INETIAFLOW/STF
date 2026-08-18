@@ -11,7 +11,15 @@ import { devFixtureOffline } from "@/lib/auth/fixture";
  * a record can always name the version that applied on its date.
  */
 
-export type PolicyKey = "attendance" | "leave" | "payroll" | "notifications";
+// "pay_setup" is deliberately its own key rather than part of "payroll":
+// the payroll key's version is stamped on approved runs, and choosing a
+// salary starter pack must not look like the late policy changed.
+export type PolicyKey =
+  | "attendance"
+  | "leave"
+  | "payroll"
+  | "notifications"
+  | "pay_setup";
 
 export async function getPolicy<T>(
   tenantId: string,

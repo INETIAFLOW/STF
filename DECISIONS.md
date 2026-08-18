@@ -527,3 +527,37 @@ undercuts the offline queue (Phase 7) sitting right behind it. Caching bugs
 are their own category of production incident and serve stale screens to a
 live pilot; this change was already broad enough. The gap is recorded here
 rather than half-closed.
+
+---
+
+## Phase 10 — Simple pay setup
+
+**D-P10-01 · 2026-08-18 · Simple pay setup is the default; components
+become the advanced path** — Setting pay asks two questions: monthly
+salary and effective date. Under the hood this upserts one tenant
+component (`monthly_salary`, EARNING, FIXED, prorated) and saves a
+one-line structure with `baseAmount` equal to the salary, so the engine,
+the payslip and the approval flow are untouched — only what a person must
+know changes. Starter packs ("Single amount" default; "Basic + HRA +
+allowance" with **illustrative, editable** percentages and a fixed
+remainder line so a full month reconstitutes the typed salary exactly)
+change only the shape of NEWLY saved structures — never existing ones —
+and contain no PF/ESI/PT/TDS items (D-P3-01 unchanged, enforced by a unit
+test). Pack choice is stored as the versioned `pay_setup` policy, its own
+key so choosing a shape never bumps the payroll policy version stamped on
+approved runs. A tenant with active pay items beyond its declared pack
+resolves to Custom — component evidence beats a stale policy, so the
+one-number forms can never save a structure that ignores half of
+someone's pay; the server actions re-check this, not just the UI. Bulk
+salary entry reuses the same persistence path as the single form,
+including the no-back-dating-into-approved-periods guard (D-P3-05).
+
+The statutory checkbox, the "defined by your accountant" payslip and
+structure annotations, and the components banner are removed from the UI
+at the owner's instruction; `isStatutory` stays in the schema and engine,
+and the approval-time accountant acknowledgement stays exactly as
+approved (D-019, copy-deck §6). No removed copy is replaced by anything
+implying compliance.
+
+*Reopens if:* per-component statutory labelling is needed on payslips
+again, or packs are asked to carry statutory items (blocked by D-P3-01).

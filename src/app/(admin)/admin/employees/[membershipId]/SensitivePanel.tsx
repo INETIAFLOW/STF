@@ -40,7 +40,7 @@ export function SensitivePanel({
   }
 
   const blocks = [
-    canSeeSalary && { kind: "salary" as const, title: "Salary structure" },
+    canSeeSalary && { kind: "salary" as const, title: "Salary" },
     canSeeBank && { kind: "bank" as const, title: "Bank details" },
   ].filter(Boolean) as Array<{ kind: "salary" | "bank"; title: string }>;
 

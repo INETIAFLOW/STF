@@ -39,7 +39,7 @@ export const MODULES = {
     key: "PAYROLL",
     name: "Payroll",
     description:
-      "Salary structures, period calculations, adjustments, review and payslips.",
+      "Salaries, period calculations, adjustments, review and payslips.",
     category: "STANDARD" as ModuleCategory,
     sortOrder: 40,
   },

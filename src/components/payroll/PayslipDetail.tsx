@@ -154,7 +154,6 @@ export function PayslipDetail({ data }: { data: PayslipData }) {
         {data.policyVersion != null &&
           `Policy version ${data.policyVersion} applied for ${data.periodLabel}. `}
         If something looks wrong, ask HR to review — changes are recorded.
-        Statutory amounts are defined by your company&apos;s accountant.
       </p>
     </div>
   );
@@ -167,7 +166,6 @@ function ComponentRow({ line }: { line: PayslipComponentLine }) {
         {line.name}
         <span className="mt-0.5 block text-caption text-text-secondary">
           {line.basis}
-          {line.isStatutory && " · defined by your accountant"}
         </span>
       </span>
       <span className="shrink-0 font-mono text-data text-text-primary tabular-nums">
