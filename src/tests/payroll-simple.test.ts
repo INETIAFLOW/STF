@@ -6,6 +6,7 @@ import {
   isSimpleStructure,
   normalizePackPercents,
   packById,
+  planPackSwitch,
   resolvePayMode,
 } from "@/lib/payroll/simple";
 import {
@@ -261,6 +262,89 @@ describe("packs are shapes, not statutory advice (D-P3-01)", () => {
         }
       }
     }
+  });
+});
+
+describe("switching packs against real component states", () => {
+  const sw = (
+    key: string,
+    opts: Partial<{
+      kind: "EARNING" | "DEDUCTION";
+      calculation: "FIXED" | "PERCENT_OF_BASE" | "PER_DAY";
+      prorated: boolean;
+      isActive: boolean;
+      referenced: boolean;
+      name: string;
+    }> = {},
+  ) => ({
+    key,
+    name: opts.name ?? key,
+    kind: opts.kind ?? ("EARNING" as const),
+    calculation: opts.calculation ?? ("FIXED" as const),
+    prorated: opts.prorated ?? true,
+    isActive: opts.isActive ?? true,
+    referenced: opts.referenced ?? false,
+  });
+
+  it("adopts the referenced carrier and cleans the stray — the pilot's exact state", () => {
+    // What four failed clicks left in production: the tenant's own
+    // "salary" carrying a real structure, plus a monthly_salary the old
+    // switch wrongly created. Choosing "single" must adopt the referenced
+    // one and deactivate the stray, not create anything.
+    const plan = planPackSwitch("single", [
+      sw("salary", { referenced: true, name: "Salary" }),
+      sw(MONTHLY_SALARY_KEY),
+    ]);
+    expect(plan).toEqual({
+      ok: true,
+      ensure: [{ ...STARTER_PACKS[0].components[0], key: "salary" }],
+      deactivateKeys: [MONTHLY_SALARY_KEY],
+    });
+  });
+
+  it("creates the default carrier for a fresh tenant", () => {
+    const plan = planPackSwitch("single", []);
+    expect(plan.ok && plan.ensure[0].key).toBe(MONTHLY_SALARY_KEY);
+    expect(plan.ok && plan.deactivateKeys).toEqual([]);
+  });
+
+  it("refuses when a referenced non-carrier stands in the way, naming it", () => {
+    const plan = planPackSwitch("single", [
+      sw("salary", { referenced: true }),
+      sw("pf", { kind: "DEDUCTION", referenced: true, name: "Provident fund" }),
+    ]);
+    expect(plan).toEqual({ ok: false, blocking: ["Provident fund"] });
+  });
+
+  it("refuses two referenced carriers — one number cannot be two", () => {
+    const plan = planPackSwitch("single", [
+      sw("salary", { referenced: true }),
+      sw("stipend", { referenced: true }),
+    ]);
+    expect(plan.ok).toBe(false);
+  });
+
+  it("deactivates unreferenced non-pack components when moving to a pack", () => {
+    const plan = planPackSwitch("basic_hra", [
+      sw("salary", { referenced: true }), // carrier-shaped, tolerated
+      sw("bonus"), // unreferenced stray → cleaned
+    ]);
+    expect(plan.ok && plan.deactivateKeys).toEqual(["bonus"]);
+  });
+
+  it("the plan's outcome actually resolves to the target mode", () => {
+    // The property the old switch violated: apply the plan on paper, then
+    // ask resolvePayMode — it must say SIMPLE, or the button lies.
+    const components = [
+      sw("salary", { referenced: true }),
+      sw(MONTHLY_SALARY_KEY),
+    ];
+    const plan = planPackSwitch("single", components);
+    if (!plan.ok) throw new Error("expected ok");
+    const after = components
+      .filter((c) => !plan.deactivateKeys.includes(c.key))
+      .map(({ key, kind, calculation, prorated }) => ({ key, kind, calculation, prorated }));
+    expect(resolvePayMode({ pack: "single" }, after).mode).toBe("SIMPLE");
   });
 });
 

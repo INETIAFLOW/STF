@@ -9,10 +9,10 @@ import { checkAccess } from "@/lib/authz/guard";
 import { getPolicy, setPolicy } from "@/lib/policies";
 import type { AppSession } from "@/lib/auth/types";
 import {
-  MONTHLY_SALARY_COMPONENT,
   buildSalaryLines,
   normalizePackPercents,
   packById,
+  planPackSwitch,
   resolvePayMode,
   type PackComponent,
   type PayMode,
@@ -555,29 +555,62 @@ export async function applyStarterPackAction(
 
   const db = getDb();
   const previous = await getPolicy<PaySetupPolicy>(session.tenant.id, "pay_setup");
-
   const percents = normalizePackPercents(parsed.data.pack, parsed.data.percents);
-  const policy: PaySetupPolicy = { pack: parsed.data.pack, percents };
-  await setPolicy(session.tenant.id, "pay_setup", policy, session.user.id);
 
   if (parsed.data.pack !== "custom") {
-    const pack = packById(parsed.data.pack)!;
+    const components = await db.salaryComponent.findMany({
+      where: { tenantId: session.tenant.id },
+      include: { _count: { select: { lines: true } } },
+    });
+    const plan = planPackSwitch(
+      parsed.data.pack,
+      components.map((c) => ({
+        key: c.key,
+        name: c.name,
+        kind: c.kind,
+        calculation: c.calculation,
+        prorated: c.prorated,
+        isActive: c.isActive,
+        referenced: c._count.lines > 0,
+      })),
+    );
+
+    // An honest refusal beats a switch that quietly is not one: a
+    // referenced pay item can neither be deactivated (the engine pays ₹0
+    // for inactive components) nor ignored (the mode would stay custom
+    // and the button would look dead — which is how this bug was found).
+    if (!plan.ok) {
+      return {
+        ok: false,
+        error: `Can't switch: ${plan.blocking.join(", ")} ${plan.blocking.length === 1 ? "is" : "are"} part of a saved salary. Re-save those salaries without it first, or keep the custom setup.`,
+      };
+    }
+
     await db.$transaction(async (tx) => {
-      await ensureComponents(tx, session.tenant.id, pack.components);
-      // Tidy away components outside the new shape — but ONLY those no
-      // structure references. The engine drops inactive components from
-      // calculation, so deactivating an in-use one would silently pay ₹0.
-      await tx.salaryComponent.updateMany({
-        where: {
-          tenantId: session.tenant.id,
-          isActive: true,
-          key: { notIn: pack.components.map((c) => c.key) },
-          lines: { none: {} },
-        },
-        data: { isActive: false },
-      });
+      await ensureComponents(tx, session.tenant.id, plan.ensure);
+      if (plan.deactivateKeys.length > 0) {
+        await tx.salaryComponent.updateMany({
+          where: {
+            tenantId: session.tenant.id,
+            key: { in: plan.deactivateKeys },
+            // Belt and braces: the plan only lists unreferenced keys, and
+            // this predicate makes the database enforce the same rule.
+            lines: { none: {} },
+          },
+          data: { isActive: false },
+        });
+      }
     });
   }
+
+  // The policy records a switch that actually happened — writing it before
+  // the component work could leave a stale declaration on failure.
+  await setPolicy(
+    session.tenant.id,
+    "pay_setup",
+    { pack: parsed.data.pack, percents } satisfies PaySetupPolicy,
+    session.user.id,
+  );
 
   await recordAuditEvent(session, {
     action: "payroll.pay_setup_changed",

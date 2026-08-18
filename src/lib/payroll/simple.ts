@@ -270,6 +270,105 @@ export function buildSalaryLines(input: {
   return lines;
 }
 
+export interface SwitchComponent {
+  key: string;
+  name: string;
+  kind: ComponentKind;
+  calculation: ComponentCalculation;
+  prorated: boolean;
+  isActive: boolean;
+  /** Is this component part of anyone's saved salary structure? */
+  referenced: boolean;
+}
+
+export type PackSwitchPlan =
+  | {
+      ok: true;
+      /** Components to upsert (name preserved on update, active asserted). */
+      ensure: PackComponent[];
+      /** Active, unreferenced components to deactivate — safe by definition. */
+      deactivateKeys: string[];
+    }
+  | {
+      ok: false;
+      /** Names of the components that make the switch dishonest. */
+      blocking: string[];
+    };
+
+/**
+ * What switching to a pack would actually do to this tenant's components —
+ * or why it must be refused.
+ *
+ * The first version of the switch upserted the pack's components by key
+ * and hoped. For a tenant whose salary already lived on its own component,
+ * that CREATED a second carrier, which made the tenant resolve to Custom,
+ * which made the button look dead — four times in a row, per the audit
+ * log. The rules it was missing:
+ *
+ * - An existing referenced carrier IS the single-amount setup. Adopt it.
+ * - A referenced component can never be deactivated (the engine silently
+ *   pays ₹0 for inactive components) and never ignored — if it stands in
+ *   the way of the target mode, the switch is refused, naming it.
+ * - Unreferenced strays are cleaned up. Deactivating them can change
+ *   nothing, because nothing points at them.
+ */
+export function planPackSwitch(
+  target: Exclude<PackId, "custom">,
+  components: readonly SwitchComponent[],
+): PackSwitchPlan {
+  const active = components.filter((c) => c.isActive);
+  const asCarrier = (c: SwitchComponent): PackComponent =>
+    c.key === MONTHLY_SALARY_KEY
+      ? MONTHLY_SALARY_COMPONENT
+      : { ...MONTHLY_SALARY_COMPONENT, key: c.key };
+
+  if (target === "single") {
+    const carriers = active.filter(isCarrierShaped);
+    const referencedCarriers = carriers.filter((c) => c.referenced);
+    const blocking = active.filter((c) => !isCarrierShaped(c) && c.referenced);
+
+    // Two referenced carriers cannot become one number honestly either.
+    if (referencedCarriers.length > 1) {
+      blocking.push(...referencedCarriers.slice(1));
+    }
+    if (blocking.length > 0) {
+      return { ok: false, blocking: blocking.map((c) => c.name) };
+    }
+
+    const carrier =
+      referencedCarriers[0] ??
+      carriers.find((c) => c.key === MONTHLY_SALARY_KEY) ??
+      carriers[0];
+
+    const ensure = carrier ? asCarrier(carrier) : MONTHLY_SALARY_COMPONENT;
+    return {
+      ok: true,
+      ensure: [ensure],
+      deactivateKeys: active
+        .filter((c) => c.key !== ensure.key && !c.referenced)
+        .map((c) => c.key),
+    };
+  }
+
+  const pack = packById(target)!;
+  const packKeys = new Set(pack.components.map((c) => c.key));
+  // Carrier-shaped leftovers are tolerated by resolvePayMode, so they do
+  // not block; anything else that is referenced does.
+  const blocking = active.filter(
+    (c) => !packKeys.has(c.key) && !isCarrierShaped(c) && c.referenced,
+  );
+  if (blocking.length > 0) {
+    return { ok: false, blocking: blocking.map((c) => c.name) };
+  }
+  return {
+    ok: true,
+    ensure: [...pack.components],
+    deactivateKeys: active
+      .filter((c) => !packKeys.has(c.key) && !c.referenced)
+      .map((c) => c.key),
+  };
+}
+
 /**
  * Is this stored structure the simple one-line shape — one fixed earning
  * that IS the salary? Judged by shape, not key, so a tenant's own single
