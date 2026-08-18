@@ -13,7 +13,10 @@
     "tokens": "node scripts/generate-tokens.mjs",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate deploy",
-    "db:seed": "tsx prisma/seed.ts"
+    "db:seed": "tsx prisma/seed.ts",
+    "sample-data": "tsx --tsconfig scripts/tsconfig.json scripts/sample-data.ts",
+    "create-tenant": "tsx --tsconfig scripts/tsconfig.json scripts/create-tenant.ts",
+    "delete-tenant": "tsx --tsconfig scripts/tsconfig.json scripts/delete-tenant.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.7.1",

@@ -8,20 +8,26 @@
  * - Requires the slug AND `--confirm <slug>` typed again. A single
  *   mistyped flag should not destroy a customer.
  * - Prints the full inventory and makes you look at it before writing.
- * - Deletes strictly within one tenant, child rows first, in a
- *   transaction. It cannot half-delete.
  * - Refuses if the tenant is not the one you named.
+ *
+ * The deletion itself lives in src/lib/platform/purge.ts, shared with the
+ * sample-data script. The guards are this file's job; knowing the order of
+ * the constraint graph is not, and a second copy of that order would go
+ * stale the moment a table is added — which is exactly what happened once
+ * already, when performance events appeared and this cascade did not know
+ * about them.
  *
  * This is genuinely destructive. The demo tenant is reversible with
  * `npx prisma db seed`; a real one is not.
  *
- * Usage:
- *   npx tsx scripts/delete-tenant.ts --slug demo-co            (dry run)
- *   npx tsx scripts/delete-tenant.ts --slug demo-co --confirm demo-co
+ * Usage (npm, not npx — see scripts/tsconfig.json for why):
+ *   npm run delete-tenant -- --slug demo-co                   (dry run)
+ *   npm run delete-tenant -- --slug demo-co --confirm demo-co
  */
 import { config as loadEnv } from "dotenv";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../src/generated/prisma/client";
+import { purgeTenant } from "../src/lib/platform/purge";
 
 loadEnv({ path: [".env.local", ".env"], quiet: true });
 
@@ -75,64 +81,13 @@ async function main() {
     return;
   }
 
-  const memberships = await db.tenantMembership.findMany({
-    where: t,
-    select: { id: true, userId: true },
-  });
-  const membershipIds = memberships.map((m) => m.id);
-  const userIds = memberships.map((m) => m.userId);
+  const removed = await purgeTenant(db, tenant.id);
 
-  await db.$transaction(async (tx) => {
-    // Children first. Every delete is tenant-scoped; nothing here can
-    // reach another company's rows.
-    await tx.actionRequestRecipient.deleteMany({ where: t });
-    await tx.actionRequest.deleteMany({ where: t });
-    await tx.proofFile.deleteMany({ where: { proof: { tenantId: tenant.id } } });
-    await tx.taskProof.deleteMany({ where: t });
-    await tx.task.deleteMany({ where: t });
-    await tx.leaveRequest.deleteMany({ where: t });
-    await tx.attendanceRecord.deleteMany({ where: t });
-    await tx.employeeDocument.deleteMany({ where: t });
-    await tx.payrollAdjustment.deleteMany({ where: { line: { tenantId: tenant.id } } });
-    await tx.payrollLine.deleteMany({ where: t });
-    await tx.payrollRun.deleteMany({ where: t });
-    await tx.salaryStructureLine.deleteMany({ where: { structure: { tenantId: tenant.id } } });
-    await tx.salaryStructure.deleteMany({ where: t });
-    await tx.salaryComponent.deleteMany({ where: t });
-    await tx.employeeInvite.deleteMany({ where: t });
-    await tx.notification.deleteMany({ where: t });
-    await tx.userFeatureException.deleteMany({ where: t });
-    await tx.tenantFeatureSetting.deleteMany({ where: t });
-    await tx.tenantModuleSetting.deleteMany({ where: t });
-    await tx.tenantPolicy.deleteMany({ where: t });
-
-    // Departments point at memberships and vice versa — break both links
-    // before removing either.
-    await tx.department.updateMany({ where: t, data: { headId: null } });
-    await tx.tenantMembership.updateMany({
-      where: t,
-      data: { departmentId: null, reportingToId: null, branchId: null, shiftId: null },
-    });
-    await tx.department.deleteMany({ where: t });
-    await tx.tenantMembership.deleteMany({ where: t });
-    await tx.branch.deleteMany({ where: t });
-    await tx.shift.deleteMany({ where: t });
-
-    await tx.rolePermission.deleteMany({ where: { role: { tenantId: tenant.id } } });
-    await tx.role.deleteMany({ where: t });
-    await tx.auditEvent.deleteMany({ where: t });
-    await tx.tenant.delete({ where: { id: tenant.id } });
-
-    // Users are platform-level and may belong to other companies. Remove
-    // only those left with no membership anywhere.
-    for (const userId of userIds) {
-      const remaining = await tx.tenantMembership.count({ where: { userId } });
-      if (remaining === 0) await tx.user.delete({ where: { id: userId } });
-    }
-  });
-
-  console.log(`\nDeleted ${tenant.name} and ${membershipIds.length} membership(s).`);
-  console.log("Orphaned logins removed; logins shared with another company kept.");
+  console.log(`\nDeleted ${tenant.name} and ${removed.memberships} membership(s).`);
+  console.log(
+    `Orphaned logins removed (${removed.orphanedUsersRemoved}); ` +
+      "logins shared with another company kept.",
+  );
 }
 
 main()

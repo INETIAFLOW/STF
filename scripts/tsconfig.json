@@ -1,0 +1,28 @@
+{
+  // Config for running scripts under tsx. It exists for one reason:
+  //
+  // Scripts reuse the app's server modules (provisioning, purging, policies)
+  // so that onboarding a company is not implemented twice. Those modules
+  // start with `import "server-only"`, a guard that stops server code being
+  // pulled into a client bundle. Next resolves that import to an empty
+  // module at build time and never needs the npm package — which is why the
+  // package is not installed, and why plain `npx tsx` on such a script fails
+  // with "Cannot find module 'server-only'".
+  //
+  // Mapping it to Next's own empty shim gives scripts the same no-op Next
+  // gives the server build. This is deliberately kept OUT of the root
+  // tsconfig: making the guard resolve to nothing app-wide would quietly
+  // weaken the very thing it protects.
+  //
+  // Run scripts through the npm scripts (npm run sample-data), which pass
+  // --tsconfig for you.
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    // `paths` replaces the parent's rather than merging, so "@/*" is
+    // restated here, relative to this file.
+    "paths": {
+      "@/*": ["../src/*"],
+      "server-only": ["../node_modules/next/dist/compiled/server-only/empty.js"]
+    }
+  }
+}

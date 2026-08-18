@@ -12,8 +12,8 @@
  * this cannot leak a credential, and the owner is onboarded through exactly
  * the flow their staff will use.
  *
- * Usage:
- *   npx tsx scripts/create-tenant.ts \
+ * Usage (npm, not npx — see scripts/tsconfig.json for why):
+ *   npm run create-tenant -- \
  *     --name "Acme Hardware" \
  *     --owner-email owner@acme.example \
  *     --owner-name "Priya Shah" \
