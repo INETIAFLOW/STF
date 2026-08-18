@@ -19,7 +19,11 @@ export type PolicyKey =
   | "leave"
   | "payroll"
   | "notifications"
-  | "pay_setup";
+  | "pay_setup"
+  // The published scoring definition (PERFORMANCE-MODULE.md §1.2): its
+  // version is stamped on every point row, and publishing it is the gate
+  // the leaderboard flag checks.
+  | "performance";
 
 export async function getPolicy<T>(
   tenantId: string,

@@ -39,6 +39,7 @@ const TENANT_TABLES = [
   "shifts",
   "attendance_records",
   "attendance_punches",
+  "performance_events",
   "leave_requests",
   "tasks",
   "task_proofs",

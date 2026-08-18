@@ -37,7 +37,8 @@ export type NavIcon =
   | "rules"
   | "company"
   | "departments"
-  | "activity";
+  | "activity"
+  | "performance";
 
 export interface NavItem {
   href: string;
@@ -97,6 +98,11 @@ export function adminConfigItems({ can }: AdminNavInput): NavItem[] {
       icon: "departments" as const,
     },
     can.settings && {
+      href: "/admin/settings/performance",
+      label: "Performance scoring",
+      icon: "performance" as const,
+    },
+    can.settings && {
       href: "/admin/settings",
       label: "Company settings",
       icon: "company" as const,
@@ -128,6 +134,7 @@ export function employeeNavItems({ enabledModules }: EmployeeNavInput): NavItem[
     { module: "TASKS", href: "/tasks", label: "Tasks", icon: "tasks" },
     { module: "LEAVE", href: "/leave", label: "Leave", icon: "leave" },
     { module: "PAYROLL", href: "/payslips", label: "Payslips", icon: "payslips" },
+    { module: "PERFORMANCE", href: "/performance", label: "Performance", icon: "performance" },
     { module: "EMPLOYEES", href: "/documents", label: "My documents", icon: "documents" },
     { module: null, href: "/profile", label: "Profile", icon: "profile" },
   ];

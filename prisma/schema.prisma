@@ -127,6 +127,7 @@ model Tenant {
   leaveRequests     LeaveRequest[]
   tasks             Task[]
   taskProofs        TaskProof[]
+  performanceEvents PerformanceEvent[]
   notifications     Notification[]
   salaryComponents  SalaryComponent[]
   salaryStructures  SalaryStructure[]
@@ -209,6 +210,7 @@ model TenantMembership {
   salaryStructures  SalaryStructure[]
   payrollLines      PayrollLine[]
   documents         EmployeeDocument[]
+  performanceEvents PerformanceEvent[]
 
   @@unique([tenantId, userId])
   /// An employee code identifies one person within one company. NULLs stay
@@ -416,6 +418,46 @@ model AttendancePunch {
   @@unique([recordId, sequence])
   @@index([tenantId, checkInAt])
   @@map("attendance_punches")
+}
+
+// ------------------------------------------------------------ performance
+
+/**
+ * One earned award. Append-only, like the audit log: corrections are new
+ * visible entries, never rewrites (Constitution §3).
+ *
+ * Points derive only from attendance and task evidence (MODULES.md;
+ * PERFORMANCE-MODULE.md). Every row stamps the scoring policy version
+ * that produced it, and `dedupeKey` makes double-awarding structurally
+ * impossible — one award per source event, one aggregate per period.
+ */
+model PerformanceEvent {
+  id           String   @id @default(uuid()) @db.Uuid
+  tenantId     String   @db.Uuid
+  membershipId String   @db.Uuid
+  /// The day this credits to, in the tenant's timezone (date only).
+  workDate     DateTime @db.Date
+  /// Rule key from the scoring policy, e.g. "on_time", "perfect_week".
+  kind         String
+  points       Int
+  /// What produced it: "attendance_record" | "task" | "task_proof" | ...
+  sourceType   String
+  sourceId     String?  @db.Uuid
+  /// Uniqueness handle: a source id, or a period key like "2026-W34".
+  dedupeKey    String
+  /// Scoring policy version in force when awarded.
+  policyVersion Int
+  /// Human line shown in the ledger, written once at award time.
+  note         String
+  createdAt    DateTime @default(now())
+
+  tenant     Tenant           @relation(fields: [tenantId], references: [id])
+  membership TenantMembership @relation(fields: [membershipId], references: [id])
+
+  @@unique([tenantId, membershipId, kind, dedupeKey])
+  @@index([tenantId, membershipId, workDate])
+  @@index([tenantId, workDate])
+  @@map("performance_events")
 }
 
 // ------------------------------------------------------------------ leave

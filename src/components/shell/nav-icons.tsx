@@ -15,6 +15,7 @@ import {
   ScrollText,
   ShieldCheck,
   ToggleRight,
+  Trophy,
   Users,
 } from "lucide-react";
 import type { NavIcon } from "@/lib/shell/nav";
@@ -44,4 +45,5 @@ export const NAV_ICONS: Record<NavIcon, typeof Clock> = {
   company: Building2,
   departments: Network,
   activity: History,
+  performance: Trophy,
 };

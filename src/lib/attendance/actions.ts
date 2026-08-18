@@ -28,6 +28,7 @@ import {
   type CheckInState,
 } from "./policy";
 import { loadAttendanceContext } from "./service";
+import { awardForCheckIn, awardForCheckOut } from "@/lib/performance/award";
 
 /**
  * May this person open a second visit today?
@@ -504,6 +505,19 @@ export async function checkInAction(
         ? `Checked in ${state.location.distanceM ?? "?"} m from ${state.location.branch?.name ?? "the permitted area"}.`
         : "Checked in with location unavailable.",
     );
+  } else {
+    // Final immediately — points count now. A pending-review check-in
+    // scores when (and only when) the review approves it.
+    await awardForCheckIn({
+      session,
+      membershipId: session.membership.id,
+      recordId: record.id,
+      workDate,
+      effectiveAt,
+      lateMinutes: state.lateBy,
+      shiftStartMinutes: context.shift.startMinutes,
+      isFirstPunchOfDay: true,
+    });
   }
 
   revalidatePath("/home");
@@ -671,6 +685,14 @@ export async function checkOutAction(
       outcome: state.location.outcome,
       branch: state.location.branch?.name ?? null,
     },
+  });
+
+  // The recorded check-out completes the day (full-day points).
+  await awardForCheckOut({
+    session,
+    membershipId: session.membership.id,
+    recordId: record.id,
+    workDate: record.workDate,
   });
 
   revalidatePath("/home");
@@ -854,6 +876,31 @@ export async function reviewAttendanceAction(
     record.id,
     parsed.data.decision,
   );
+
+  // Approval makes the check-in final, so its base points land now —
+  // retro, so streak milestones don't fire on the wrong day, and no
+  // early-bird (shift context from days ago cannot be honestly rebuilt).
+  if (parsed.data.decision === "APPROVED" && record.checkInAt) {
+    await awardForCheckIn({
+      session,
+      membershipId: record.membershipId,
+      recordId: record.id,
+      workDate: record.workDate,
+      effectiveAt: record.checkInAt,
+      lateMinutes: record.lateMinutes,
+      shiftStartMinutes: 0,
+      isFirstPunchOfDay: true,
+      retro: true,
+    });
+    if (record.checkOutAt) {
+      await awardForCheckOut({
+        session,
+        membershipId: record.membershipId,
+        recordId: record.id,
+        workDate: record.workDate,
+      });
+    }
+  }
 
   await notify.attendanceDecision(
     session,

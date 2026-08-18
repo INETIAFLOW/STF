@@ -7,6 +7,7 @@ import { recordAuditEvent } from "@/lib/audit";
 import { notify } from "@/lib/notifications";
 import { clearActionRequest, raiseTaskProof, SUBJECT } from "@/lib/actions/raise";
 import { checkAccess } from "@/lib/authz/guard";
+import { awardForTaskCompletion } from "@/lib/performance/award";
 
 /**
  * Task server actions.
@@ -299,6 +300,18 @@ export async function submitProofAction(
       session.user.displayName,
       task.title,
     );
+  } else {
+    // Completed directly (no proof requirement) — final now, so it scores
+    // now. Proof-gated tasks score when the review approves them.
+    await awardForTaskCompletion({
+      session,
+      assigneeMembershipId: session.membership.id,
+      taskId: task.id,
+      completedAt: new Date(),
+      dueDate: task.dueDate,
+      dueMinutes: task.dueMinutes,
+      priority: task.priority,
+    });
   }
 
   revalidatePath("/tasks");
@@ -396,6 +409,25 @@ export async function reviewProofAction(
     task.id,
     parsed.data.decision,
   );
+
+  // Approved proof makes the completion final — points go to the ASSIGNEE
+  // (the session here belongs to the reviewer). First-time-right means no
+  // earlier "details requested" round on this task.
+  if (parsed.data.decision === "APPROVED") {
+    const detailRounds = await db.taskProof.count({
+      where: { taskId: task.id, decision: "DETAILS_REQUESTED" },
+    });
+    await awardForTaskCompletion({
+      session,
+      assigneeMembershipId: task.assigneeId,
+      taskId: task.id,
+      completedAt: new Date(),
+      dueDate: task.dueDate,
+      dueMinutes: task.dueMinutes,
+      priority: task.priority,
+      proof: { firstTimeRight: detailRounds === 0 },
+    });
+  }
 
   await notify.proofDecision(
     session,
