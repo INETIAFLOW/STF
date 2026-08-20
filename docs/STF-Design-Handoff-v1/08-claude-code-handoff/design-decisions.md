@@ -74,8 +74,10 @@ The check-in confirmation is a single 1→1.03→1 pulse. Payroll and attendance
 *Why:* a system of record must not feel like a game, and an animating salary figure invites doubt about the final number.
 
 **D-018 · Marketing makes its trust argument with the product, not with badges**
-No customer logos or names, no adoption or accuracy statistics, no uptime or compliance claims, no prices. Permitted positioning: "Designed for Indian SMEs". Pricing page ships as a placeholder with `₹ —`.
-*Reopens when:* real pilot outcomes exist and are approved for publication, and pricing is set.
+No customer logos or names, no adoption or accuracy statistics, no uptime or compliance claims. Permitted positioning: "Designed for Indian SMEs".
+*Why:* every one of those is a claim a reader cannot check, and the product itself is the argument worth making.
+*Amended (marketing redesign):* the no-prices half of this decision is CLOSED. Pricing is set and approved for publication — Starter ₹49, Operations ₹79, Multi-Branch ₹119 per employee per month, with annual billing at ₹39/₹69/₹99. The homepage carries a pricing section and `/pricing` no longer renders `₹ —`. Figures live in one module, `src/lib/marketing/plans.ts`, so the two surfaces cannot quote different numbers. Everything else in this decision stands: still no logos, no statistics, no compliance claims.
+*Reopens when:* real pilot outcomes exist and are approved for publication.
 
 **D-019 · Payroll never asserts compliance**
 Approval requires an explicit acknowledgement that figures were checked with the customer's accountant. Wording is "payroll inputs you can review before you pay".

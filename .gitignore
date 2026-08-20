@@ -43,3 +43,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Design handoff bundles — vendor prototypes, reference only (see their README).
+/Inetiaflow design fixes/
+/Inetiaflow design fixes.zip

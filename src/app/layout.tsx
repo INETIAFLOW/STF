@@ -38,7 +38,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#2F45C4",
+  themeColor: "#10253F",
   // Lets the page reach the edges of a notched screen — and, less obviously,
   // is what makes `env(safe-area-inset-*)` report anything but 0. The
   // employee layout and --stf-layout-bottom-nav-safe-area already consume

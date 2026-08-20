@@ -1,0 +1,517 @@
+/* ---------------------------------------------------------------------
+ * Marketing + sign-in surface.
+ *
+ * A SECOND design language, deliberately quarantined. Everything here is
+ * scoped under [data-surface="marketing"], and the file is imported by the
+ * two layouts that need it rather than by globals.css — so the product's
+ * own tokens (src/styles/tokens.css) are never touched and none of this
+ * reaches the admin or employee screens.
+ *
+ * Source: design_handoff_stf/README.md (high-fidelity: colours, spacing,
+ * type and motion are final). Values are transcribed from that spec, not
+ * re-derived, so a diff against the bundle stays readable.
+ * ------------------------------------------------------------------- */
+
+[data-surface="marketing"] {
+  /* Cream */
+  --m-cream: #fbf8f2;
+  --m-cream-inset: #f1ebde;
+  --m-grid: #f6f1e6;
+  --m-white: #ffffff;
+
+  /* Navy */
+  --m-navy: #10253f;
+  --m-navy-deep: #0b1b2f;
+
+  /* Vermilion */
+  --m-red: #f04e30;
+  --m-red-hover: #d8401f;
+  --m-red-on-dark: #ff5f3f;
+  --m-red-deep: #b4451f;
+
+  /* Amber */
+  --m-amber: #f5b940;
+  --m-amber-text: #8a6210;
+
+  /* Green */
+  --m-green: #2f9e6f;
+  --m-green-text: #22754f;
+  --m-green-on-dark: #7bd3a8;
+
+  /* Text */
+  --m-muted: #4a5b70;
+  --m-muted-2: #8a96a5;
+  --m-on-navy: #5e7189;
+  --m-on-navy-2: #9fb0c4;
+
+  /* Borders */
+  --m-border: #e7e0d3;
+  --m-border-inner: #ede6d8;
+  --m-border-strong: #dcd3c2;
+
+  /* Shadows */
+  --m-shadow-card: 0 1px 2px rgba(16, 37, 63, 0.05), 0 18px 44px rgba(16, 37, 63, 0.12);
+  --m-shadow-panel: 0 1px 2px rgba(16, 37, 63, 0.05), 0 14px 36px rgba(16, 37, 63, 0.09);
+  --m-shadow-primary: 0 3px 10px rgba(240, 78, 48, 0.32);
+  --m-shadow-lift: 0 18px 40px rgba(16, 37, 63, 0.13);
+
+  --m-font-head: var(--font-archivo), "Archivo", system-ui, sans-serif;
+  --m-font-body: var(--font-ibm-plex-sans), "IBM Plex Sans", system-ui, sans-serif;
+
+  background: var(--m-cream);
+  color: var(--m-navy);
+  font-family: var(--m-font-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Focus is one rule everywhere on this surface: amber, 3px, 2px offset.
+   Stated once so no component can quietly opt out. */
+[data-surface="marketing"] :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 3px solid var(--m-amber);
+  outline-offset: 2px;
+  box-shadow: none;
+}
+
+/* ------------------------------------------------------------ motion */
+
+@keyframes m-marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+@keyframes m-pulse-ring {
+  0% { transform: scale(0.5); opacity: 0.65; }
+  100% { transform: scale(2.4); opacity: 0; }
+}
+@keyframes m-ring-fill { from { stroke-dashoffset: 163; } }
+@keyframes m-pin-pop {
+  0% { transform: scale(0) translateY(6px); opacity: 0; }
+  60% { transform: scale(1.25); }
+  100% { transform: scale(1); opacity: 1; }
+}
+@keyframes m-seq-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes m-task-move {
+  0% { transform: translate(0, 0); }
+  55%, 100% { transform: translate(178px, -2px); }
+}
+@keyframes m-leave-go {
+  0% { transform: translateX(0); }
+  55%, 100% { transform: translateX(150px); }
+}
+@keyframes m-chip-out { 0%, 45% { opacity: 1; } 60%, 100% { opacity: 0; } }
+@keyframes m-chip-in { 0%, 45% { opacity: 0; } 60%, 100% { opacity: 1; } }
+@keyframes m-ev-walk { 0% { left: 6%; } 55%, 100% { left: calc(52% - 7px); } }
+@keyframes m-cell-glow { 0%, 100% { opacity: 0; } 50% { opacity: 0.055; } }
+@keyframes m-spin { to { transform: rotate(360deg); } }
+
+/* Reduced motion: every loop stops and every entrance lands at its final
+   value. Counters jump rather than tick (handled in the components). */
+@media (prefers-reduced-motion: reduce) {
+  [data-surface="marketing"] *,
+  [data-surface="marketing"] *::before,
+  [data-surface="marketing"] *::after {
+    animation-duration: 0.001ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+/* ------------------------------------------------------- scroll reveal */
+
+/* Armed by the Reveal component only BELOW the fold — above-fold content
+   is never hidden, so a failed observer cannot blank the hero. */
+[data-surface="marketing"] [data-reveal][data-reveal-armed="true"] {
+  opacity: 0;
+  transform: translateY(16px);
+}
+[data-surface="marketing"] [data-reveal][data-reveal-shown="true"] {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity 0.7s ease var(--m-reveal-delay, 0ms),
+    transform 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) var(--m-reveal-delay, 0ms);
+}
+
+/* ------------------------------------------------------------ layout */
+
+.m-shell {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding-inline: 28px;
+}
+
+/* --------------------------------------------------------- typography */
+
+.m-h1 {
+  font-family: var(--m-font-head);
+  font-weight: 800;
+  font-size: clamp(42px, 5.2vw, 72px);
+  line-height: 1.04;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+  margin: 0;
+}
+.m-h2 {
+  font-family: var(--m-font-head);
+  font-weight: 800;
+  font-size: clamp(32px, 3.4vw, 46px);
+  line-height: 1.1;
+  letter-spacing: -0.015em;
+  margin: 0;
+  text-wrap: balance;
+}
+.m-h3 {
+  font-family: var(--m-font-head);
+  font-weight: 700;
+  font-size: 18px;
+  margin: 0;
+}
+.m-eyebrow {
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: var(--m-red-deep);
+}
+.m-lede {
+  font-size: clamp(17px, 1.4vw, 20px);
+  line-height: 1.55;
+  color: var(--m-muted);
+  margin: 0;
+}
+.m-section-lede {
+  font-size: 17px;
+  line-height: 1.55;
+  color: var(--m-muted);
+  margin: 0;
+}
+.m-num { font-variant-numeric: tabular-nums; }
+
+/* ----------------------------------------------------------- buttons */
+
+.m-btn-primary,
+.m-btn-outline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-size: 16px;
+  font-weight: 600;
+  padding: 15px 28px;
+  border-radius: 13px;
+  min-height: 44px;
+  cursor: pointer;
+  border: none;
+  transition: transform 0.18s ease, background 0.18s ease, color 0.18s ease;
+}
+.m-btn-primary {
+  background: var(--m-red);
+  color: #fff;
+  box-shadow: var(--m-shadow-primary);
+}
+.m-btn-primary:hover {
+  transform: translateY(-2px);
+  background: var(--m-red-hover);
+  color: #fff;
+}
+.m-btn-outline {
+  color: var(--m-navy);
+  border: 1.5px solid var(--m-navy);
+  background: transparent;
+}
+.m-btn-outline:hover {
+  transform: translateY(-2px);
+  background: var(--m-navy);
+  color: var(--m-cream);
+}
+/* On navy the vermilion has to lift, not darken, to stay legible. */
+.m-btn-on-navy:hover { background: var(--m-red-on-dark); }
+
+/* --------------------------------------------------------------- nav */
+
+.m-nav {
+  position: fixed;
+  inset: 0 0 auto 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 28px;
+  background: rgba(251, 248, 242, 0.6);
+  backdrop-filter: blur(10px);
+  transition: padding 0.25s ease, box-shadow 0.25s ease, background 0.25s ease;
+}
+.m-nav[data-scrolled="true"] {
+  padding: 10px 28px;
+  box-shadow: 0 8px 24px rgba(16, 37, 63, 0.12);
+  background: rgba(251, 248, 242, 0.88);
+}
+.m-nav-link {
+  color: var(--m-navy);
+  font-size: 14.5px;
+  font-weight: 500;
+}
+.m-nav-link:hover { color: var(--m-red); }
+
+.m-drawer-link {
+  color: var(--m-cream);
+  font-size: 18px;
+  font-weight: 600;
+  padding: 14px 4px;
+  border-bottom: 1px solid rgba(251, 248, 242, 0.12);
+}
+
+/* ------------------------------------------------------------- cards */
+
+.m-card {
+  background: var(--m-white);
+  border: 1px solid var(--m-border);
+  border-radius: 16px;
+  box-shadow: var(--m-shadow-card);
+}
+.m-tile {
+  border: 1px solid var(--m-border-inner);
+  border-radius: 12px;
+  padding: 14px;
+  transition: box-shadow 0.2s ease;
+}
+.m-tile:hover { box-shadow: 0 6px 18px rgba(16, 37, 63, 0.1); }
+.m-stat {
+  font-family: var(--m-font-head);
+  font-weight: 800;
+  font-size: 26px;
+  font-variant-numeric: tabular-nums;
+}
+.m-tile-label {
+  font-size: 12px;
+  color: var(--m-muted);
+  font-weight: 600;
+}
+.m-bar {
+  height: 5px;
+  background: var(--m-border-inner);
+  border-radius: 4px;
+  margin-top: 10px;
+  overflow: hidden;
+}
+.m-bar > span {
+  display: block;
+  height: 100%;
+  border-radius: 4px;
+}
+
+/* A live dot with its expanding ring — used in the hero, the ticker and
+   the sign-in panel, so it is one class rather than three copies. */
+.m-live-dot {
+  position: relative;
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  flex: none;
+}
+.m-live-dot::before,
+.m-live-dot::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: var(--m-green);
+}
+.m-live-dot::after { animation: m-pulse-ring 2.6s ease-out infinite; }
+
+/* Map/grid backdrop shared by the hero mini-map and the loop scenes. */
+.m-mapgrid {
+  background:
+    repeating-linear-gradient(0deg, var(--m-grid) 0 1px, transparent 1px 26px),
+    repeating-linear-gradient(90deg, var(--m-grid) 0 1px, transparent 1px 26px),
+    var(--m-cream);
+}
+.m-mapgrid-tight {
+  background:
+    repeating-linear-gradient(0deg, var(--m-grid) 0 1px, transparent 1px 18px),
+    repeating-linear-gradient(90deg, var(--m-grid) 0 1px, transparent 1px 18px),
+    var(--m-cream);
+}
+
+/* ------------------------------------------------------------ ticker */
+
+.m-ticker-track {
+  display: flex;
+  gap: 56px;
+  width: max-content;
+  padding: 0 28px;
+  animation: m-marquee 45s linear infinite;
+}
+.m-ticker-track:hover { animation-play-state: paused; }
+/* Under 768px the marquee becomes an ordinary horizontal scroll — an
+   auto-scrolling strip on a phone fights the reader's own thumb. */
+@media (max-width: 767px) {
+  .m-ticker { overflow-x: auto; scrollbar-width: none; }
+  .m-ticker-track { animation: none; }
+}
+
+/* ------------------------------------------------------ operating loop */
+
+.m-loop-tile {
+  text-align: left;
+  border: 1px solid var(--m-border);
+  background: transparent;
+  border-radius: 14px;
+  padding: 18px 20px;
+  cursor: pointer;
+  min-height: 44px;
+  transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+}
+.m-loop-tile[data-active="true"] {
+  border-color: var(--m-red);
+  background: var(--m-white);
+}
+.m-loop-num {
+  font-family: var(--m-font-head);
+  font-weight: 800;
+  font-size: 13px;
+  color: var(--m-muted-2);
+  font-variant-numeric: tabular-nums;
+}
+.m-loop-tile[data-active="true"] .m-loop-num { color: var(--m-red); }
+.m-loop-label {
+  font-family: var(--m-font-head);
+  font-weight: 700;
+  font-size: 17px;
+  color: var(--m-navy);
+}
+.m-panel {
+  background: var(--m-white);
+  border: 1px solid var(--m-border);
+  border-radius: 16px;
+  box-shadow: var(--m-shadow-panel);
+  padding: 28px;
+  min-height: 380px;
+  position: sticky;
+  top: 96px;
+}
+.m-scene { animation: m-seq-in 0.4s ease both; }
+
+/* ---------------------------------------------------------- use cases */
+
+.m-uc-rail {
+  display: flex;
+  gap: 18px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  padding-bottom: 8px;
+  scrollbar-width: none;
+}
+.m-uc-rail::-webkit-scrollbar { display: none; }
+.m-uc-card {
+  flex: 0 0 auto;
+  width: min(320px, 82vw);
+  scroll-snap-align: start;
+  background: var(--m-white);
+  border: 1px solid var(--m-border);
+  border-radius: 16px;
+  overflow: hidden;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+.m-uc-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--m-shadow-lift);
+}
+.m-uc-media { transition: transform 0.5s ease; }
+.m-uc-card:hover .m-uc-media { transform: scale(1.045); }
+
+/* ------------------------------------------------------------ pricing */
+
+.m-pill {
+  border: none;
+  border-radius: 100px;
+  padding: 10px 18px;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  min-height: 44px;
+  background: var(--m-cream-inset);
+  color: var(--m-muted);
+  transition: background 0.2s ease, color 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.m-pill[aria-pressed="true"] {
+  background: var(--m-navy);
+  color: var(--m-cream);
+}
+.m-plan {
+  position: relative;
+  background: var(--m-white);
+  border: 1px solid var(--m-border);
+  border-radius: 18px;
+  padding: 30px 28px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 1px 2px rgba(16, 37, 63, 0.05);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+.m-plan:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 18px 40px rgba(16, 37, 63, 0.16);
+}
+.m-plan[data-flagship="true"] {
+  background: var(--m-navy);
+  border-color: var(--m-navy);
+  box-shadow: 0 14px 36px rgba(16, 37, 63, 0.25);
+}
+.m-plan-price {
+  font-family: var(--m-font-head);
+  font-weight: 800;
+  font-size: 44px;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+.m-tick {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  flex: none;
+  margin-top: 1px;
+  background: rgba(47, 158, 111, 0.14);
+  color: var(--m-green-text);
+}
+.m-plan[data-flagship="true"] .m-tick {
+  background: rgba(47, 158, 111, 0.25);
+  color: var(--m-green-on-dark);
+}
+
+/* ----------------------------------------------------------- sign-in */
+
+.m-field {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1.5px solid var(--m-border-strong);
+  border-radius: 12px;
+  padding: 14px 16px;
+  /* 16px exactly: anything smaller makes iOS Safari zoom on focus. */
+  font-size: 16px;
+  background: var(--m-white);
+  color: var(--m-navy);
+  font-family: var(--m-font-body);
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.m-field::placeholder { color: var(--m-muted-2); }
+.m-field:focus {
+  border-color: var(--m-red);
+  box-shadow: 0 0 0 3px rgba(240, 78, 48, 0.15);
+}
+.m-field:focus-visible {
+  outline: 3px solid var(--m-amber);
+  outline-offset: 2px;
+}
+.m-field[aria-invalid="true"] { border-color: var(--m-red-deep); }

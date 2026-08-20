@@ -8,9 +8,14 @@ import Link from "next/link";
  * precision — no warm tokens (brand-guidelines.md §4).
  *
  * Forbidden here and enforced by review: customer names or logos,
- * adoption/accuracy/uptime statistics, compliance or security badges,
- * prices, and any wording implying guaranteed statutory payroll
- * compliance (copy-deck.md §11, decision D-018).
+ * adoption/accuracy/uptime statistics, compliance or security badges, and
+ * any wording implying guaranteed statutory payroll compliance
+ * (copy-deck.md §11, decisions D-018 and D-019). Prices are no longer on
+ * that list — pricing is set and published; see src/lib/marketing/plans.ts.
+ *
+ * The homepage is NOT under this layout. It moved to the (home) group with
+ * the marketing redesign, which covers the homepage and sign-in only; the
+ * pages here keep the product's original design language.
  */
 export default function MarketingLayout({
   children,
