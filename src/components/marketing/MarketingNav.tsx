@@ -15,10 +15,15 @@ import { ChakraMark } from "@/components/brand/ChakraMark";
  * The media query costs nothing and cannot disagree with itself.
  */
 
+/**
+ * Rooted at "/" rather than bare fragments: this header now sits above
+ * /demo as well as the homepage, and a bare "#pricing" over there scrolls
+ * to nothing. "/#pricing" goes home and lands on the section from either.
+ */
 const LINKS = [
-  { href: "#how", label: "Product" },
-  { href: "#usecases", label: "Modules" },
-  { href: "#pricing", label: "Pricing" },
+  { href: "/#how", label: "Product" },
+  { href: "/#usecases", label: "Modules" },
+  { href: "/#pricing", label: "Pricing" },
 ];
 
 export function MarketingNav() {
@@ -60,7 +65,7 @@ export function MarketingNav() {
   return (
     <>
       <nav className="m-nav" data-scrolled={scrolled ? "true" : "false"} aria-label="Main">
-        <Link href="#top" className="flex items-center gap-2.5 text-[color:var(--m-navy)]">
+        <Link href="/" className="flex items-center gap-2.5 text-[color:var(--m-navy)]">
           <ChakraMark size={28} />
           <span className="font-[family-name:var(--m-font-head)] text-[19px] font-extrabold tracking-[0.02em]">
             STF
@@ -72,9 +77,9 @@ export function MarketingNav() {
 
         <div className="hidden items-center gap-7 md:flex">
           {LINKS.map((l) => (
-            <a key={l.href} href={l.href} className="m-nav-link">
+            <Link key={l.href} href={l.href} className="m-nav-link">
               {l.label}
-            </a>
+            </Link>
           ))}
         </div>
 
@@ -143,9 +148,9 @@ export function MarketingNav() {
               </button>
             </div>
             {LINKS.map((l) => (
-              <a key={l.href} href={l.href} onClick={close} className="m-drawer-link">
+              <Link key={l.href} href={l.href} onClick={close} className="m-drawer-link">
                 {l.label}
-              </a>
+              </Link>
             ))}
             <Link href="/sign-in" onClick={close} className="m-drawer-link border-b-0">
               Sign in

@@ -41,15 +41,15 @@ export default function HomeLayout({ children }: { children: React.ReactNode }) 
             </span>
           </div>
           <div className="flex flex-wrap gap-6">
-            <a href="#how" className="text-[color:var(--m-on-navy)] hover:text-[color:var(--m-cream)]">
+            <Link href="/#how" className="text-[color:var(--m-on-navy)] hover:text-[color:var(--m-cream)]">
               Product
-            </a>
-            <a
-              href="#usecases"
+            </Link>
+            <Link
+              href="/#usecases"
               className="text-[color:var(--m-on-navy)] hover:text-[color:var(--m-cream)]"
             >
               Modules
-            </a>
+            </Link>
             <Link
               href="/demo"
               className="text-[color:var(--m-on-navy)] hover:text-[color:var(--m-cream)]"
