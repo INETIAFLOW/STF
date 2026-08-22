@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { checkAccess } from "@/lib/authz/guard";
 import { devFixtureOffline } from "@/lib/auth/fixture";
 import { getDb } from "@/lib/db";
-import { Card, CardHeader } from "@/components/ui/Card";
+import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { CreateRewardForm, DecideRedemption, RetireRewardButton } from "./RewardAdmin";
 

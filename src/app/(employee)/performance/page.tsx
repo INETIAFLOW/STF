@@ -51,11 +51,20 @@ export default async function PerformancePage() {
   const summary = await loadPerformanceSummary(session);
   if (!summary) redirect("/unauthorized");
 
-  const recent = await getDb().performanceEvent.findMany({
-    where: { tenantId: session.tenant.id, membershipId: session.membership.id },
-    orderBy: [{ workDate: "desc" }, { createdAt: "desc" }],
-    take: 20,
-  });
+  const db = getDb();
+  const [recent, kudos] = await Promise.all([
+    db.performanceEvent.findMany({
+      where: { tenantId: session.tenant.id, membershipId: session.membership.id },
+      orderBy: [{ workDate: "desc" }, { createdAt: "desc" }],
+      take: 20,
+    }),
+    db.kudos.findMany({
+      where: { tenantId: session.tenant.id, toMembershipId: session.membership.id },
+      include: { from: { include: { user: true } } },
+      orderBy: { createdAt: "desc" },
+      take: 5,
+    }),
+  ]);
 
   return (
     <div className="flex flex-col gap-5">
@@ -177,6 +186,27 @@ export default async function PerformancePage() {
         </h2>
         <BadgeWall earned={summary.earned} locked={summary.locked} />
       </section>
+
+      {/* ---- kudos received ---- */}
+      {kudos.length > 0 && (
+        <section aria-labelledby="kudos">
+          <h2 id="kudos" className="mb-3 font-heading text-h2 text-text-primary">
+            Kudos
+          </h2>
+          <Card>
+            <ul className="flex flex-col divide-y divide-border-subtle">
+              {kudos.map((k) => (
+                <li key={k.id} className="py-2.5 first:pt-0 last:pb-0">
+                  <p className="text-body text-text-primary">&ldquo;{k.message}&rdquo;</p>
+                  <p className="mt-0.5 text-caption text-text-secondary">
+                    — {k.from.user.displayName}, {formatDay(k.createdAt)}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          </Card>
+        </section>
+      )}
 
       {/* ---- ledger ---- */}
       <section aria-labelledby="recent">

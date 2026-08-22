@@ -1,6 +1,7 @@
 import { Award, Lock } from "lucide-react";
 import type { EarnedBadge, LockedBadge } from "@/lib/performance/summary";
 
+
 /**
  * The badge wall. Earned badges celebrate; locked ones are greyed WITH
  * exactly how to earn them (PERFORMANCE-MODULE.md §B) — a locked badge
@@ -25,6 +26,16 @@ export function BadgeWall({
           </span>
           <p className="font-heading text-label text-text-primary">{badge.name}</p>
           <p className="text-caption text-text-secondary">{badge.earnedLine}</p>
+          {/* Opens the PNG; the person saves and forwards it themselves.
+              Sharing is THEIR act — the product never posts anywhere. */}
+          <a
+            href={`/performance/badges/${badge.key}/card`}
+            target="_blank"
+            rel="noopener"
+            className="text-caption font-semibold text-brand-primary underline-offset-2 hover:underline"
+          >
+            Share card
+          </a>
         </li>
       ))}
       {locked.map((badge) => (

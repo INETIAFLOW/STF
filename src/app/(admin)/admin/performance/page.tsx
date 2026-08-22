@@ -16,6 +16,7 @@ import {
   type SeasonEntry,
 } from "@/lib/performance/seasons";
 import { BoostManager } from "./BoostManager";
+import { SendKudos } from "./SendKudos";
 
 export const metadata: Metadata = { title: "Performance" };
 
@@ -78,10 +79,18 @@ export default async function AdminPerformancePage() {
       }));
   };
 
-  const [current, previous, boosts] = await Promise.all([
+  const monday = new Date(today.getTime() - ((today.getUTCDay() + 6) % 7) * 86_400_000);
+  const [current, previous, boosts, kudosSentThisWeek] = await Promise.all([
     entriesFor(bounds.start, bounds.end),
     entriesFor(prev.start, prev.end),
     db.performanceBoost.findMany({ where: { tenantId }, orderBy: { startDate: "desc" }, take: 10 }),
+    db.kudos.count({
+      where: {
+        tenantId,
+        fromMembershipId: session.membership.id,
+        createdAt: { gte: monday },
+      },
+    }),
   ]);
   const ranked = rankSeason(current);
   const improved = mostImproved(current, previous);
@@ -216,6 +225,21 @@ export default async function AdminPerformancePage() {
           )}
         </Card>
       </div>
+
+      <section aria-labelledby="kudos">
+        <h2 id="kudos" className="mb-3 font-heading text-h2 text-text-primary">
+          Kudos
+        </h2>
+        <Card>
+          <SendKudos
+            members={members
+              .filter((m) => m.id !== session.membership.id)
+              .map((m) => ({ id: m.id, name: m.user.displayName }))
+              .sort((a, b) => a.name.localeCompare(b.name))}
+            sentThisWeek={kudosSentThisWeek}
+          />
+        </Card>
+      </section>
 
       <section aria-labelledby="boosts">
         <h2 id="boosts" className="mb-3 font-heading text-h2 text-text-primary">

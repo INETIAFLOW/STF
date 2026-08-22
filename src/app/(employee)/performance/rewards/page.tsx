@@ -5,7 +5,7 @@ import { Gift } from "lucide-react";
 import { checkAccess } from "@/lib/authz/guard";
 import { devFixtureOffline } from "@/lib/auth/fixture";
 import { getDb } from "@/lib/db";
-import { Card, CardHeader } from "@/components/ui/Card";
+import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { StatusChip } from "@/components/ui/StatusChip";
 import { availablePoints, canRedeem, HOLDING_STATUSES } from "@/lib/performance/rewards";
