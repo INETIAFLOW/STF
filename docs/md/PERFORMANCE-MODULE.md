@@ -1,6 +1,6 @@
 # Sudarshan Task Force — Performance & Leaderboards
 
-Version: 1.0  |  Date: 18 August 2026  |  Status: **Approved** (owner, 18 Aug 2026)
+Version: 1.1  |  Date: 18 August 2026  |  Status: **Approved** (owner, 18 Aug 2026) · **All five phases built** (23 Aug 2026; P5 approved with the owner's complete-the-module directive)
 
 The last unbuilt main V1 module. MODULES.md defines it in one binding
 sentence: *"attendance and task-derived indicators only, with transparent
