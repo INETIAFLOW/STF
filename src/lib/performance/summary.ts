@@ -69,6 +69,8 @@ export interface PerformanceSummary {
   boost: { name: string; multiplier: number; endDate: Date } | null;
   /** Whether the leaderboard feature is enabled for this person. */
   leaderboardOn: boolean;
+  /** Whether the rewards store is enabled for this person. */
+  rewardsOn: boolean;
 }
 
 const DAY_MS = 86_400_000;
@@ -88,6 +90,12 @@ export async function loadPerformanceSummary(
     entitlements,
     module: "PERFORMANCE",
     feature: "leaderboard",
+  }).allowed;
+  const rewardsOn = evaluateAccess({
+    session,
+    entitlements,
+    module: "PERFORMANCE",
+    feature: "rewards",
   }).allowed;
 
   const db = getDb();
@@ -253,5 +261,6 @@ export async function loadPerformanceSummary(
       ? { name: boost.name, multiplier: boost.multiplier, endDate: boost.endDate }
       : null,
     leaderboardOn,
+    rewardsOn,
   };
 }

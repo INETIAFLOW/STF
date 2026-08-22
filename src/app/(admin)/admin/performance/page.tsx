@@ -116,12 +116,20 @@ export default async function AdminPerformancePage() {
     <div className="flex flex-col gap-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="font-heading text-h1 text-text-primary">Performance</h1>
-        <Link
-          href="/admin/settings/performance"
-          className="text-label text-brand-primary underline-offset-2 hover:underline"
-        >
-          Scoring rules
-        </Link>
+        <div className="flex items-center gap-4">
+          <Link
+            href="/admin/performance/rewards"
+            className="text-label text-brand-primary underline-offset-2 hover:underline"
+          >
+            Rewards
+          </Link>
+          <Link
+            href="/admin/settings/performance"
+            className="text-label text-brand-primary underline-offset-2 hover:underline"
+          >
+            Scoring rules
+          </Link>
+        </div>
       </div>
 
       {!published && (

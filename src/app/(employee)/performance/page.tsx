@@ -65,14 +65,24 @@ export default async function PerformancePage() {
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="font-heading text-h1 text-text-primary">My Performance</h1>
-        {summary.leaderboardOn && (
-          <Link
-            href="/performance/leaderboard"
-            className="text-label text-brand-primary underline-offset-2 hover:underline"
-          >
-            Leaderboard
-          </Link>
-        )}
+        <div className="flex items-center gap-4">
+          {summary.rewardsOn && (
+            <Link
+              href="/performance/rewards"
+              className="text-label text-brand-primary underline-offset-2 hover:underline"
+            >
+              Rewards
+            </Link>
+          )}
+          {summary.leaderboardOn && (
+            <Link
+              href="/performance/leaderboard"
+              className="text-label text-brand-primary underline-offset-2 hover:underline"
+            >
+              Leaderboard
+            </Link>
+          )}
+        </div>
       </div>
 
       {!summary.published && (
