@@ -42,6 +42,8 @@ export const RULE_KEYS = [
   "planned_leave",
   "onboarding_complete",
   "work_anniversary",
+  // Weekly quest bonus (P3) — the pot for whichever quest this week runs.
+  "weekly_quest",
 ] as const;
 
 export type RuleKey = (typeof RULE_KEYS)[number];
@@ -100,6 +102,7 @@ export const DEFAULT_SCORING: ScoringPolicy = {
     planned_leave: { enabled: true, points: 10 },
     onboarding_complete: { enabled: true, points: 25 },
     work_anniversary: { enabled: true, points: 50 },
+    weekly_quest: { enabled: true, points: 30 },
   },
   earlyBirdMinutes: 15,
   taskEarlyHours: 24,
@@ -137,6 +140,7 @@ export const RULE_LABELS: Record<RuleKey, string> = {
   planned_leave: "Leave planned ahead",
   onboarding_complete: "Onboarding complete",
   work_anniversary: "Work anniversary",
+  weekly_quest: "Weekly quest completed",
 };
 
 /**

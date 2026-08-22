@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 import { Bell, Volume2, VolumeX } from "lucide-react";
 import { IconButton } from "@/components/ui/IconButton";
 import { useActionQueue } from "@/lib/actions/ActionQueueProvider";
@@ -30,6 +31,17 @@ export function NotificationBell({
   const pathname = usePathname();
   const onNotifications = pathname === "/notifications";
 
+  // Whether audio exists is only knowable in the browser, and answering
+  // it during render made the server and client disagree — a hydration
+  // failure on every page with a top bar. Both now render WITHOUT the
+  // button first; it appears a frame after mount where supported. The
+  // deferred set (inside rAF) keeps this out of the render-cascade trap.
+  const [hasAudio, setHasAudio] = useState(false);
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setHasAudio(soundSupported()));
+    return () => cancelAnimationFrame(id);
+  }, []);
+
   const decisions = tiles.length;
   // Before the first poll returns, the server-rendered count is the truth.
   const notices = unread || initialUnread;
@@ -46,7 +58,7 @@ export function NotificationBell({
 
   return (
     <div className="flex items-center gap-1">
-      {soundSupported() && (
+      {hasAudio && (
         <IconButton
           // Kept short deliberately: the tooltip is centred on the button,
           // and this button sits at the right edge of a 375px screen, so a

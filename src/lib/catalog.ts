@@ -166,6 +166,7 @@ export const FEATURES: ReadonlyArray<{
   { module: "NOTIFICATIONS", key: "whatsapp", name: "WhatsApp notifications", defaultEnabled: false },
   { module: "NOTIFICATIONS", key: "sms", name: "SMS notifications", defaultEnabled: false },
   { module: "PERFORMANCE", key: "leaderboard", name: "Leaderboard", defaultEnabled: false },
+  { module: "PERFORMANCE", key: "rewards", name: "Rewards store", defaultEnabled: false },
 ];
 
 /**

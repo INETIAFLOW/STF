@@ -67,6 +67,8 @@ export interface PerformanceSummary {
   celebrations: Celebration[];
   /** An active double-points window, for the Home banner. */
   boost: { name: string; multiplier: number; endDate: Date } | null;
+  /** Whether the leaderboard feature is enabled for this person. */
+  leaderboardOn: boolean;
 }
 
 const DAY_MS = 86_400_000;
@@ -81,6 +83,12 @@ export async function loadPerformanceSummary(
     module: "PERFORMANCE",
   }).allowed;
   if (!moduleOn) return null;
+  const leaderboardOn = evaluateAccess({
+    session,
+    entitlements,
+    module: "PERFORMANCE",
+    feature: "leaderboard",
+  }).allowed;
 
   const db = getDb();
   const tenantId = session.tenant.id;
@@ -244,5 +252,6 @@ export async function loadPerformanceSummary(
     boost: boost
       ? { name: boost.name, multiplier: boost.multiplier, endDate: boost.endDate }
       : null,
+    leaderboardOn,
   };
 }

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { checkAccess } from "@/lib/authz/guard";
 import { devFixtureOffline } from "@/lib/auth/fixture";
@@ -62,7 +63,17 @@ export default async function PerformancePage() {
         <CelebrationOverlay celebrations={summary.celebrations} />
       )}
 
-      <h1 className="font-heading text-h1 text-text-primary">My Performance</h1>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="font-heading text-h1 text-text-primary">My Performance</h1>
+        {summary.leaderboardOn && (
+          <Link
+            href="/performance/leaderboard"
+            className="text-label text-brand-primary underline-offset-2 hover:underline"
+          >
+            Leaderboard
+          </Link>
+        )}
+      </div>
 
       {!summary.published && (
         <Card>

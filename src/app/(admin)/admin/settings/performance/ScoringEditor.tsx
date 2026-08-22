@@ -45,6 +45,7 @@ const RULE_HELP: Record<RuleKey, string> = {
   planned_leave: "Leave requested well ahead, then approved.",
   onboarding_complete: "Documents verified and profile filled in.",
   work_anniversary: "Each completed year of service.",
+  weekly_quest: "This week's rotating goal, finished.",
 };
 
 const GROUPS: Array<{ title: string; keys: RuleKey[] }> = [
@@ -81,7 +82,7 @@ const GROUPS: Array<{ title: string; keys: RuleKey[] }> = [
   },
   {
     title: "Milestones in the job",
-    keys: ["planned_leave", "onboarding_complete", "work_anniversary"],
+    keys: ["planned_leave", "onboarding_complete", "work_anniversary", "weekly_quest"],
   },
 ];
 

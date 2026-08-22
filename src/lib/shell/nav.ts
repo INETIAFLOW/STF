@@ -66,6 +66,7 @@ export function adminNavItems({ enabledModules }: AdminNavInput): NavItem[] {
     { module: "TASKS", href: "/admin/tasks", label: "Tasks", icon: "tasks" },
     { module: "PAYROLL", href: "/admin/payroll", label: "Payroll", icon: "payroll" },
     { module: "DAILY_REPORTING", href: "/admin/daily-report", label: "Daily report", icon: "dailyReport" },
+    { module: "PERFORMANCE", href: "/admin/performance", label: "Performance", icon: "performance" },
     { module: null, href: "/admin/reports", label: "Reports", icon: "reports" },
   ];
 

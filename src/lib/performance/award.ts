@@ -29,6 +29,13 @@ import {
   type ScoringPolicy,
 } from "./scoring";
 import { BADGES, detectBadges, type BadgeFacts } from "./badges";
+import {
+  mostImproved,
+  previousSeasonBounds,
+  questForWeek,
+  questProgress,
+  type QuestProgress,
+} from "./seasons";
 import { levelBadgeKey, levelFor } from "./levels";
 import { notify } from "@/lib/notifications";
 import { minutesInTimezone, workDateInTimezone } from "@/lib/attendance/policy";
@@ -665,11 +672,27 @@ async function afterAwards(
   options: { checkIn?: boolean; streak?: number } = {},
 ): Promise<void> {
   try {
+    const monthAlready = await getDb().performanceEvent.findFirst({
+      where: {
+        tenantId: session.tenant.id,
+        membershipId,
+        kind: { in: ["perfect_month", "clean_month"] },
+        dedupeKey: monthKey(
+          new Date(Date.UTC(workDate.getUTCFullYear(), workDate.getUTCMonth() - 1, 1)),
+        ),
+      },
+      select: { id: true },
+    });
     await evaluatePreviousMonth(session, membershipId, state, workDate);
+    // Season close-out rides the same once-per-member-per-month trigger.
+    if (!monthAlready) {
+      await evaluateSeasonBadge(session, state, workDate);
+    }
     await evaluateAnniversary(session, membershipId, state, workDate);
     if (options.checkIn) {
       await evaluateTeamDay(session, membershipId, state, workDate);
     }
+    await evaluateQuest(session, membershipId, state, workDate);
     await evaluateAchievements(session, membershipId, state, options.streak ?? 0);
   } catch (error) {
     console.error("[performance] aggregate pass failed:", error);
@@ -766,5 +789,147 @@ export async function awardForOnboarding(input: {
     await afterAwards(input.session, input.membershipId, state, workDate);
   } catch (error) {
     console.error("[performance] onboarding award failed:", error);
+  }
+}
+
+// ------------------------------------------------------- P3 mechanics
+
+/**
+ * This week's quest may have just been completed by this event. The bonus
+ * pays once per quest per week (dedupe on quest + week); the pot is the
+ * weekly_quest rule, switchable like everything else.
+ */
+async function evaluateQuest(
+  session: AppSession,
+  membershipId: string,
+  state: ScoringState,
+  workDate: Date,
+): Promise<void> {
+  const rule = state.policy.rules.weekly_quest;
+  if (!rule.enabled || rule.points <= 0) return;
+
+  const thisWeek = weekKey(workDate);
+  const quest = questForWeek(thisWeek);
+
+  // Week bounds: Monday of workDate's week, through workDate.
+  const dayOfWeek = (workDate.getUTCDay() + 6) % 7;
+  const monday = new Date(workDate.getTime() - dayOfWeek * 86_400_000);
+
+  const db = getDb();
+  let progress: QuestProgress;
+  if (quest.metric === "on_time_days") {
+    const onTime = await db.attendanceRecord.count({
+      where: {
+        tenantId: session.tenant.id,
+        membershipId,
+        workDate: { gte: monday, lte: workDate },
+        checkInAt: { not: null },
+        lateMinutes: 0,
+        reviewStatus: { in: ["NONE", "APPROVED"] },
+      },
+    });
+    progress = questProgress(quest, { onTimeDaysThisWeek: onTime, tasksCompletedThisWeek: 0 });
+  } else {
+    const tasks = await db.performanceEvent.count({
+      where: {
+        tenantId: session.tenant.id,
+        membershipId,
+        kind: "task_completed",
+        workDate: { gte: monday, lte: workDate },
+      },
+    });
+    progress = questProgress(quest, { onTimeDaysThisWeek: 0, tasksCompletedThisWeek: tasks });
+  }
+  if (!progress.done) return;
+
+  await writeAwards({
+    session,
+    membershipId,
+    workDate,
+    awards: [
+      {
+        kind: "weekly_quest",
+        points: rule.points,
+        note: `Quest complete: ${quest.title}`,
+      },
+    ],
+    sourceType: "quest",
+    sourceId: null,
+    dedupeKeyFor: () => `${quest.key}:${thisWeek}`,
+    version: state.version,
+  });
+}
+
+/**
+ * The season badge: most improved of the season that just closed
+ * (PERFORMANCE-MODULE.md §B — the one badge the wall shows locked until
+ * seasons exist to judge it). Runs on the once-per-member month pass; the
+ * badge store's unique index keeps it once-ever per person.
+ */
+async function evaluateSeasonBadge(
+  session: AppSession,
+  state: ScoringState,
+  today: Date,
+): Promise<void> {
+  const db = getDb();
+  const closed = previousSeasonBounds(today);
+  const before = previousSeasonBounds(closed.start);
+
+  const sum = async (start: Date, end: Date) =>
+    db.performanceEvent.groupBy({
+      by: ["membershipId"],
+      where: {
+        tenantId: session.tenant.id,
+        workDate: { gte: start, lte: end },
+        // The quest/aggregate kinds ride along; a season is simply the sum.
+      },
+      _sum: { points: true },
+    });
+
+  const [closedRows, beforeRows] = await Promise.all([
+    sum(closed.start, closed.end),
+    sum(before.start, before.end),
+  ]);
+  if (closedRows.length === 0 || beforeRows.length === 0) return;
+
+  const current = closedRows.map((r) => ({
+    membershipId: r.membershipId,
+    name: "",
+    departmentName: null,
+    points: r._sum.points ?? 0,
+  }));
+  const previous = beforeRows.map((r) => ({
+    membershipId: r.membershipId,
+    name: "",
+    departmentName: null,
+    points: r._sum.points ?? 0,
+  }));
+
+  const winner = mostImproved(current, previous);
+  if (!winner) return;
+
+  const created = await db.employeeBadge.createMany({
+    data: [
+      {
+        tenantId: session.tenant.id,
+        membershipId: winner.membershipId,
+        badgeKey: "comeback_season",
+      },
+    ],
+    skipDuplicates: true,
+  });
+  if (created.count === 0) return;
+
+  const member = await db.tenantMembership.findUnique({
+    where: { id: winner.membershipId },
+    select: { userId: true },
+  });
+  if (member) {
+    await notify.performanceMoment(
+      session,
+      member.userId,
+      "Badge earned: The Comeback",
+      `Biggest climb of the season — ${winner.previousPoints} to ${winner.currentPoints} points.`,
+    );
   }
 }

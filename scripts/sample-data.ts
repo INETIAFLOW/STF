@@ -252,7 +252,15 @@ async function main() {
       branchId: branches[0].id,
       shiftId: shifts[0].id,
       joinedOn: dayAgo(1_200),
+      // ACTIVE so the dev preview session can resolve this owner. The
+      // invite still works: acceptance re-affirms ACTIVE and sets the
+      // password, it does not require INVITED.
+      status: "ACTIVE",
     },
+  });
+  await db.user.update({
+    where: { id: owner.userId },
+    data: { status: "ACTIVE" },
   });
 
   interface Member {

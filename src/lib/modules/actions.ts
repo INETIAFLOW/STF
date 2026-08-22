@@ -192,6 +192,26 @@ export async function setFeatureEnabledAction(
   });
   if (!feature) return { ok: false, error: "That feature is not available." };
 
+  // The leaderboard's publish gate (PERFORMANCE-MODULE.md §C): ranking
+  // people by rules nobody can read is exactly the opaque scoring this
+  // module exists to end, so the flag refuses until a definition is
+  // published. Enforced here in code, not in anyone's memory.
+  if (
+    parsed.data.moduleKey === "PERFORMANCE" &&
+    parsed.data.featureKey === "leaderboard" &&
+    parsed.data.enabled
+  ) {
+    const { getPolicy } = await import("@/lib/policies");
+    const scoring = await getPolicy(session.tenant.id, "performance");
+    if (scoring == null) {
+      return {
+        ok: false,
+        error:
+          "Publish the scoring rules first (Settings → Performance scoring). A leaderboard needs published rules everyone can read.",
+      };
+    }
+  }
+
   const existing = await db.tenantFeatureSetting.findUnique({
     where: {
       tenantId_featureId: {
