@@ -5,6 +5,7 @@ import { z } from "zod";
 import { getDb } from "@/lib/db";
 import { recordAuditEvent } from "@/lib/audit";
 import { notify } from "@/lib/notifications";
+import { awardForLeaveApproval } from "@/lib/performance/award";
 import { clearActionRequest, raiseLeaveRequest, SUBJECT } from "@/lib/actions/raise";
 import { checkAccess } from "@/lib/authz/guard";
 import {
@@ -241,6 +242,18 @@ export async function decideLeaveAction(
     request.id,
     parsed.data.decision,
   );
+
+  if (parsed.data.decision === "APPROVED") {
+    // Amendment 2, rule 18: leave planned well ahead earns points. Judged
+    // from when the request was CREATED, which nobody can backdate.
+    await awardForLeaveApproval({
+      session,
+      membershipId: request.membershipId,
+      leaveRequestId: request.id,
+      requestedAt: request.createdAt,
+      startDate: request.startDate,
+    });
+  }
 
   if (parsed.data.decision !== "DETAILS_REQUESTED") {
     await notify.leaveDecision(

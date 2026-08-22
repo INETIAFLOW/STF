@@ -67,3 +67,29 @@ go to the bell.
 Departments belong to Employee Management. With Employee Management
 disabled, departments are unreachable and action tiles fall back to
 tenant admins — they are never silently dropped.
+
+# Amendment 2 — Performance point sources beyond attendance and tasks
+*Approved 18 August 2026 with PERFORMANCE-MODULE.md. Appended, not rewritten.*
+
+## Performance & Leaderboards — extended
+
+The module's binding sentence stands: indicators derive from recorded
+evidence with transparent, published definitions — never from opinions or
+manual entries. This amendment adds three narrow, evidence-based point
+sources that are not attendance or task events:
+
+- **Planned leave.** A leave request submitted at least N days before its
+  start date (N tenant-editable, default 3) earns points when APPROVED.
+  The evidence is the request's own creation timestamp, which nobody can
+  backdate. Rewarding notice turns the leave calendar from a surprise
+  into a plan.
+- **Onboarding complete.** One-time: at least one document VERIFIED and
+  the workforce profile filled in (designation, department, branch,
+  shift). The evidence is the document review decision and the profile
+  record.
+- **Work anniversary.** Points per completed year of service, judged from
+  `joinedOn` at date granularity. One award per year count, ever.
+
+Each source is an individually switchable rule with its own value in the
+published scoring definition, like every other rule. Nothing here
+introduces manual scoring, and nothing here can deduct.

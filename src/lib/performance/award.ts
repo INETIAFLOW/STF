@@ -6,20 +6,31 @@ import { loadEntitlements } from "@/lib/authz/entitlements";
 import { evaluateAccess } from "@/lib/authz/flags";
 import type { AppSession } from "@/lib/auth/types";
 import {
+  anniversaryAward,
   applyDailyTaskCap,
   checkInAwards,
   checkOutAwards,
+  completedServiceYears,
   currentStreak,
   hasBrokenRun,
+  monthAwards,
+  monthKey,
+  monthTaskMilestones,
   normalizeScoring,
+  onboardingAward,
+  plannedLeaveAward,
   proofAwards,
   taskAwards,
+  teamDayAward,
   weekKey,
   TASK_CAPPED_KINDS,
   type Award,
   type DayStanding,
   type ScoringPolicy,
 } from "./scoring";
+import { BADGES, detectBadges, type BadgeFacts } from "./badges";
+import { levelBadgeKey, levelFor } from "./levels";
+import { notify } from "@/lib/notifications";
 import { minutesInTimezone, workDateInTimezone } from "@/lib/attendance/policy";
 
 /**
@@ -224,7 +235,7 @@ export async function awardForCheckIn(input: {
       session: input.session,
       membershipId: input.membershipId,
       workDate: input.workDate,
-      awards,
+      awards: applyBoost(awards, await boostMultiplier(input.session, input.workDate)),
       sourceType: "attendance_record",
       sourceId: input.recordId,
       dedupeKeyFor: (a) =>
@@ -234,6 +245,10 @@ export async function awardForCheckIn(input: {
             ? input.recordId // one per record
             : dayKey, // milestones/comeback: one per day they landed
       version: state.version,
+    });
+    await afterAwards(input.session, input.membershipId, state, input.workDate, {
+      checkIn: true,
+      streak: streakIncludingToday,
     });
   } catch (error) {
     console.error("[performance] check-in award failed:", error);
@@ -254,12 +269,16 @@ export async function awardForCheckOut(input: {
       session: input.session,
       membershipId: input.membershipId,
       workDate: input.workDate,
-      awards: checkOutAwards(state.policy),
+      awards: applyBoost(
+        checkOutAwards(state.policy),
+        await boostMultiplier(input.session, input.workDate),
+      ),
       sourceType: "attendance_record",
       sourceId: input.recordId,
       dedupeKeyFor: () => input.recordId,
       version: state.version,
     });
+    await afterAwards(input.session, input.membershipId, state, input.workDate);
   } catch (error) {
     console.error("[performance] check-out award failed:", error);
   }
@@ -336,13 +355,416 @@ export async function awardForTaskCompletion(input: {
       session: input.session,
       membershipId: input.assigneeMembershipId,
       workDate,
-      awards: capped,
+      awards: applyBoost(capped, await boostMultiplier(input.session, workDate)),
       sourceType: "task",
       sourceId: input.taskId,
       dedupeKeyFor: () => input.taskId, // every kind at most once per task
       version: state.version,
     });
+
+    // Monthly task-volume milestones, keyed to the month so each pays once.
+    const monthStart = new Date(Date.UTC(workDate.getUTCFullYear(), workDate.getUTCMonth(), 1));
+    const completedThisMonth = await getDb().performanceEvent.count({
+      where: {
+        tenantId: input.session.tenant.id,
+        membershipId: input.assigneeMembershipId,
+        kind: "task_completed",
+        workDate: { gte: monthStart },
+      },
+    });
+    await writeAwards({
+      session: input.session,
+      membershipId: input.assigneeMembershipId,
+      workDate,
+      awards: monthTaskMilestones(state.policy, completedThisMonth),
+      sourceType: "month",
+      sourceId: null,
+      dedupeKeyFor: () => monthKey(workDate),
+      version: state.version,
+    });
+
+    await afterAwards(input.session, input.assigneeMembershipId, state, workDate);
   } catch (error) {
     console.error("[performance] task award failed:", error);
+  }
+}
+
+// --------------------------------------------- aggregates + badges (P2)
+
+/**
+ * Double-points boost in force on a date, if any (P3 mechanics, applied
+ * from the moment the table exists so a declared window never misses a
+ * day). Returns the multiplier, 1 when no window covers the date.
+ */
+async function boostMultiplier(session: AppSession, workDate: Date): Promise<number> {
+  const boost = await getDb().performanceBoost.findFirst({
+    where: {
+      tenantId: session.tenant.id,
+      startDate: { lte: workDate },
+      endDate: { gte: workDate },
+    },
+    orderBy: { multiplier: "desc" },
+  });
+  return boost ? Math.max(1, boost.multiplier) : 1;
+}
+
+/** Multiply awards for a boost window, saying so on the ledger line. */
+function applyBoost(awards: readonly Award[], multiplier: number): Award[] {
+  if (multiplier <= 1) return [...awards];
+  return awards.map((a) => ({
+    ...a,
+    points: a.points * multiplier,
+    note: `${a.note} (x${multiplier} day)`,
+  }));
+}
+
+/**
+ * Month awards for the PREVIOUS month, judged by the first award event
+ * that arrives after it closed ("awarded by the event that completes
+ * them" — nothing here runs on a clock). The dedupe key is the month, so
+ * however many events race to judge it, it pays once.
+ */
+async function evaluatePreviousMonth(
+  session: AppSession,
+  membershipId: string,
+  state: ScoringState,
+  today: Date,
+): Promise<void> {
+  const monthStart = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth() - 1, 1));
+  const monthEnd = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), 0));
+  const key = monthKey(monthStart);
+
+  const already = await getDb().performanceEvent.findFirst({
+    where: {
+      tenantId: session.tenant.id,
+      membershipId,
+      kind: { in: ["perfect_month", "clean_month"] },
+      dedupeKey: key,
+    },
+    select: { id: true },
+  });
+  if (already) return;
+
+  const records = await getDb().attendanceRecord.findMany({
+    where: {
+      tenantId: session.tenant.id,
+      membershipId,
+      workDate: { gte: monthStart, lte: monthEnd },
+      checkInAt: { not: null },
+    },
+    select: { lateMinutes: true, reviewStatus: true, exemptionStatus: true },
+  });
+  if (records.length === 0) return;
+
+  const onTime = records.filter(
+    (r) =>
+      !(r.lateMinutes > 0 && r.exemptionStatus !== "EXEMPTED") &&
+      r.reviewStatus !== "REJECTED",
+  ).length;
+  const exceptions = records.filter((r) => r.reviewStatus !== "NONE").length;
+
+  const awards = monthAwards(state.policy, {
+    workedDays: records.length,
+    onTimeDays: onTime,
+    exceptionDays: exceptions,
+  });
+
+  await writeAwards({
+    session,
+    membershipId,
+    workDate: monthEnd,
+    awards,
+    sourceType: "month",
+    sourceId: null,
+    dedupeKeyFor: () => key,
+    version: state.version,
+  });
+}
+
+/**
+ * Work anniversary, judged by the first award event on or after the date.
+ * One award per completed year, keyed on the year count — a missed year
+ * (nobody checked in near the date) is still collectable later, but the
+ * same year can never pay twice.
+ */
+async function evaluateAnniversary(
+  session: AppSession,
+  membershipId: string,
+  state: ScoringState,
+  today: Date,
+): Promise<void> {
+  const membership = await getDb().tenantMembership.findUnique({
+    where: { id: membershipId },
+    select: { joinedOn: true },
+  });
+  if (!membership?.joinedOn) return;
+
+  const years = completedServiceYears(membership.joinedOn, today);
+  const award = anniversaryAward(state.policy, { completedYears: years });
+  if (!award) return;
+
+  await writeAwards({
+    session,
+    membershipId,
+    workDate: today,
+    awards: [award],
+    sourceType: "anniversary",
+    sourceId: null,
+    dedupeKeyFor: () => `anniv-${years}`,
+    version: state.version,
+  });
+}
+
+/**
+ * Team day: this check-in may have completed the department. Everyone in
+ * it gets the award — including the members whose check-ins came earlier,
+ * which is the point: the last arrival closes the loop for the whole team.
+ */
+async function evaluateTeamDay(
+  session: AppSession,
+  membershipId: string,
+  state: ScoringState,
+  workDate: Date,
+): Promise<void> {
+  if (!state.policy.rules.team_day.enabled) return;
+
+  const me = await getDb().tenantMembership.findUnique({
+    where: { id: membershipId },
+    select: { departmentId: true },
+  });
+  if (!me?.departmentId) return;
+
+  const members = await getDb().tenantMembership.findMany({
+    where: {
+      tenantId: session.tenant.id,
+      departmentId: me.departmentId,
+      status: "ACTIVE",
+    },
+    select: { id: true },
+  });
+
+  const onTimeRecords = await getDb().attendanceRecord.findMany({
+    where: {
+      tenantId: session.tenant.id,
+      membershipId: { in: members.map((m) => m.id) },
+      workDate,
+      checkInAt: { not: null },
+      lateMinutes: 0,
+      reviewStatus: { in: ["NONE", "APPROVED"] },
+    },
+    select: { membershipId: true },
+  });
+  const onTimeSet = new Set(onTimeRecords.map((r) => r.membershipId));
+
+  const award = teamDayAward(state.policy, {
+    departmentSize: members.length,
+    onTimeToday: onTimeSet.size,
+  });
+  if (!award) return;
+
+  const dayKey = workDate.toISOString().slice(0, 10);
+  for (const member of members) {
+    await writeAwards({
+      session,
+      membershipId: member.id,
+      workDate,
+      awards: [award],
+      sourceType: "team_day",
+      sourceId: null,
+      dedupeKeyFor: () => dayKey,
+      version: state.version,
+    });
+  }
+}
+
+/**
+ * After any award lands: re-derive badges and level from the ledger, store
+ * what is newly earned, and ring the bell once for each. The unique index
+ * on employee_badges makes re-detection idempotent, so this can run after
+ * every event without ever duplicating a moment.
+ */
+async function evaluateAchievements(
+  session: AppSession,
+  membershipId: string,
+  state: ScoringState,
+  currentStreakDays: number,
+): Promise<void> {
+  const db = getDb();
+
+  const [total, byKind] = await Promise.all([
+    db.performanceEvent.aggregate({
+      where: { tenantId: session.tenant.id, membershipId },
+      _sum: { points: true },
+    }),
+    db.performanceEvent.groupBy({
+      by: ["kind"],
+      where: { tenantId: session.tenant.id, membershipId },
+      _count: true,
+    }),
+  ]);
+  const count = (kind: string) => byKind.find((k) => k.kind === kind)?._count ?? 0;
+
+  const facts: BadgeFacts = {
+    totalPoints: total._sum.points ?? 0,
+    currentStreak: currentStreakDays,
+    tasksCompleted: count("task_completed"),
+    earlyBirdCount: count("early_bird"),
+    proofAcceptedCount: count("proof_accepted"),
+    perfectMonths: count("perfect_month"),
+  };
+
+  const level = levelFor(facts.totalPoints, state.policy);
+  const wanted = detectBadges(facts);
+  // Level celebrations ride the same store; index 0 is the floor everyone
+  // starts on, so only 1+ are moments.
+  for (let i = 1; i <= level.index; i++) wanted.push(levelBadgeKey(i));
+  if (wanted.length === 0) return;
+
+  const existing = await db.employeeBadge.findMany({
+    where: { tenantId: session.tenant.id, membershipId, badgeKey: { in: wanted } },
+    select: { badgeKey: true },
+  });
+  const have = new Set(existing.map((b) => b.badgeKey));
+  const fresh = wanted.filter((k) => !have.has(k));
+  if (fresh.length === 0) return;
+
+  await db.employeeBadge.createMany({
+    data: fresh.map((badgeKey) => ({
+      tenantId: session.tenant.id,
+      membershipId,
+      badgeKey,
+    })),
+    skipDuplicates: true,
+  });
+
+  // The bell — one notice per moment, to the person who earned it.
+  const membership = await db.tenantMembership.findUnique({
+    where: { id: membershipId },
+    select: { userId: true },
+  });
+  if (!membership) return;
+  for (const key of fresh) {
+    const badge = BADGES.find((b) => b.key === key);
+    const title = badge
+      ? `Badge earned: ${badge.name}`
+      : `Level up: ${state.policy.levelNames[Number(key.split("_")[1])] ?? "next level"}`;
+    await notify.performanceMoment(session, membership.userId, title);
+  }
+}
+
+/**
+ * The follow-on pass every entry point calls after its own awards: month
+ * close-outs, anniversaries, team day, then badges and level. Fail-quiet
+ * as a whole — none of this may break the action that triggered it.
+ */
+async function afterAwards(
+  session: AppSession,
+  membershipId: string,
+  state: ScoringState,
+  workDate: Date,
+  options: { checkIn?: boolean; streak?: number } = {},
+): Promise<void> {
+  try {
+    await evaluatePreviousMonth(session, membershipId, state, workDate);
+    await evaluateAnniversary(session, membershipId, state, workDate);
+    if (options.checkIn) {
+      await evaluateTeamDay(session, membershipId, state, workDate);
+    }
+    await evaluateAchievements(session, membershipId, state, options.streak ?? 0);
+  } catch (error) {
+    console.error("[performance] aggregate pass failed:", error);
+  }
+}
+
+// ------------------------------------------ Amendment 2 entry points (P2)
+
+/** Leave was APPROVED — was it planned well ahead? */
+export async function awardForLeaveApproval(input: {
+  session: AppSession;
+  membershipId: string;
+  leaveRequestId: string;
+  requestedAt: Date;
+  startDate: Date;
+}): Promise<void> {
+  try {
+    const state = await scoringStateFor(input.session);
+    if (!state) return;
+
+    const daysAhead = Math.floor(
+      (input.startDate.getTime() - input.requestedAt.getTime()) / 86_400_000,
+    );
+    const award = plannedLeaveAward(state.policy, { requestedDaysAhead: daysAhead });
+    if (!award) return;
+
+    const workDate = workDateInTimezone(new Date(), input.session.tenant.timezone);
+    await writeAwards({
+      session: input.session,
+      membershipId: input.membershipId,
+      workDate,
+      awards: applyBoost([award], await boostMultiplier(input.session, workDate)),
+      sourceType: "leave_request",
+      sourceId: input.leaveRequestId,
+      dedupeKeyFor: () => input.leaveRequestId,
+      version: state.version,
+    });
+    await afterAwards(input.session, input.membershipId, state, workDate);
+  } catch (error) {
+    console.error("[performance] leave award failed:", error);
+  }
+}
+
+/**
+ * A document was VERIFIED — did that complete onboarding? One-time by
+ * dedupe key; profile completeness is judged now, on the completing event.
+ */
+export async function awardForOnboarding(input: {
+  session: AppSession;
+  membershipId: string;
+}): Promise<void> {
+  try {
+    const state = await scoringStateFor(input.session);
+    if (!state) return;
+
+    const db = getDb();
+    const [membership, verifiedDocs] = await Promise.all([
+      db.tenantMembership.findUnique({
+        where: { id: input.membershipId },
+        select: { designation: true, departmentId: true, branchId: true, shiftId: true },
+      }),
+      db.employeeDocument.count({
+        where: {
+          tenantId: input.session.tenant.id,
+          membershipId: input.membershipId,
+          status: "VERIFIED",
+        },
+      }),
+    ]);
+    if (!membership) return;
+
+    const award = onboardingAward(state.policy, {
+      hasVerifiedDocument: verifiedDocs > 0,
+      profileComplete: Boolean(
+        membership.designation &&
+          membership.departmentId &&
+          membership.branchId &&
+          membership.shiftId,
+      ),
+    });
+    if (!award) return;
+
+    const workDate = workDateInTimezone(new Date(), input.session.tenant.timezone);
+    await writeAwards({
+      session: input.session,
+      membershipId: input.membershipId,
+      workDate,
+      awards: [award],
+      sourceType: "onboarding",
+      sourceId: null,
+      dedupeKeyFor: () => "onboarding", // once, ever
+      version: state.version,
+    });
+    await afterAwards(input.session, input.membershipId, state, workDate);
+  } catch (error) {
+    console.error("[performance] onboarding award failed:", error);
   }
 }

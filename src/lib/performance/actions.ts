@@ -27,6 +27,9 @@ const scoringSchema = z.object({
   perfectWeekDays: z.number().min(2).max(7),
   comebackRunLength: z.number().min(2).max(30),
   dailyTaskCap: z.number().min(0).max(10_000),
+  monthMinDays: z.number().min(1).max(31),
+  plannedLeaveDays: z.number().min(1).max(60),
+  levelNames: z.array(z.string().min(1).max(30)).length(5),
 });
 
 /**
@@ -83,4 +86,38 @@ export async function publishScoringAction(
     ok: true,
     message: `Scoring version ${version} is published. Points count from now.`,
   };
+}
+
+const celebrateSchema = z.object({
+  badgeKeys: z.array(z.string().min(1).max(60)).min(1).max(10),
+});
+
+/**
+ * Mark celebration moments as shown. Scoped to the caller's own
+ * membership — nobody can dismiss anyone else's moment — and idempotent:
+ * a second call finds celebratedAt already set and changes nothing.
+ */
+export async function markCelebratedAction(
+  input: z.input<typeof celebrateSchema>,
+): Promise<ActionResult> {
+  const parsed = celebrateSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: "Nothing to mark." };
+
+  const { session, decision } = await checkAccess({ module: "PERFORMANCE" });
+  if (!decision.allowed) {
+    return { ok: false, error: decision.message ?? "You don't have access to this." };
+  }
+
+  const { getDb } = await import("@/lib/db");
+  await getDb().employeeBadge.updateMany({
+    where: {
+      tenantId: session.tenant.id,
+      membershipId: session.membership.id,
+      badgeKey: { in: parsed.data.badgeKeys },
+      celebratedAt: null,
+    },
+    data: { celebratedAt: new Date() },
+  });
+
+  return { ok: true, message: "Celebrated." };
 }

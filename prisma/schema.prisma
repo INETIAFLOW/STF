@@ -138,6 +138,11 @@ model Tenant {
   departments       Department[]
   employeeInvites   EmployeeInvite[]
   actionRequests    ActionRequest[]
+  employeeBadges    EmployeeBadge[]
+  performanceBoosts PerformanceBoost[]
+  rewards           Reward[]
+  rewardRedemptions RewardRedemption[]
+  kudos             Kudos[]
 
   @@map("tenants")
 }
@@ -211,6 +216,10 @@ model TenantMembership {
   payrollLines      PayrollLine[]
   documents         EmployeeDocument[]
   performanceEvents PerformanceEvent[]
+  badges            EmployeeBadge[]
+  rewardRedemptions RewardRedemption[]
+  kudosSent         Kudos[]            @relation("kudosFrom")
+  kudosReceived     Kudos[]            @relation("kudosTo")
 
   @@unique([tenantId, userId])
   /// An employee code identifies one person within one company. NULLs stay
@@ -1167,6 +1176,7 @@ enum ActionRequestKind {
   LEAVE_REQUEST
   TASK_PROOF
   EMPLOYEE_INVITE
+  REWARD_REDEMPTION
 }
 
 enum ActionRequestStatus {
@@ -1238,4 +1248,128 @@ model ActionRequestRecipient {
   @@unique([actionRequestId, userId])
   @@index([tenantId, userId, snoozedUntil])
   @@map("action_request_recipients")
+}
+
+// ---------------------------------------------------- performance P2–P5
+
+/// One earned achievement — a catalog badge, or a level celebration row
+/// (badgeKey "level_1".."level_4", filtered off the badge wall). Earned
+/// once, kept forever; `celebratedAt` marks the full-screen moment as
+/// shown so it fires exactly once (PERFORMANCE-MODULE.md §B).
+model EmployeeBadge {
+  id           String    @id @default(uuid()) @db.Uuid
+  tenantId     String    @db.Uuid
+  membershipId String    @db.Uuid
+  /// Key into the code catalog (src/lib/performance/badges.ts / levels.ts).
+  badgeKey     String
+  earnedAt     DateTime  @default(now())
+  celebratedAt DateTime?
+
+  tenant     Tenant           @relation(fields: [tenantId], references: [id])
+  membership TenantMembership @relation(fields: [membershipId], references: [id])
+
+  @@unique([tenantId, membershipId, badgeKey])
+  @@index([tenantId, membershipId, celebratedAt])
+  @@map("employee_badges")
+}
+
+/// A double-points window an admin declared (festival rush, stock-taking).
+/// Applied at award time; existing rows are never rewritten.
+model PerformanceBoost {
+  id          String   @id @default(uuid()) @db.Uuid
+  tenantId    String   @db.Uuid
+  /// Why, in the admin's words — shown on the Home widget banner.
+  name        String
+  /// Date-only bounds, inclusive, in the tenant's timezone.
+  startDate   DateTime @db.Date
+  endDate     DateTime @db.Date
+  multiplier  Int      @default(2)
+  createdById String?  @db.Uuid
+  createdAt   DateTime @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  @@index([tenantId, startDate, endDate])
+  @@map("performance_boosts")
+}
+
+/// Something points can be redeemed for. Defined by the tenant; never
+/// money inside STF (D-P3-01) — cash goes through payroll adjustments.
+model Reward {
+  id          String  @id @default(uuid()) @db.Uuid
+  tenantId    String  @db.Uuid
+  name        String
+  description String?
+  pointCost   Int
+  /// Null = unlimited. Decremented on approval, not on request.
+  stock       Int?
+  isActive    Boolean @default(true)
+  sortOrder   Int     @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tenant      Tenant             @relation(fields: [tenantId], references: [id])
+  redemptions RewardRedemption[]
+
+  @@index([tenantId, isActive])
+  @@map("rewards")
+}
+
+enum RedemptionStatus {
+  /// Points are held; an action tile is asking for a decision.
+  PENDING
+  /// Handed over. Points stay spent; stock decremented.
+  APPROVED
+  /// Refused. Points return automatically; the reason is shown verbatim.
+  REJECTED
+  /// Withdrawn by the employee while still pending. Points return.
+  CANCELLED
+}
+
+/// One spend of points. The balance is earned minus PENDING+APPROVED
+/// redemptions, so a rejection returns the points by arithmetic — there
+/// is no compensating write to forget.
+model RewardRedemption {
+  id           String           @id @default(uuid()) @db.Uuid
+  tenantId     String           @db.Uuid
+  rewardId     String           @db.Uuid
+  membershipId String           @db.Uuid
+  /// Cost at request time — a later price change never rewrites history.
+  points       Int
+  /// Reward name at request time, so history survives a renamed reward.
+  rewardName   String
+  status       RedemptionStatus @default(PENDING)
+  decidedById  String?          @db.Uuid
+  decidedAt    DateTime?
+  /// Shown to the employee word for word on rejection.
+  decisionReason String?
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  tenant     Tenant           @relation(fields: [tenantId], references: [id])
+  reward     Reward           @relation(fields: [rewardId], references: [id])
+  membership TenantMembership @relation(fields: [membershipId], references: [id])
+
+  @@index([tenantId, membershipId, status])
+  @@index([tenantId, status])
+  @@map("reward_redemptions")
+}
+
+/// A thank-you from a manager — words only, never points (principle 1:
+/// no points from opinions). Capped per sender per week in the action.
+model Kudos {
+  id               String   @id @default(uuid()) @db.Uuid
+  tenantId         String   @db.Uuid
+  fromMembershipId String   @db.Uuid
+  toMembershipId   String   @db.Uuid
+  message          String
+  createdAt        DateTime @default(now())
+
+  tenant Tenant           @relation(fields: [tenantId], references: [id])
+  from   TenantMembership @relation("kudosFrom", fields: [fromMembershipId], references: [id])
+  to     TenantMembership @relation("kudosTo", fields: [toMembershipId], references: [id])
+
+  @@index([tenantId, toMembershipId, createdAt])
+  @@index([tenantId, fromMembershipId, createdAt])
+  @@map("kudos")
 }

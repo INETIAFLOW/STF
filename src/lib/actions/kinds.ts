@@ -19,6 +19,10 @@ export const ACTION_KINDS = [
   "LEAVE_REQUEST",
   "TASK_PROOF",
   "EMPLOYEE_INVITE",
+  // A redemption spends an employee's points on something the tenant
+  // offered (PERFORMANCE-MODULE.md §D) — an approval surface by design:
+  // handing over a reward is a human act, so a human confirms it.
+  "REWARD_REDEMPTION",
 ] as const;
 
 export type ActionKind = (typeof ACTION_KINDS)[number];
@@ -48,6 +52,13 @@ export const APPROVE_INLINE: Record<
   // An invitation is not approved or rejected — it is chased. The tile
   // links to the person so an admin can resend or correct the address.
   EMPLOYEE_INVITE: { allowed: false, because: "Nothing to approve — chase or correct it." },
+  // Approving means the reward is being HANDED OVER — a physical act the
+  // approver should confirm from the fulfilment screen, not a tap made in
+  // passing that leaves someone waiting for a voucher nobody gave them.
+  REWARD_REDEMPTION: {
+    allowed: false,
+    because: "Approving confirms the reward was handed over.",
+  },
 };
 
 /** What the button that leaves the tile should say. */
@@ -61,6 +72,8 @@ export function openLabel(kind: ActionKind): string {
       return "Review proof";
     case "EMPLOYEE_INVITE":
       return "Open profile";
+    case "REWARD_REDEMPTION":
+      return "Review redemption";
   }
 }
 

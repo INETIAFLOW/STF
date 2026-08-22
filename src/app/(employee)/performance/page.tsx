@@ -3,19 +3,17 @@ import { redirect } from "next/navigation";
 import { checkAccess } from "@/lib/authz/guard";
 import { devFixtureOffline } from "@/lib/auth/fixture";
 import { getDb } from "@/lib/db";
-import { getPolicy, getPolicyVersion } from "@/lib/policies";
 import { Card, CardHeader } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
-import {
-  RULE_KEYS,
-  RULE_LABELS,
-  normalizeScoring,
-  weekKey,
-  type ScoringPolicy,
-} from "@/lib/performance/scoring";
-import { workDateInTimezone } from "@/lib/attendance/policy";
+import { BadgeWall } from "@/components/performance/BadgeWall";
+import { CelebrationOverlay } from "@/components/performance/CelebrationOverlay";
+import { LevelRing } from "@/components/performance/LevelRing";
+import { StreakFlame } from "@/components/performance/StreakFlame";
+import { WeekBars } from "@/components/performance/WeekBars";
+import { loadPerformanceSummary } from "@/lib/performance/summary";
+import { RULE_KEYS, RULE_LABELS } from "@/lib/performance/scoring";
 
-export const metadata: Metadata = { title: "Performance" };
+export const metadata: Metadata = { title: "My Performance" };
 
 function formatDay(date: Date): string {
   return new Intl.DateTimeFormat("en-GB", {
@@ -26,11 +24,13 @@ function formatDay(date: Date): string {
 }
 
 /**
- * My Performance (P1: points, ledger and the published rules — the full
- * game surface with rings, streaks and badges arrives in P2).
+ * My Performance (P2): the full motivation surface — level ring, streak
+ * flame, weekly bars, personal bests, badge wall, ledger, and the
+ * published rules.
  *
- * Every number here traces to a ledger line, and every ledger line names
- * its rule and carries the scoring version that produced it.
+ * Every number traces to a ledger line or an attendance record; the
+ * summary loader is shared with the Home widget so the two can never
+ * disagree. Celebrations ride in from the same load and fire once.
  */
 export default async function PerformancePage() {
   const { session, decision } = await checkAccess({ module: "PERFORMANCE" });
@@ -39,48 +39,32 @@ export default async function PerformancePage() {
   if (devFixtureOffline()) {
     return (
       <div className="flex flex-col gap-5">
-        <h1 className="font-heading text-h1 text-text-primary">Performance</h1>
+        <h1 className="font-heading text-h1 text-text-primary">My Performance</h1>
         <Card flush>
-          <EmptyState
-            warm
-            title="No points yet."
-            body="Connect a database to see performance."
-          />
+          <EmptyState warm title="No points yet." body="Connect a database to see performance." />
         </Card>
       </div>
     );
   }
 
-  const db = getDb();
-  const published = await getPolicy<ScoringPolicy>(session.tenant.id, "performance");
-  const version = published
-    ? await getPolicyVersion(session.tenant.id, "performance")
-    : 0;
-  const policy = published ? normalizeScoring(published) : null;
+  const summary = await loadPerformanceSummary(session);
+  if (!summary) redirect("/unauthorized");
 
-  const today = workDateInTimezone(new Date(), session.tenant.timezone);
-  const thisWeek = weekKey(today);
-
-  const events = await db.performanceEvent.findMany({
+  const recent = await getDb().performanceEvent.findMany({
     where: { tenantId: session.tenant.id, membershipId: session.membership.id },
     orderBy: [{ workDate: "desc" }, { createdAt: "desc" }],
-    take: 500,
+    take: 20,
   });
-
-  const total = events.reduce((sum, e) => sum + e.points, 0);
-  const todayPoints = events
-    .filter((e) => e.workDate.getTime() === today.getTime())
-    .reduce((sum, e) => sum + e.points, 0);
-  const weekPoints = events
-    .filter((e) => weekKey(e.workDate) === thisWeek)
-    .reduce((sum, e) => sum + e.points, 0);
-  const recent = events.slice(0, 20);
 
   return (
     <div className="flex flex-col gap-5">
-      <h1 className="font-heading text-h1 text-text-primary">Performance</h1>
+      {summary.celebrations.length > 0 && (
+        <CelebrationOverlay celebrations={summary.celebrations} />
+      )}
 
-      {!policy && (
+      <h1 className="font-heading text-h1 text-text-primary">My Performance</h1>
+
+      {!summary.published && (
         <Card>
           <CardHeader title="Points aren't counting yet" />
           <p className="text-body text-text-secondary">
@@ -91,21 +75,89 @@ export default async function PerformancePage() {
         </Card>
       )}
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        {[
-          { label: "Total points", value: total },
-          { label: "This week", value: weekPoints },
-          { label: "Today", value: todayPoints },
-        ].map((stat) => (
-          <Card key={stat.label}>
-            <p className="text-caption text-text-secondary">{stat.label}</p>
-            <p className="font-mono text-data-xl font-semibold text-text-primary tabular-nums">
-              {stat.value.toLocaleString("en-IN")}
+      {summary.boost && (
+        <Card>
+          <p className="text-body font-semibold text-text-primary">
+            ×{summary.boost.multiplier} points: {summary.boost.name}
+          </p>
+          <p className="text-caption text-text-secondary">
+            Every point earned counts {summary.boost.multiplier} times until{" "}
+            {formatDay(summary.boost.endDate)}.
+          </p>
+        </Card>
+      )}
+
+      {/* ---- the game face: ring, streak, week ---- */}
+      <Card>
+        <div className="flex flex-wrap items-center justify-around gap-6">
+          <LevelRing level={summary.level} totalPoints={summary.totalPoints} />
+          <div className="flex flex-col gap-4">
+            <StreakFlame days={summary.streak} />
+            <div>
+              <p className="font-mono text-data font-semibold text-text-primary tabular-nums">
+                {summary.weekPoints.toLocaleString("en-IN")}
+              </p>
+              <p className="text-caption text-text-secondary">points this week</p>
+            </div>
+            <div>
+              <p className="font-mono text-data font-semibold text-text-primary tabular-nums">
+                {summary.todayPoints.toLocaleString("en-IN")}
+              </p>
+              <p className="text-caption text-text-secondary">today</p>
+            </div>
+          </div>
+          <WeekBars bars={summary.weekBars} />
+        </div>
+        {summary.level.next !== null && (
+          <p className="mt-4 border-t border-border-subtle pt-3 text-caption text-text-secondary">
+            {summary.level.pointsToNext.toLocaleString("en-IN")} points to{" "}
+            {summary.policy?.levelNames[summary.level.index + 1] ?? "the next level"}. Levels
+            never reset.
+          </p>
+        )}
+      </Card>
+
+      {/* ---- personal bests ---- */}
+      <section aria-labelledby="bests">
+        <h2 id="bests" className="mb-3 font-heading text-h2 text-text-primary">
+          Personal bests
+        </h2>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <Card>
+            <p className="text-caption text-text-secondary">Best day</p>
+            <p className="font-mono text-data-lg font-semibold text-text-primary tabular-nums">
+              {summary.bestDay.points.toLocaleString("en-IN")}
+            </p>
+            <p className="text-caption text-text-tertiary">
+              {summary.bestDay.date ? formatDay(summary.bestDay.date) : "—"}
             </p>
           </Card>
-        ))}
-      </div>
+          <Card>
+            <p className="text-caption text-text-secondary">Best week</p>
+            <p className="font-mono text-data-lg font-semibold text-text-primary tabular-nums">
+              {summary.bestWeek.points.toLocaleString("en-IN")}
+            </p>
+            <p className="text-caption text-text-tertiary">{summary.bestWeek.week ?? "—"}</p>
+          </Card>
+          <Card>
+            <p className="text-caption text-text-secondary">Longest streak</p>
+            <p className="font-mono text-data-lg font-semibold text-text-primary tabular-nums">
+              {summary.longestStreak} day{summary.longestStreak === 1 ? "" : "s"}
+            </p>
+            <p className="text-caption text-text-tertiary">within the last year</p>
+          </Card>
+        </div>
+      </section>
 
+      {/* ---- badge wall ---- */}
+      <section aria-labelledby="badges">
+        <h2 id="badges" className="mb-3 font-heading text-h2 text-text-primary">
+          Badges
+        </h2>
+        <BadgeWall earned={summary.earned} locked={summary.locked} />
+      </section>
+
+      {/* ---- ledger ---- */}
       <section aria-labelledby="recent">
         <h2 id="recent" className="mb-3 font-heading text-h2 text-text-primary">
           Recent points
@@ -127,9 +179,7 @@ export default async function PerformancePage() {
                   className="flex items-center justify-between gap-3 py-2.5 first:pt-0 last:pb-0"
                 >
                   <div className="min-w-0">
-                    <p className="truncate text-body text-text-primary">
-                      {event.note}
-                    </p>
+                    <p className="truncate text-body text-text-primary">{event.note}</p>
                     <p className="text-caption text-text-secondary">
                       {formatDay(event.workDate)}
                     </p>
@@ -144,40 +194,40 @@ export default async function PerformancePage() {
         )}
       </section>
 
-      {policy && (
+      {/* ---- how points work ---- */}
+      {summary.policy && (
         <section aria-labelledby="how">
           <h2 id="how" className="mb-3 font-heading text-h2 text-text-primary">
             How points work
           </h2>
           <Card>
             <p className="text-caption text-text-secondary">
-              Published rules, version {version}. Points come only from your
-              attendance and your tasks — nothing else, and nobody edits
+              Published rules, version {summary.version}. Points come only from
+              your attendance and your tasks — nothing else, and nobody edits
               them by hand.
             </p>
             <ul className="mt-3 flex flex-col divide-y divide-border-subtle">
-              {RULE_KEYS.filter((k) => policy.rules[k].enabled).map((key) => (
+              {RULE_KEYS.filter((k) => summary.policy!.rules[k].enabled).map((key) => (
                 <li
                   key={key}
                   className="flex items-center justify-between gap-3 py-2 first:pt-0 last:pb-0"
                 >
-                  <span className="text-body text-text-primary">
-                    {RULE_LABELS[key]}
-                  </span>
+                  <span className="text-body text-text-primary">{RULE_LABELS[key]}</span>
                   <span className="shrink-0 font-mono text-data text-text-secondary tabular-nums">
-                    +{policy.rules[key].points}
+                    +{summary.policy!.rules[key].points}
                   </span>
                 </li>
               ))}
             </ul>
             <p className="mt-3 border-t border-border-subtle pt-3 text-caption text-text-secondary">
-              Your streak counts every worked day you arrived on time. Days
-              you didn&apos;t work — leave, weekly off — don&apos;t break
-              it; arriving late does. Task points stop at{" "}
-              {policy.dailyTaskCap > 0
-                ? `${policy.dailyTaskCap} per day`
+              Your streak counts every worked day you arrived on time. Days you
+              didn&apos;t work — leave, weekly off — don&apos;t break it;
+              arriving late does. Task points stop at{" "}
+              {summary.policy.dailyTaskCap > 0
+                ? `${summary.policy.dailyTaskCap} per day`
                 : "no daily limit"}
-              .
+              . Month awards need at least {summary.policy.monthMinDays} worked
+              days in the month.
             </p>
           </Card>
         </section>

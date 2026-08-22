@@ -10,6 +10,9 @@ import { AttendanceActionCard } from "@/components/attendance/AttendanceActionCa
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { TaskCard } from "@/components/tasks/TaskCard";
+import { LevelRing } from "@/components/performance/LevelRing";
+import { StreakFlame } from "@/components/performance/StreakFlame";
+import { loadPerformanceSummary } from "@/lib/performance/summary";
 
 export const metadata: Metadata = { title: "Home" };
 
@@ -51,6 +54,13 @@ export default async function EmployeeHomePage() {
     ? await loadAttendanceContext(session)
     : null;
 
+  // The motivation widget (PERFORMANCE-MODULE.md §B): streak flame,
+  // today's points, level ring — the first thing seen after check-in.
+  // Same loader as My Performance, so the two can never disagree.
+  const performance = devFixtureOffline()
+    ? null
+    : await loadPerformanceSummary(session);
+
   const tasks =
     tasksOn && !devFixtureOffline()
       ? await getDb().task.findMany({
@@ -73,6 +83,36 @@ export default async function EmployeeHomePage() {
       {attendance && (
         <section aria-label="Attendance today">
           <AttendanceActionCard context={attendance} firstName={firstName} />
+        </section>
+      )}
+
+      {performance?.published && (
+        <section aria-label="Your points">
+          <Link href="/performance" className="block">
+            <Card className="transition-shadow hover:shadow-elevation-2">
+              {performance.boost && (
+                <p className="mb-3 rounded-input bg-[color:var(--stf-color-status-warning-bg)] px-3 py-2 text-caption font-semibold text-status-warning-fg">
+                  ×{performance.boost.multiplier} points — {performance.boost.name}
+                </p>
+              )}
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex flex-col gap-3">
+                  <StreakFlame days={performance.streak} />
+                  <div>
+                    <p className="font-mono text-data font-semibold text-text-primary tabular-nums">
+                      +{performance.todayPoints.toLocaleString("en-IN")}
+                    </p>
+                    <p className="text-caption text-text-secondary">points today</p>
+                  </div>
+                </div>
+                <LevelRing
+                  level={performance.level}
+                  totalPoints={performance.totalPoints}
+                  size={96}
+                />
+              </div>
+            </Card>
+          </Link>
         </section>
       )}
 

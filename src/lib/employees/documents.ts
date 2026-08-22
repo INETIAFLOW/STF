@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { getDb } from "@/lib/db";
+import { awardForOnboarding } from "@/lib/performance/award";
 import { recordAuditEvent } from "@/lib/audit";
 import { checkAccess } from "@/lib/authz/guard";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -153,6 +154,15 @@ export async function reviewDocumentAction(
     before: { status: document.status },
     after: { status: parsed.data.decision },
   });
+
+  if (parsed.data.decision === "VERIFIED") {
+    // Amendment 2, rule 19: a verified document may have just completed
+    // onboarding (one-time; the award layer judges and dedupes).
+    await awardForOnboarding({
+      session,
+      membershipId: document.membershipId,
+    });
+  }
 
   revalidatePath("/documents");
   revalidatePath(`/admin/employees/${document.membershipId}`);

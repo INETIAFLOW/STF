@@ -36,6 +36,15 @@ const RULE_HELP: Record<RuleKey, string> = {
   streak_30: "Thirty consecutive on-time days.",
   streak_100: "A hundred consecutive on-time days.",
   comeback: "Back on track after a broken streak.",
+  perfect_month: "Every worked day of a month on time.",
+  clean_month: "A month with no location exceptions.",
+  month_tasks_10: "Ten tasks completed inside one month.",
+  month_tasks_25: "Twenty-five tasks inside one month.",
+  month_tasks_50: "Fifty tasks inside one month.",
+  team_day: "The whole department on time the same day.",
+  planned_leave: "Leave requested well ahead, then approved.",
+  onboarding_complete: "Documents verified and profile filled in.",
+  work_anniversary: "Each completed year of service.",
 };
 
 const GROUPS: Array<{ title: string; keys: RuleKey[] }> = [
@@ -59,6 +68,21 @@ const GROUPS: Array<{ title: string; keys: RuleKey[] }> = [
       "first_task_before_noon",
     ],
   },
+  {
+    title: "Month awards",
+    keys: [
+      "perfect_month",
+      "clean_month",
+      "month_tasks_10",
+      "month_tasks_25",
+      "month_tasks_50",
+      "team_day",
+    ],
+  },
+  {
+    title: "Milestones in the job",
+    keys: ["planned_leave", "onboarding_complete", "work_anniversary"],
+  },
 ];
 
 export function ScoringEditor({
@@ -78,7 +102,10 @@ export function ScoringEditor({
     perfectWeekDays: String(initial.perfectWeekDays),
     comebackRunLength: String(initial.comebackRunLength),
     dailyTaskCap: String(initial.dailyTaskCap),
+    monthMinDays: String(initial.monthMinDays),
+    plannedLeaveDays: String(initial.plannedLeaveDays),
   });
+  const [levelNames, setLevelNames] = useState<string[]>([...initial.levelNames]);
 
   function setRule(key: RuleKey, patch: Partial<{ enabled: boolean; points: number }>) {
     setRules((prev) => ({ ...prev, [key]: { ...prev[key], ...patch } }));
@@ -93,6 +120,9 @@ export function ScoringEditor({
         perfectWeekDays: Number(thresholds.perfectWeekDays),
         comebackRunLength: Number(thresholds.comebackRunLength),
         dailyTaskCap: Number(thresholds.dailyTaskCap),
+        monthMinDays: Number(thresholds.monthMinDays),
+        plannedLeaveDays: Number(thresholds.plannedLeaveDays),
+        levelNames,
       });
       if (result.ok) {
         show({ variant: "success", message: result.message });
@@ -200,6 +230,44 @@ export function ScoringEditor({
               setThresholds((p) => ({ ...p, dailyTaskCap: e.target.value }))
             }
           />
+          <Input
+            label="Month awards — worked days needed"
+            type="number"
+            inputMode="numeric"
+            helper="Stops one worked day from being a perfect month."
+            value={thresholds.monthMinDays}
+            onChange={(e) =>
+              setThresholds((p) => ({ ...p, monthMinDays: e.target.value }))
+            }
+          />
+          <Input
+            label="Planned leave — days requested ahead"
+            type="number"
+            inputMode="numeric"
+            value={thresholds.plannedLeaveDays}
+            onChange={(e) =>
+              setThresholds((p) => ({ ...p, plannedLeaveDays: e.target.value }))
+            }
+          />
+        </div>
+      </Card>
+
+      <Card>
+        <CardHeader
+          title="Level names"
+          meta="Lifetime points climb through five levels. The thresholds are fixed; the words are yours."
+        />
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+          {levelNames.map((name, i) => (
+            <Input
+              key={i}
+              label={`Level ${i + 1}`}
+              value={name}
+              onChange={(e) =>
+                setLevelNames((prev) => prev.map((n, j) => (j === i ? e.target.value : n)))
+              }
+            />
+          ))}
         </div>
       </Card>
 

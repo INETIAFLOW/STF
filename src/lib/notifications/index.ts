@@ -190,6 +190,26 @@ async function proofDecision(
   });
 }
 
+/**
+ * A performance moment — badge, level, streak milestone. A bell notice,
+ * NEVER an action tile: nothing here needs a decision
+ * (PERFORMANCE-MODULE.md §B).
+ */
+async function performanceMoment(
+  session: AppSession,
+  userId: string,
+  title: string,
+  body?: string,
+): Promise<void> {
+  await create({
+    tenantId: session.tenant.id,
+    userId,
+    title: title.slice(0, 60),
+    body,
+    href: "/performance",
+  });
+}
+
 export const notify = {
   attendanceException,
   attendanceDecision,
@@ -198,6 +218,7 @@ export const notify = {
   taskAssigned,
   proofSubmitted,
   proofDecision,
+  performanceMoment,
 };
 
 /** Unread count for the top-bar bell. */

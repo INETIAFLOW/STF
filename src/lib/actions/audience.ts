@@ -83,6 +83,9 @@ export const DECIDING_PERMISSION: Record<ActionKind, PermissionKey> = {
   LEAVE_REQUEST: "leave.approve",
   TASK_PROOF: "tasks.manage",
   EMPLOYEE_INVITE: "employees.manage",
+  // Handing over a reward is a people decision, and employees.manage is
+  // the permission that already marks who makes those.
+  REWARD_REDEMPTION: "employees.manage",
 };
 
 /**

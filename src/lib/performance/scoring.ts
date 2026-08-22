@@ -31,6 +31,17 @@ export const RULE_KEYS = [
   "streak_30",
   "streak_100",
   "comeback",
+  // Aggregate awards (P2) — granted by the event that completes them.
+  "perfect_month",
+  "clean_month",
+  "month_tasks_10",
+  "month_tasks_25",
+  "month_tasks_50",
+  "team_day",
+  // Amendment 2 sources (P2) — still evidence, never opinion.
+  "planned_leave",
+  "onboarding_complete",
+  "work_anniversary",
 ] as const;
 
 export type RuleKey = (typeof RULE_KEYS)[number];
@@ -52,6 +63,15 @@ export interface ScoringPolicy {
   comebackRunLength: number;
   /** Most task-derived points one person can earn per day (anti-farming). */
   dailyTaskCap: number;
+  /** Worked days a month needs before month awards can fire. Without a
+   *  working-day calendar (D-P3-03) this is what stops one worked day
+   *  from being a "perfect month". */
+  monthMinDays: number;
+  /** Leave requested at least this many days ahead counts as planned. */
+  plannedLeaveDays: number;
+  /** Level names, Bronze→Diamond. Tenant-editable words; the thresholds
+   *  live in code (levels.ts) like the badge catalog. */
+  levelNames: [string, string, string, string, string];
 }
 
 export const DEFAULT_SCORING: ScoringPolicy = {
@@ -71,12 +91,24 @@ export const DEFAULT_SCORING: ScoringPolicy = {
     streak_30: { enabled: true, points: 100 },
     streak_100: { enabled: true, points: 500 },
     comeback: { enabled: true, points: 15 },
+    perfect_month: { enabled: true, points: 100 },
+    clean_month: { enabled: true, points: 50 },
+    month_tasks_10: { enabled: true, points: 20 },
+    month_tasks_25: { enabled: true, points: 50 },
+    month_tasks_50: { enabled: true, points: 100 },
+    team_day: { enabled: true, points: 5 },
+    planned_leave: { enabled: true, points: 10 },
+    onboarding_complete: { enabled: true, points: 25 },
+    work_anniversary: { enabled: true, points: 50 },
   },
   earlyBirdMinutes: 15,
   taskEarlyHours: 24,
   perfectWeekDays: 6,
   comebackRunLength: 5,
   dailyTaskCap: 50,
+  monthMinDays: 20,
+  plannedLeaveDays: 3,
+  levelNames: ["Bronze", "Silver", "Gold", "Platinum", "Diamond"],
 };
 
 /** Ledger copy per rule — written once here so screens cannot drift. */
@@ -96,6 +128,15 @@ export const RULE_LABELS: Record<RuleKey, string> = {
   streak_30: "30-day streak",
   streak_100: "100-day streak",
   comeback: "Comeback — back on track",
+  perfect_month: "Perfect month",
+  clean_month: "Clean month — no exceptions",
+  month_tasks_10: "10 tasks this month",
+  month_tasks_25: "25 tasks this month",
+  month_tasks_50: "50 tasks this month",
+  team_day: "Team day — whole department on time",
+  planned_leave: "Leave planned ahead",
+  onboarding_complete: "Onboarding complete",
+  work_anniversary: "Work anniversary",
 };
 
 /**
@@ -134,7 +175,21 @@ export function normalizeScoring(raw: unknown): ScoringPolicy {
     perfectWeekDays: clampInt(input.perfectWeekDays, DEFAULT_SCORING.perfectWeekDays, 2, 7),
     comebackRunLength: clampInt(input.comebackRunLength, DEFAULT_SCORING.comebackRunLength, 2, 30),
     dailyTaskCap: clampInt(input.dailyTaskCap, DEFAULT_SCORING.dailyTaskCap, 0, 10_000),
+    monthMinDays: clampInt(input.monthMinDays, DEFAULT_SCORING.monthMinDays, 1, 31),
+    plannedLeaveDays: clampInt(input.plannedLeaveDays, DEFAULT_SCORING.plannedLeaveDays, 1, 60),
+    levelNames: normalizeLevelNames(input.levelNames),
   };
+}
+
+/** Five non-empty names, or the defaults where the input falls short. */
+function normalizeLevelNames(raw: unknown): [string, string, string, string, string] {
+  const given = Array.isArray(raw) ? raw : [];
+  return DEFAULT_SCORING.levelNames.map((fallback, i) => {
+    const v = given[i];
+    return typeof v === "string" && v.trim().length > 0 && v.trim().length <= 30
+      ? v.trim()
+      : fallback;
+  }) as [string, string, string, string, string];
 }
 
 // ------------------------------------------------------------------ awards
@@ -353,4 +408,114 @@ export function weekKey(date: Date): string {
   const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
   const week = Math.ceil(((d.getTime() - yearStart.getTime()) / 86_400_000 + 1) / 7);
   return `${d.getUTCFullYear()}-W${String(week).padStart(2, "0")}`;
+}
+
+// ---------------------------------------------------- aggregates (P2)
+
+/** "2026-08" — the dedupe key for month-scoped aggregates. */
+export function monthKey(date: Date): string {
+  return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}`;
+}
+
+export interface MonthFacts {
+  /** Days in the month with a recorded check-in. */
+  workedDays: number;
+  /** Of those, days that were on time (not late, review not refused). */
+  onTimeDays: number;
+  /** Days that raised a location exception, whatever its outcome. */
+  exceptionDays: number;
+}
+
+/**
+ * Month awards, judged once the month is over.
+ *
+ * "Perfect" and "clean" both require at least `monthMinDays` worked days:
+ * without a working-day calendar (D-P3-03) a month with one attendance is
+ * indistinguishable from a month of leave, and awarding it would make the
+ * rule a joke. The threshold is editable and stated on "How points work".
+ */
+export function monthAwards(policy: ScoringPolicy, facts: MonthFacts): Award[] {
+  if (facts.workedDays < policy.monthMinDays) return [];
+  const awards: Award[] = [];
+  const push = (a: Award | null) => a && awards.push(a);
+  if (facts.onTimeDays === facts.workedDays) push(award(policy, "perfect_month"));
+  if (facts.exceptionDays === 0) push(award(policy, "clean_month"));
+  return awards;
+}
+
+/** Which monthly task-volume milestones a count has reached. */
+export function monthTaskMilestones(
+  policy: ScoringPolicy,
+  completedThisMonth: number,
+): Award[] {
+  const awards: Award[] = [];
+  const push = (a: Award | null) => a && awards.push(a);
+  if (completedThisMonth >= 10) push(award(policy, "month_tasks_10"));
+  if (completedThisMonth >= 25) push(award(policy, "month_tasks_25"));
+  if (completedThisMonth >= 50) push(award(policy, "month_tasks_50"));
+  return awards;
+}
+
+/**
+ * Team day: the whole department on time on the same day. Needs at least
+ * two people — a department of one is just a person having a morning.
+ */
+export function teamDayAward(
+  policy: ScoringPolicy,
+  facts: { departmentSize: number; onTimeToday: number },
+): Award | null {
+  if (facts.departmentSize < 2) return null;
+  if (facts.onTimeToday < facts.departmentSize) return null;
+  return award(policy, "team_day");
+}
+
+// ------------------------------------------- Amendment 2 sources (P2)
+
+/** Leave approved after being requested well ahead. */
+export function plannedLeaveAward(
+  policy: ScoringPolicy,
+  facts: { requestedDaysAhead: number },
+): Award | null {
+  if (facts.requestedDaysAhead < policy.plannedLeaveDays) return null;
+  return award(
+    policy,
+    "planned_leave",
+    `Leave planned ${facts.requestedDaysAhead} days ahead`,
+  );
+}
+
+/** Documents verified and profile filled in — once, ever. */
+export function onboardingAward(
+  policy: ScoringPolicy,
+  facts: { hasVerifiedDocument: boolean; profileComplete: boolean },
+): Award | null {
+  if (!facts.hasVerifiedDocument || !facts.profileComplete) return null;
+  return award(policy, "onboarding_complete");
+}
+
+/**
+ * Completed years of service as of a given day. The anniversary itself is
+ * judged at date granularity in the caller's timezone-resolved dates.
+ */
+export function completedServiceYears(joinedOn: Date, today: Date): number {
+  let years = today.getUTCFullYear() - joinedOn.getUTCFullYear();
+  const anniversaryPassed =
+    today.getUTCMonth() > joinedOn.getUTCMonth() ||
+    (today.getUTCMonth() === joinedOn.getUTCMonth() &&
+      today.getUTCDate() >= joinedOn.getUTCDate());
+  if (!anniversaryPassed) years -= 1;
+  return Math.max(0, years);
+}
+
+export function anniversaryAward(
+  policy: ScoringPolicy,
+  facts: { completedYears: number },
+): Award | null {
+  if (facts.completedYears < 1) return null;
+  const a = award(policy, "work_anniversary");
+  if (!a) return null;
+  return {
+    ...a,
+    note: `Work anniversary — ${facts.completedYears} year${facts.completedYears === 1 ? "" : "s"} completed`,
+  };
 }
