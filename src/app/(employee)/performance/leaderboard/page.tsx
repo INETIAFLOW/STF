@@ -104,7 +104,10 @@ export default async function LeaderboardPage({
                 {[1, 0, 2].map((slot) => {
                   const entry = data.podium[slot];
                   if (!entry) return <div key={slot} className="min-w-0 flex-1 max-w-28" />;
-                  const heights = ["h-28", "h-36", "h-24"];
+                  // Indexed by PODIUM position (0 = winner), not by render
+                  // order — getting that wrong put gold on a shorter
+                  // plinth than silver, and a user photographed it.
+                  const heights = ["h-36", "h-28", "h-24"];
                   return (
                     <div key={entry.membershipId} className="flex min-w-0 flex-1 max-w-28 flex-col items-center gap-1.5">
                       <span aria-hidden="true" className="text-2xl">{medals[slot]}</span>
