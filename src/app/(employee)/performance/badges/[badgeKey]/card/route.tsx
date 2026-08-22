@@ -1,5 +1,5 @@
 import { ImageResponse } from "next/og";
-import { getAppSession } from "@/lib/auth/session";
+import { checkAccess } from "@/lib/authz/guard";
 import { getDb } from "@/lib/db";
 import { BADGES } from "@/lib/performance/badges";
 
@@ -30,8 +30,18 @@ export async function GET(
   _request: Request,
   { params }: { params: Promise<{ badgeKey: string }> },
 ) {
-  const session = await getAppSession();
-  if (!session) return new Response("Not found", { status: 404 });
+  // The same gate as every other performance surface: module off means
+  // no cards, however real the badge underneath. A 404 rather than a
+  // redirect — this is an image URL, and an image that bounces to a
+  // sign-in page renders as a broken thumbnail wherever it was pasted.
+  let session;
+  try {
+    const access = await checkAccess({ module: "PERFORMANCE" });
+    if (!access.decision.allowed) return new Response("Not found", { status: 404 });
+    session = access.session;
+  } catch {
+    return new Response("Not found", { status: 404 });
+  }
 
   const { badgeKey } = await params;
   const badge = BADGES.find((b) => b.key === badgeKey);
