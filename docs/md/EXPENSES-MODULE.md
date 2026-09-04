@@ -1,6 +1,6 @@
 # Sudarshan Task Force — Expenses
 
-Version: 1.1  |  Date: 4 September 2026  |  Status: **Approved** (owner, 4 September 2026, with one change — employee withdrawal added to E1, this version). Nothing below is built. This document is the model, the schema, the permissions, the policy shape and the phase boundaries that E1 is built to.
+Version: 1.2  |  Date: 4 September 2026  |  Status: **Approved** (owner, 4 September 2026; v1.1 added employee withdrawal to E1) · **E1 built, verified and deployed** (4 September 2026; §19 records the three deviations the owner accepted at verification).
 
 MODULES.md admits Expenses in one clause: *"Expenses … may be enabled per tenant only when their detailed rules are approved."* The catalog carries the module already (`EXPENSES`, optional, sort order 110) with the placeholder description *"enabled only after its rules are approved."* This document is those rules.
 
@@ -150,6 +150,8 @@ Grants beyond the template use the role/permission machinery that already exists
 
 **Module off.** Pages redirect (existing shell behaviour); actions refuse via `checkAccess`; `EXPENSE_CLAIM` tiles are not shown and their decide actions refuse; data is retained untouched. The disable confirmation shows the count of `SUBMITTED` claims waiting, in the existing impact-confirm pattern.
 
+**Enabling (intentional platform behaviour).** Expenses is an OPTIONAL module: like every optional module it is switched on for a tenant by the STF platform contact, not by the tenant’s own admin (`setModuleEnabledAction` refuses optional modules by design). The order is therefore *enable first, then the tenant publishes its rules*. There is deliberately no policy gate on enabling — it would deadlock, since the rules editor needs the module on. Until rules are published, employees see an empty state, submission is refused with a plain message, and approvers see a publish-first alert; the tile queue and the claim counter are never touched.
+
 ---
 
 ## 8. Tenant policy (`PolicyKey = "expenses"`)
@@ -174,7 +176,7 @@ type ExpensesPolicy = {
 };
 ```
 
-**Normalisation** (`normalizeExpensesPolicy`) fills defaults for missing fields and clamps: deadline ≥ 1, retention ≥ floor, amounts ≥ 0, at least one active category before the module can be enabled. A v1 document read by later code normalises cleanly — the same compatibility rule Performance keeps.
+**Normalisation** (`normalizeExpensesPolicy`) fills defaults for missing fields and clamps: deadline ≥ 1, retention ≥ floor, amounts ≥ 0, at least one active category before the rules can be published (§7 explains why enabling the module is not gated on this). A v1 document read by later code normalises cleanly — the same compatibility rule Performance keeps.
 
 **Categories live in the policy, not in a table.** They are configuration, versioned with the rest; the claim snapshots `categoryKey` + `categoryName` + the two rules that applied. This is why there is no `ExpenseCategory` table in §9. (A table would need its own versioning to give the same guarantee.)
 
@@ -338,10 +340,10 @@ Mirrors employee documents (`src/lib/employees/documents.ts`) exactly, because t
 
 - **Bucket** `expense-receipts`, private. Nothing is ever served from a public path.
 - **Path** `{tenantId}/{claimId}/{receiptId}` — tenant prefix first, so bucket policies and any future per-tenant export are prefix operations.
-- **Upload** through a server action that checks `checkAccess({ module: "EXPENSES" })`, ownership of the claim, claim status `DRAFT` (E1: the same transaction that submits), MIME allowlist `image/jpeg`, `image/png`, `image/webp`, `application/pdf`, and size ≤ 10 MB. The client never writes to the bucket directly.
+- **Upload** from the browser straight into the private bucket, under `{tenantId}/{draftId}/…`, exactly as task proof and employee documents already do: the bucket’s only storage policy is *insert for authenticated users* — nothing can be listed or read that way. The submit action then records only paths that begin with the caller’s own tenant prefix, with a MIME allowlist (`image/jpeg`, `image/png`, `image/webp`, `image/heic`, `application/pdf`) and size ≤ 10 MB. *(v1.2: E0 said “through a server action”; E1 kept the codebase’s proven pattern — see §19.)*
 - **Read** through a short-lived signed URL (TTL 120 s, matching documents and proofs), minted only for: the claimant; holders of `expenses.view`/`expenses.approve` in the same tenant. Every mint writes `expense.receipt_viewed` with viewer, claim and receipt ids.
 - **No transformation.** No OCR, no thumbnailing that copies the file elsewhere. The image is displayed via the signed URL and nothing else.
-- **Retention** is a policy value (§8) that E4 acts on. Until E4, no receipt is ever deleted by the system. Claim deletion is not a feature at any phase; purge (`purgeTenant`) cascades the five tables and empties the tenant's bucket prefix.
+- **Retention** is a policy value (§8) that E4 acts on. Until E4, no receipt is ever deleted by the system. Claim deletion is not a feature at any phase; purge (`purgeTenant`) cascades the five tables. Emptying the tenant’s bucket prefix is an E4 item alongside the retention sweep — no module’s purge touches storage today (§19).
 - **Immutability.** Receipts cannot be replaced or removed after submission. A wrong receipt means a rejected claim and a new one.
 
 ### 10.1 Submission validation
@@ -467,7 +469,7 @@ The only import from `@/lib/payroll` anywhere under `src/lib/expenses/` is insid
 | **E1 — Core** | migration + RLS; enum, transition function, invariants, pure-logic tests; `expenses` policy + normaliser + settings editor with categories; `expenses.approve`/`expenses.view` in catalog + role templates + Amendment 3; submit (submit-only, no drafts) with receipt upload + validation + flags; employee history + detail; `EXPENSE_CLAIM` tile kind; decision card (approve / partial / reject); **employee withdrawal** (confirmation, optional reason, tile resolution); `OUTSIDE` settlement; transitions + audit; bell notifications; module-off behaviour; purge cascade | payroll route (E2), advances (E3), reports/export/retention sweep (E4), drafts, department-scoped `expenses.view` |
 | **E2 — Payroll integration** | `settle-payroll.ts` seam and all four results; run screen "approved claims waiting"; locked-period handling; payslip traceability; boundary test | anything that changes Payroll's own lifecycle |
 | **E3 — Advances** | `EXPENSES.advances` flag; advance issue (recorded, not paid); recovery schedule; outstanding balance on the claim and the person; recovery against claims; recovery through payroll via the §13 seam (negative adjustment); early settlement; the `PAYROLL.advances` collision decision | interest, salary advances |
-| **E4 — Reporting & retention** | expense / category / employee / decision reports; outstanding advances; Excel + PDF export (`reports.export`); per-tenant data export; **receipt retention sweep** honouring `receiptRetentionYears` with a `SYSTEM` audit event per deletion — the first concrete answer to ACCEPTANCE.md's "retention honoured" line | analytics, budgets |
+| **E4 — Reporting & retention** | expense / category / employee / decision reports; outstanding advances; Excel + PDF export (`reports.export`); per-tenant data export; **receipt retention sweep** honouring `receiptRetentionYears` with a `SYSTEM` audit event per deletion — the first concrete answer to ACCEPTANCE.md's "retention honoured" line; **receipt storage purge** on tenant deletion (empty the `{tenantId}/` prefix of `expense-receipts` from `purgeTenant` — the storage half §10 defers) | analytics, budgets |
 
 Each phase ships on its own: tests, typecheck, lint, build, browser at 360 px and 1280 px, commit, deploy.
 
@@ -518,7 +520,7 @@ Each phase ships on its own: tests, typecheck, lint, build, browser at 360 px an
 **Security & privacy**
 - [ ] All five tables are in `scripts/setup-rls.ts`; cross-tenant read returns nothing.
 - [ ] No salary, bank or payslip data is readable through any Expenses screen or action.
-- [ ] `purgeTenant` cascades the five tables and the bucket prefix.
+- [ ] `purgeTenant` cascades the five tables (the bucket prefix moves to E4, §19).
 
 **Design system**
 - [ ] Employee screens work from 360 px; status is text + colour; money figures render at final value (D-017).
@@ -542,6 +544,18 @@ Each phase ships on its own: tests, typecheck, lint, build, browser at 360 px an
 - Deleting claims. Deleting receipts before E4's retention sweep.
 - Performance points for expenses. Ever.
 - Salary advances. (E3 is expense advances; the salary concept stays Payroll's.)
+
+---
+
+## 19. Deviations recorded at E1 verification (v1.2)
+
+Three places where the build differs from the E0 text. Each was reported at verification and accepted by the owner on 4 September 2026.
+
+1. **Receipt upload is browser-to-bucket, not through a server action** (§10). The codebase’s two existing private-file flows — task proof and employee documents — upload from the browser under an insert-only storage policy and let the server record the path; E1 followed them. The properties §10 cares about hold unchanged: no public path, tenant-prefixed paths validated at submission, signed-URL reads only, every read audited. A server-side upload would have meant raising the app-wide server-action body limit for one module.
+2. **Purge does not empty the receipt bucket prefix** (§10). No module’s purge touches storage today; E1 kept the same shape. Listed under E4 (§16) next to the retention sweep, which needs the same storage-deletion code.
+3. **No policy gate on enabling the module** (§7, §8). Optional modules are enabled by the platform contact, so a gate on tenant-published rules would deadlock. The equivalent protection lives in the screens: empty state, refused submission, publish-first alert.
+
+Also landed at E1, beyond this module: action tiles now carry their module for every kind, so a tile whose module is off is hidden and its decide action refuses — the enforcement §7 asked for, applied consistently.
 
 ---
 

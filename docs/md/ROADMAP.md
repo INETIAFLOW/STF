@@ -20,6 +20,8 @@ Run a controlled tenant pilot, fix high-impact usability and data issues, train 
 ## Future backlog, not V1
 Biometric/face/QR/RFID attendance, accounting and bank integrations, visitor register, inventory/CRM, advanced AI insights, white-label domains, and additional languages.
 
+Expenses, deferred to E4 (EXPENSES-MODULE.md §16, §19): the receipt retention sweep, and emptying a tenant’s receipt storage prefix on purge — no module’s purge touches storage today. Also open from the E0 review: the `PAYROLL.advances` flag exists with nothing behind it and collides with the E3 expense-advance flag; decide at E3.
+
 ## Decision gates
 Do not start code before Phase 0 approval. Do not process production payroll before rules, auditability, security, backup, and compliance review are proven. Do not add V2 work merely because it is technically possible.
 

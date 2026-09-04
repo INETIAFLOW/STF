@@ -151,6 +151,11 @@ d("expenses flow (integration, sample tenant)", () => {
     });
     await db.expenseSettlement.deleteMany({ where: { claimId: { in: claimIds } } });
     await db.expenseClaim.deleteMany({ where: { id: { in: claimIds } } });
+    // Leave the counter at its baseline when nothing else was claimed
+    // meanwhile, so the sample tenant's next real claim is EXP-000001 again.
+    if ((await db.expenseClaim.count({ where: { tenantId } })) === 0) {
+      await db.expenseCounter.deleteMany({ where: { tenantId } });
+    }
   });
 
   it("a required receipt blocks; an optional category submits, numbers, records and raises the tile", async () => {
