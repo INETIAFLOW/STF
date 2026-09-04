@@ -66,6 +66,14 @@ export const STATUS = {
   /// An employee record that exists but cannot yet sign in.
   inviteNotSent: s("invite-not-sent", "Not invited", "neutral"),
   snoozed: s("snoozed", "Snoozed", "neutral"),
+  /// Expense claims (EXPENSES-MODULE.md §3) and the approver-facing flags.
+  submitted: s("submitted", "Submitted", "info"),
+  partlyApproved: s("partly-approved", "Partly approved", "warning"),
+  withdrawn: s("withdrawn", "Withdrawn", "neutral"),
+  settled: s("settled", "Settled", "success"),
+  lateClaim: s("late-claim", "Late claim", "warning"),
+  overCap: s("over-cap", "Over the cap", "warning"),
+  possibleDuplicate: s("possible-duplicate", "Possible duplicate", "warning"),
 } as const;
 
 /** Parameterised fixed labels (copy-deck.md §1). */

@@ -3,9 +3,10 @@
  * permissions and role templates. Seeded into the database and referenced
  * by navigation, guards and the flag evaluator.
  *
- * Source documents: MODULES.md, FEATURE-FLAGS.md, USER-ROLES.md (Pack 01).
- * Do not add modules, features, roles or permissions beyond those documents
- * (design handoff README §8).
+ * Source documents: MODULES.md, FEATURE-FLAGS.md, USER-ROLES.md (Pack 01),
+ * as amended — Amendment 3 (EXPENSES-MODULE.md) adds the two expenses
+ * permissions. Do not add modules, features, roles or permissions beyond
+ * those documents (design handoff README §8).
  */
 
 export type ModuleCategory = "CORE" | "STANDARD" | "OPTIONAL";
@@ -78,7 +79,8 @@ export const MODULES = {
   EXPENSES: {
     key: "EXPENSES",
     name: "Expenses",
-    description: "Optional module — enabled only after its rules are approved.",
+    description:
+      "Claims with receipts, approval, and a record of settlement. Works with or without Payroll (EXPENSES-MODULE.md).",
     category: "OPTIONAL" as ModuleCategory,
     sortOrder: 110,
   },
@@ -200,6 +202,10 @@ export const PERMISSIONS = [
   { key: "modules.manage", name: "Manage modules and features", isSensitive: false },
   { key: "roles.manage", name: "Manage roles and permissions", isSensitive: false },
   { key: "settings.manage", name: "Manage company settings", isSensitive: false },
+  // Expenses (MODULES.md Amendment 3, EXPENSES-MODULE.md §5): approving
+  // spend is its own authority — deliberately not employees.manage.
+  { key: "expenses.approve", name: "Approve and settle expense claims", isSensitive: false },
+  { key: "expenses.view", name: "View expense claims", isSensitive: false },
 ] as const;
 
 export type PermissionKey = (typeof PERMISSIONS)[number]["key"];
@@ -251,6 +257,8 @@ export const ROLE_TEMPLATES: ReadonlyArray<{
       "modules.manage",
       "roles.manage",
       "settings.manage",
+      "expenses.approve",
+      "expenses.view",
     ],
   },
   {
@@ -270,6 +278,8 @@ export const ROLE_TEMPLATES: ReadonlyArray<{
       "tasks.view",
       "tasks.manage",
       "reports.view",
+      "expenses.approve",
+      "expenses.view",
     ],
   },
   {
@@ -289,6 +299,8 @@ export const ROLE_TEMPLATES: ReadonlyArray<{
       "documents.download",
       "payroll.view",
       "reports.view",
+      "expenses.approve",
+      "expenses.view",
     ],
   },
   {
@@ -307,6 +319,7 @@ export const ROLE_TEMPLATES: ReadonlyArray<{
       "tasks.manage",
       "tasks.reassign",
       "reports.view",
+      "expenses.view",
     ],
   },
   {

@@ -86,6 +86,8 @@ export const DECIDING_PERMISSION: Record<ActionKind, PermissionKey> = {
   // Handing over a reward is a people decision, and employees.manage is
   // the permission that already marks who makes those.
   REWARD_REDEMPTION: "employees.manage",
+  // Approving spend is its own authority (EXPENSES-MODULE.md §5).
+  EXPENSE_CLAIM: "expenses.approve",
 };
 
 /**

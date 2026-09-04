@@ -5,7 +5,9 @@ import { devFixtureOffline } from "@/lib/auth/fixture";
 import type { AppSession } from "@/lib/auth/types";
 import { isTileVisible } from "./snooze";
 import { resolveAudience, DECIDING_PERMISSION, type AudienceCandidate } from "./audience";
-import type { ActionKind } from "./kinds";
+import { MODULE_FOR_KIND, type ActionKind } from "./kinds";
+import { loadEntitlements } from "@/lib/authz/entitlements";
+import { enabledModuleKeys } from "@/lib/authz/flags";
 
 /**
  * The action queue — durable "somebody must decide this" records.
@@ -209,12 +211,16 @@ export async function loadActionTiles(
 ): Promise<ActionTile[]> {
   if (devFixtureOffline()) return [];
 
+  // A tile for a disabled module would open a page that redirects away
+  // (EXPENSES-MODULE.md §7): only kinds whose module is on are shown.
+  const kinds = await enabledKinds(session.tenant.id, session.user.id);
+
   const rows = await getDb().actionRequestRecipient.findMany({
     where: {
       tenantId: session.tenant.id,
       userId: session.user.id,
       OR: [{ snoozedUntil: null }, { snoozedUntil: { lte: now } }],
-      actionRequest: { status: { in: ["PENDING", "SNOOZED"] } },
+      actionRequest: { status: { in: ["PENDING", "SNOOZED"] }, kind: { in: kinds } },
     },
     include: { actionRequest: true },
     orderBy: { createdAt: "asc" },
@@ -242,12 +248,21 @@ export async function countActionTiles(
   now: Date = new Date(),
 ): Promise<number> {
   if (devFixtureOffline()) return 0;
+  const kinds = await enabledKinds(tenantId, userId);
   return getDb().actionRequestRecipient.count({
     where: {
       tenantId,
       userId,
       OR: [{ snoozedUntil: null }, { snoozedUntil: { lte: now } }],
-      actionRequest: { status: { in: ["PENDING", "SNOOZED"] } },
+      actionRequest: { status: { in: ["PENDING", "SNOOZED"] }, kind: { in: kinds } },
     },
   });
+}
+
+/** The tile kinds whose module is enabled for this tenant. */
+async function enabledKinds(tenantId: string, userId: string): Promise<ActionKind[]> {
+  const enabled = new Set(enabledModuleKeys(await loadEntitlements(tenantId, userId)));
+  return (Object.keys(MODULE_FOR_KIND) as ActionKind[]).filter((kind) =>
+    enabled.has(MODULE_FOR_KIND[kind]),
+  );
 }

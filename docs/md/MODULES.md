@@ -93,3 +93,7 @@ sources that are not attendance or task events:
 Each source is an individually switchable rule with its own value in the
 published scoring definition, like every other rule. Nothing here
 introduces manual scoring, and nothing here can deduct.
+
+# Amendment 3 — Expenses: rules, permissions and payroll independence
+
+The Expenses module’s detailed rules are EXPENSES-MODULE.md (v1.1, approved 4 September 2026). It adds two permissions to USER-ROLES.md — `expenses.approve` (approve and settle claims; default Owner, Super Admin, Admin, HR) and `expenses.view` (see others’ claims; default additionally Manager) — and, from E3, one feature flag to FEATURE-FLAGS.md, `EXPENSES.advances` (default off). Expenses has no module dependency. Payroll is a settlement route offered only when the Payroll module is enabled for the tenant; a tenant without Payroll settles claims outside payroll. Claims never earn Performance points. A submitted claim can be withdrawn by its claimant only, before any decision; the withdrawal is terminal and audited.

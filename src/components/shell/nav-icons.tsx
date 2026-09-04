@@ -17,6 +17,7 @@ import {
   ToggleRight,
   Trophy,
   Users,
+  Wallet,
 } from "lucide-react";
 import type { NavIcon } from "@/lib/shell/nav";
 
@@ -46,4 +47,5 @@ export const NAV_ICONS: Record<NavIcon, typeof Clock> = {
   departments: Network,
   activity: History,
   performance: Trophy,
+  expenses: Wallet,
 };

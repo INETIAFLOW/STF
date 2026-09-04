@@ -46,6 +46,11 @@ export async function purgeTenant(
       await tx.kudos.deleteMany({ where: t });
       await tx.rewardRedemption.deleteMany({ where: t });
       await tx.reward.deleteMany({ where: t });
+      await tx.expenseSettlement.deleteMany({ where: t });
+      await tx.expenseClaimTransition.deleteMany({ where: t });
+      await tx.expenseReceipt.deleteMany({ where: t });
+      await tx.expenseClaim.deleteMany({ where: t });
+      await tx.expenseCounter.deleteMany({ where: { tenantId } });
       await tx.proofFile.deleteMany({ where: { proof: { tenantId } } });
       await tx.taskProof.deleteMany({ where: t });
       await tx.task.deleteMany({ where: t });

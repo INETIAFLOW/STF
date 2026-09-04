@@ -25,7 +25,7 @@ const MIME = ["image/jpeg", "image/png", "image/heic", "image/webp", "applicatio
  * address proofs — the most sensitive files STF holds — so they get the
  * same treatment as proof, never a public path (Constitution §7).
  */
-const BUCKETS = ["task-proof", "employee-documents"];
+const BUCKETS = ["task-proof", "employee-documents", "expense-receipts"];
 
 const connectionString = process.env.DIRECT_URL ?? process.env.DATABASE_URL;
 if (!connectionString) {
@@ -80,7 +80,7 @@ async function main() {
     `select policyname, cmd, roles::text
      from pg_policies
      where schemaname = 'storage' and tablename = 'objects'
-       and (policyname like 'task_proof%' or policyname like 'employee_documents%')
+       and (policyname like 'task_proof%' or policyname like 'employee_documents%' or policyname like 'expense_receipts%')
      order by policyname`,
   );
 

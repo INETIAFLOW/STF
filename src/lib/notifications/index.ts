@@ -210,6 +210,26 @@ async function performanceMoment(
   });
 }
 
+/**
+ * An expense claim moved — approved, partly approved, rejected, settled.
+ * The reason travels verbatim (EXPENSES-MODULE.md §11).
+ */
+async function expenseUpdate(
+  session: AppSession,
+  userId: string,
+  title: string,
+  body: string | undefined,
+  href: string,
+): Promise<void> {
+  await create({
+    tenantId: session.tenant.id,
+    userId,
+    title: title.slice(0, 60),
+    body,
+    href,
+  });
+}
+
 export const notify = {
   attendanceException,
   attendanceDecision,
@@ -219,6 +239,7 @@ export const notify = {
   proofSubmitted,
   proofDecision,
   performanceMoment,
+  expenseUpdate,
 };
 
 /** Unread count for the top-bar bell. */

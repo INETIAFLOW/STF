@@ -38,7 +38,8 @@ export type NavIcon =
   | "company"
   | "departments"
   | "activity"
-  | "performance";
+  | "performance"
+  | "expenses";
 
 export interface NavItem {
   href: string;
@@ -65,6 +66,7 @@ export function adminNavItems({ enabledModules }: AdminNavInput): NavItem[] {
     { module: "LEAVE", href: "/admin/leave", label: "Leave", icon: "leave" },
     { module: "TASKS", href: "/admin/tasks", label: "Tasks", icon: "tasks" },
     { module: "PAYROLL", href: "/admin/payroll", label: "Payroll", icon: "payroll" },
+    { module: "EXPENSES", href: "/admin/expenses", label: "Expenses", icon: "expenses" },
     { module: "DAILY_REPORTING", href: "/admin/daily-report", label: "Daily report", icon: "dailyReport" },
     { module: "PERFORMANCE", href: "/admin/performance", label: "Performance", icon: "performance" },
     { module: null, href: "/admin/reports", label: "Reports", icon: "reports" },
@@ -104,6 +106,11 @@ export function adminConfigItems({ can }: AdminNavInput): NavItem[] {
       icon: "performance" as const,
     },
     can.settings && {
+      href: "/admin/settings/expenses",
+      label: "Expense rules",
+      icon: "expenses" as const,
+    },
+    can.settings && {
       href: "/admin/settings",
       label: "Company settings",
       icon: "company" as const,
@@ -135,6 +142,7 @@ export function employeeNavItems({ enabledModules }: EmployeeNavInput): NavItem[
     { module: "TASKS", href: "/tasks", label: "Tasks", icon: "tasks" },
     { module: "LEAVE", href: "/leave", label: "Leave", icon: "leave" },
     { module: "PAYROLL", href: "/payslips", label: "Payslips", icon: "payslips" },
+    { module: "EXPENSES", href: "/expenses", label: "Expenses", icon: "expenses" },
     { module: "PERFORMANCE", href: "/performance", label: "Performance", icon: "performance" },
     { module: "EMPLOYEES", href: "/documents", label: "My documents", icon: "documents" },
     { module: null, href: "/profile", label: "Profile", icon: "profile" },

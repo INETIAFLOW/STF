@@ -68,6 +68,12 @@ const TENANT_TABLES = [
   // the name and phone number of people who are not even customers. If
   // anything on this list deserves a second fence, it is this.
   "demo_requests",
+  // Expenses (EXPENSES-MODULE.md §9): claims carry amounts and receipts.
+  "expense_claims",
+  "expense_receipts",
+  "expense_claim_transitions",
+  "expense_settlements",
+  "expense_counters",
 ];
 
 const connectionString = process.env.DIRECT_URL ?? process.env.DATABASE_URL;

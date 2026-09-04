@@ -143,6 +143,7 @@ model Tenant {
   rewards           Reward[]
   rewardRedemptions RewardRedemption[]
   kudos             Kudos[]
+  expenseClaims     ExpenseClaim[]
 
   @@map("tenants")
 }
@@ -220,6 +221,7 @@ model TenantMembership {
   rewardRedemptions RewardRedemption[]
   kudosSent         Kudos[]            @relation("kudosFrom")
   kudosReceived     Kudos[]            @relation("kudosTo")
+  expenseClaims     ExpenseClaim[]
 
   @@unique([tenantId, userId])
   /// An employee code identifies one person within one company. NULLs stay
@@ -1177,6 +1179,7 @@ enum ActionRequestKind {
   TASK_PROOF
   EMPLOYEE_INVITE
   REWARD_REDEMPTION
+  EXPENSE_CLAIM
 }
 
 enum ActionRequestStatus {
@@ -1372,4 +1375,146 @@ model Kudos {
   @@index([tenantId, toMembershipId, createdAt])
   @@index([tenantId, fromMembershipId, createdAt])
   @@map("kudos")
+}
+
+// ---------------------------------------------------------------- expenses
+// EXPENSES-MODULE.md §9. Five tables; no foreign key to Payroll, ever —
+// Expenses works with Payroll off, and a settlement stores only an id.
+
+enum ExpenseClaimStatus {
+  DRAFT
+  SUBMITTED
+  APPROVED
+  PARTIALLY_APPROVED
+  REJECTED
+  WITHDRAWN
+  SETTLED
+}
+
+enum ExpenseSettlementRoute {
+  PAYROLL
+  OUTSIDE
+}
+
+/// One claim. Amounts in rupees with paise (Decimal 12,2), INR only.
+/// Category and rules are SNAPSHOTS at submission (invariant 11). Status
+/// changes only through src/lib/expenses/transition.ts.
+model ExpenseClaim {
+  id             String             @id @default(uuid()) @db.Uuid
+  tenantId       String             @db.Uuid
+  membershipId   String             @db.Uuid
+  /// Per-tenant sequence assigned at submission; shown as EXP-000042.
+  claimNumber    Int
+  status         ExpenseClaimStatus @default(DRAFT)
+
+  categoryKey    String
+  categoryName   String
+  receiptRequiredAtSubmission Boolean
+  maxClaimAmountAtSubmission  Decimal? @db.Decimal(12, 2)
+
+  claimedAmount  Decimal            @db.Decimal(12, 2)
+  approvedAmount Decimal?           @db.Decimal(12, 2)
+  expenseDate    DateTime           @db.Date
+  description    String
+
+  /// Facts for the approver, computed once at submission (invariant 12).
+  isLate         Boolean            @default(false)
+  isOverCap      Boolean            @default(false)
+  isPossibleDuplicate Boolean       @default(false)
+
+  submittedAt    DateTime?
+  policyVersion  Int?
+  decidedById    String?            @db.Uuid
+  decidedAt      DateTime?
+  /// Shown to the employee word for word.
+  decisionReason String?
+  settledAt      DateTime?
+  /// Set by the claimant's own withdrawal (invariant 13); reason optional,
+  /// in their words, visible to anyone who can see the claim.
+  withdrawnAt    DateTime?
+  withdrawalReason String?
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  tenant      Tenant                   @relation(fields: [tenantId], references: [id])
+  membership  TenantMembership         @relation(fields: [membershipId], references: [id])
+  receipts    ExpenseReceipt[]
+  transitions ExpenseClaimTransition[]
+  settlement  ExpenseSettlement?
+
+  @@unique([tenantId, claimNumber])
+  @@index([tenantId, membershipId, status])
+  @@index([tenantId, status, submittedAt])
+  @@index([tenantId, expenseDate])
+  @@map("expense_claims")
+}
+
+/// A receipt image or PDF. The file lives in the PRIVATE bucket
+/// `expense-receipts`; only `path` is stored (pattern: ProofFile).
+model ExpenseReceipt {
+  id           String   @id @default(uuid()) @db.Uuid
+  tenantId     String   @db.Uuid
+  claimId      String   @db.Uuid
+  path         String
+  name         String
+  mime         String
+  sizeBytes    Int
+  uploadedById String   @db.Uuid
+  createdAt    DateTime @default(now())
+
+  claim ExpenseClaim @relation(fields: [claimId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, claimId])
+  @@map("expense_receipts")
+}
+
+/// The claim's own history — who moved it, from what, to what, why.
+/// Append-only by convention (no update path, no updatedAt), like AuditEvent.
+model ExpenseClaimTransition {
+  id             String              @id @default(uuid()) @db.Uuid
+  tenantId       String              @db.Uuid
+  claimId        String              @db.Uuid
+  fromStatus     ExpenseClaimStatus?
+  toStatus       ExpenseClaimStatus
+  actorUserId    String?             @db.Uuid
+  actorType      AuditActorType      @default(USER)
+  reason         String?
+  /// Amount decided at this step, when the step decides one.
+  approvedAmount Decimal?            @db.Decimal(12, 2)
+  selfApproved   Boolean             @default(false)
+  createdAt      DateTime            @default(now())
+
+  claim ExpenseClaim @relation(fields: [claimId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, claimId, createdAt])
+  @@map("expense_claim_transitions")
+}
+
+/// How an approved claim was paid — a RECORD, not a payment.
+model ExpenseSettlement {
+  id                  String                 @id @default(uuid()) @db.Uuid
+  tenantId            String                 @db.Uuid
+  claimId             String                 @unique @db.Uuid
+  route               ExpenseSettlementRoute
+  amount              Decimal                @db.Decimal(12, 2)
+  /// OUTSIDE: free text ("cash 12 Sept, voucher 118"). PAYROLL: run month.
+  reference           String?
+  /// Set only for PAYROLL; unique so one adjustment settles one claim.
+  payrollAdjustmentId String?                @unique @db.Uuid
+  settledById         String                 @db.Uuid
+  settledAt           DateTime               @default(now())
+
+  claim ExpenseClaim @relation(fields: [claimId], references: [id])
+
+  @@index([tenantId, settledAt])
+  @@map("expense_settlements")
+}
+
+/// Per-tenant claim counter, advanced atomically inside the submit
+/// transaction (single INSERT … ON CONFLICT … RETURNING).
+model ExpenseCounter {
+  tenantId String @id @db.Uuid
+  next     Int    @default(1)
+
+  @@map("expense_counters")
 }

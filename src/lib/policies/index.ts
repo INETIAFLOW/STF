@@ -23,7 +23,11 @@ export type PolicyKey =
   // The published scoring definition (PERFORMANCE-MODULE.md §1.2): its
   // version is stamped on every point row, and publishing it is the gate
   // the leaderboard flag checks.
-  | "performance";
+  | "performance"
+  // Expense claim rules (EXPENSES-MODULE.md §8): categories, deadline,
+  // settlement default, retention. Every claim stamps the version that
+  // applied at submission.
+  | "expenses";
 
 export async function getPolicy<T>(
   tenantId: string,

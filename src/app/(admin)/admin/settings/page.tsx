@@ -59,6 +59,12 @@ export default async function CompanySettingsPage() {
             Departments
           </Link>
           <Link
+            href="/admin/settings/expenses"
+            className="text-label text-brand-primary underline-offset-2 hover:underline"
+          >
+            Expense rules
+          </Link>
+          <Link
             href="/admin/settings/notifications"
             className="text-label text-brand-primary underline-offset-2 hover:underline"
           >

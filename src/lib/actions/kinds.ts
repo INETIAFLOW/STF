@@ -14,6 +14,8 @@
  * too (MODULES.md → Notifications; edge-cases.md → "alert fatigue").
  */
 
+import type { ModuleKey } from "@/lib/catalog";
+
 export const ACTION_KINDS = [
   "ATTENDANCE_EXCEPTION",
   "LEAVE_REQUEST",
@@ -23,6 +25,9 @@ export const ACTION_KINDS = [
   // offered (PERFORMANCE-MODULE.md §D) — an approval surface by design:
   // handing over a reward is a human act, so a human confirms it.
   "REWARD_REDEMPTION",
+  // An expense claim asks the company for money back (EXPENSES-MODULE.md
+  // §11) — an approval surface by definition.
+  "EXPENSE_CLAIM",
 ] as const;
 
 export type ActionKind = (typeof ACTION_KINDS)[number];
@@ -59,6 +64,12 @@ export const APPROVE_INLINE: Record<
     allowed: false,
     because: "Approving confirms the reward was handed over.",
   },
+  // Approving a claim means choosing the amount and, later, where it
+  // settles — never a tap made in passing (EXPENSES-MODULE.md §11).
+  EXPENSE_CLAIM: {
+    allowed: false,
+    because: "Approving means choosing the amount and where it settles.",
+  },
 };
 
 /** What the button that leaves the tile should say. */
@@ -74,9 +85,25 @@ export function openLabel(kind: ActionKind): string {
       return "Open profile";
     case "REWARD_REDEMPTION":
       return "Review redemption";
+    case "EXPENSE_CLAIM":
+      return "Review claim";
   }
 }
 
 export function isActionKind(value: string): value is ActionKind {
   return (ACTION_KINDS as readonly string[]).includes(value);
 }
+
+/**
+ * The module each kind belongs to. A tile whose module is disabled for the
+ * tenant is not shown and cannot be decided (EXPENSES-MODULE.md §7) — the
+ * queue never opens a door that module management has closed.
+ */
+export const MODULE_FOR_KIND: Record<ActionKind, ModuleKey> = {
+  ATTENDANCE_EXCEPTION: "ATTENDANCE",
+  LEAVE_REQUEST: "LEAVE",
+  TASK_PROOF: "TASKS",
+  EMPLOYEE_INVITE: "EMPLOYEES",
+  REWARD_REDEMPTION: "PERFORMANCE",
+  EXPENSE_CLAIM: "EXPENSES",
+};

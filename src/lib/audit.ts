@@ -3,6 +3,7 @@ import "server-only";
 import { getDb } from "@/lib/db";
 import { devFixtureOffline } from "@/lib/auth/fixture";
 import type { AppSession } from "@/lib/auth/types";
+import type { PrismaClient } from "@/generated/prisma/client";
 
 /**
  * Audit-event helper (Product Constitution §3): the acting person,
@@ -25,6 +26,8 @@ export interface AuditInput {
 export async function recordAuditEvent(
   session: AppSession,
   input: AuditInput,
+  /** Pass the transaction client to commit the event with the change it describes. */
+  client: Pick<PrismaClient, "auditEvent"> = getDb(),
 ): Promise<void> {
   if (session.source === "dev-fixture" || devFixtureOffline()) {
     // Dev preview session has no database; make the skip loud in dev logs.
@@ -34,7 +37,7 @@ export async function recordAuditEvent(
     return;
   }
 
-  await getDb().auditEvent.create({
+  await client.auditEvent.create({
     data: {
       tenantId: session.tenant.id,
       actorUserId: session.user.id,
