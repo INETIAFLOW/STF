@@ -9,9 +9,15 @@ import { Card, CardHeader } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { StatusChip } from "@/components/ui/StatusChip";
 import { STATUS, type Status } from "@/lib/status";
-import { formatRupees, periodLabel } from "@/lib/payroll/engine";
+import { loadEntitlements } from "@/lib/authz/entitlements";
+import { evaluateAccess } from "@/lib/authz/flags";
+import { formatRupees, periodLabel, roundRupees } from "@/lib/payroll/engine";
 import { buildPayrollPreview, currentPeriod } from "@/lib/payroll/service";
+import { payrollRoundingNote, settlementMonth } from "@/lib/expenses/payroll-settlement";
+import { listClaimsAwaitingPayroll } from "@/lib/expenses/queries";
+import { claimRef } from "@/lib/expenses/state";
 import { PayrollControls } from "./PayrollControls";
+import { SettleIntoRun } from "./SettleIntoRun";
 
 export const metadata: Metadata = { title: "Payroll" };
 
@@ -95,6 +101,36 @@ export default async function AdminPayrollPage({
   const canApprove = session.permissions.has("payroll.approve");
   const canEdit = session.permissions.has("payroll.edit");
 
+  // Payroll pulls (EXPENSES-MODULE.md §13 rule 8): approved expense claims
+  // for people on this DRAFT run. Only when Expenses is on and the viewer
+  // may settle claims; the write still goes through the seam.
+  const entitlements = await loadEntitlements(session.tenant.id, session.user.id);
+  const expensesOn = evaluateAccess({ session, entitlements, module: "EXPENSES" }).allowed;
+  const canSettleExpenses =
+    expensesOn && session.permissions.has("expenses.approve") && Boolean(run) && !approved;
+  const awaiting = canSettleExpenses ? await listClaimsAwaitingPayroll(session) : [];
+  const payableMembers = new Set(
+    (run?.lines ?? [])
+      .filter((line) => line.status !== "NO_SALARY_STRUCTURE")
+      .map((line) => line.membershipId),
+  );
+  const claimsForRun = awaiting
+    .filter((c) => c.approvedAmount !== null && payableMembers.has(c.membershipId))
+    .filter((c) => settlementMonth(c.decidedAt ?? new Date(), tz).getTime() <= periodMonth.getTime())
+    .map((c) => {
+      const approvedAmount = Number(c.approvedAmount);
+      const payrollAmount = roundRupees(approvedAmount);
+      return {
+        id: c.id,
+        ref: claimRef(c.claimNumber),
+        personName: c.membership.user.displayName,
+        categoryName: c.categoryName,
+        approvedAmount,
+        payrollAmount,
+        note: payrollRoundingNote(approvedAmount, payrollAmount),
+      };
+    });
+
   if (structureCount === 0) {
     return (
       <div className="flex flex-col gap-5">
@@ -148,6 +184,20 @@ export default async function AdminPayrollPage({
         }))}
         unreviewedExceptions={preview.unreviewedExceptions}
       />
+
+      {preview.adjustmentsOnExcludedLines.length > 0 && (
+        <Alert variant="warning" title="Adjustments on lines this run will not pay.">
+          {preview.adjustmentsOnExcludedLines
+            .map((x) => `${x.name}: ${x.count} adjustment${x.count === 1 ? "" : "s"}, ${formatRupees(x.total)}`)
+            .join(" · ")}
+          {" — "}no salary is set, or the person has left, so these amounts are in no payslip.
+          Set a salary and recalculate, or settle them outside payroll.
+        </Alert>
+      )}
+
+      {canSettleExpenses && claimsForRun.length > 0 && (
+        <SettleIntoRun periodLabel={label} claims={claimsForRun} />
+      )}
 
       {/* Inputs used — payroll traceability. */}
       <Card>

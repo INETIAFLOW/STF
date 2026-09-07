@@ -20,6 +20,10 @@ if (process.env.DIRECT_URL) process.env.DATABASE_URL = process.env.DIRECT_URL;
 
 const HAS_DB = Boolean(process.env.DATABASE_URL);
 
+// Other database suites (rewards, payroll settlement) share the sample
+// tenant and run in parallel workers; give real round trips room.
+vi.setConfig({ testTimeout: 30_000, hookTimeout: 60_000 });
+
 vi.mock("server-only", () => ({}));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 vi.mock("@/lib/notifications", () => ({
@@ -49,7 +53,7 @@ import { getPolicy, setPolicy } from "@/lib/policies";
 import { DEFAULT_EXPENSES_POLICY } from "@/lib/expenses/policy";
 import {
   decideClaimAction,
-  settleOutsideAction,
+  settleClaimAction,
   submitClaimAction,
   withdrawClaimAction,
 } from "@/lib/expenses/actions";
@@ -185,7 +189,10 @@ d("expenses flow (integration, sample tenant)", () => {
     expect(a.ok && b.ok).toBe(true);
     if (!a.ok || !b.ok || !a.claimId || !b.claimId) return;
     const [ra, rb] = await Promise.all([claim(a.claimId), claim(b.claimId)]);
-    expect(rb.claimNumber).toBe(ra.claimNumber + 1);
+    // Strictly greater, not +1: the payroll-settlement suite shares this
+    // tenant and may take a number in between. Uniqueness is the point.
+    expect(rb.claimNumber).toBeGreaterThan(ra.claimNumber);
+    expect(await db.expenseClaim.count({ where: { tenantId, claimNumber: rb.claimNumber } })).toBe(1);
   });
 
   it("receipts land with the claim and their own audit; a path outside the tenant prefix is refused", async () => {
@@ -285,8 +292,8 @@ d("expenses flow (integration, sample tenant)", () => {
     expect(await audit(id, "expense.partially_approved")).not.toBeNull();
     expect(resolved).toContainEqual({ subjectId: id, resolution: "PARTIALLY_APPROVED" });
 
-    expect((await settleOutsideAction({ claimId: id, reference: "ok" })).ok).toBe(false);
-    const settled = await settleOutsideAction({ claimId: id, reference: "Cash, 4 Sept, voucher 118" });
+    expect((await settleClaimAction({ claimId: id, route: "OUTSIDE", reference: "ok" })).ok).toBe(false);
+    const settled = await settleClaimAction({ claimId: id, route: "OUTSIDE", reference: "Cash, 4 Sept, voucher 118" });
     expect(settled.ok).toBe(true);
     row = await claim(id);
     expect(row.status).toBe("SETTLED");

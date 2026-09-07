@@ -74,6 +74,9 @@ export function ClaimCard({
         <p className="mt-2 text-caption text-text-secondary">
           Settled {claim.settlement.route === "OUTSIDE" ? "outside payroll" : "through payroll"}
           {claim.settlement.reference ? ` — ${claim.settlement.reference}` : ""}
+          {approved !== null && Number(claim.settlement.amount) !== approved
+            ? ` · ${formatAmount(Number(claim.settlement.amount))} (rounded to whole rupees)`
+            : ""}
         </p>
       )}
 

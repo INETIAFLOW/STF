@@ -12,11 +12,19 @@ import { ClaimTimeline } from "@/components/expenses/ClaimTimeline";
 import { ReceiptLink } from "@/components/expenses/ReceiptLink";
 import { canApproveClaims, canViewOthersClaims, loadExpensesPolicy } from "@/lib/expenses/access";
 import { formatAmount, formatExpenseDate, formatWhen } from "@/lib/expenses/format";
+import {
+  monthLabel,
+  offeredRoutes,
+  payrollRoundingNote,
+  seamFailureMessage,
+  settlementMonth,
+} from "@/lib/expenses/payroll-settlement";
+import { previewPayrollSettlement } from "@/lib/expenses/settle-payroll";
 import { loadClaimForViewer } from "@/lib/expenses/queries";
 import { claimRef } from "@/lib/expenses/state";
 import { CLAIM_STATUS, flagMeanings, flagStatuses } from "@/lib/expenses/status-map";
 import { DecisionCard } from "./DecisionCard";
-import { SettleForm } from "./SettleForm";
+import { SettleForm, type PayrollOption } from "./SettleForm";
 
 export const metadata: Metadata = { title: "Expense claim" };
 
@@ -53,6 +61,58 @@ export default async function AdminExpenseClaimPage({
   const person = claim.membership.user.displayName;
   const flags = flagStatuses(claim);
   const canApprove = canApproveClaims(session);
+
+  // Settlement (§12): routes from the entitlement, preselected from policy,
+  // and what payroll would do — computed here, before the click.
+  const settleable =
+    (claim.status === "APPROVED" || claim.status === "PARTIALLY_APPROVED") &&
+    canApprove &&
+    approved !== null;
+  const routes = offeredRoutes({
+    payrollOn,
+    defaultRoute: published?.policy.defaultSettlementRoute ?? "OUTSIDE",
+  });
+  let payrollOption: PayrollOption | null = null;
+  if (settleable && payrollOn && approved !== null) {
+    const preview = await previewPayrollSettlement(session, {
+      membershipId: claim.membershipId,
+      decidedAt: claim.decidedAt,
+      approvedAmount: approved,
+    });
+    if (preview.available) {
+      const target = preview.target;
+      payrollOption = target.ok
+        ? {
+            ready: true,
+            monthLabel: monthLabel(target.run.periodMonth),
+            amount: preview.amount,
+            note: payrollRoundingNote(preview.approvedAmount, preview.amount),
+            problem: null,
+          }
+        : {
+            ready: false,
+            monthLabel: null,
+            amount: preview.amount,
+            note: null,
+            problem:
+              target.reason === "NO_OPEN_RUN"
+                ? seamFailureMessage("NO_OPEN_RUN", {
+                    monthLabel: monthLabel(settlementMonth(claim.decidedAt ?? new Date(), tz)),
+                    earliestLockedLabel: target.earliestLockedMonth
+                      ? monthLabel(target.earliestLockedMonth)
+                      : null,
+                  })
+                : seamFailureMessage("NO_LINE_FOR_PERSON", {
+                    monthLabel: monthLabel(target.periodMonth),
+                    personName: person,
+                  }),
+          };
+    }
+  }
+  const settledNote =
+    claim.settlement && approved !== null
+      ? payrollRoundingNote(approved, Number(claim.settlement.amount))
+      : null;
 
   return (
     <div className="flex flex-col gap-5">
@@ -137,8 +197,15 @@ export default async function AdminExpenseClaimPage({
         </Alert>
       )}
 
-      {(claim.status === "APPROVED" || claim.status === "PARTIALLY_APPROVED") && canApprove && approved !== null && (
-        <SettleForm claimId={claim.id} amount={approved} personName={person} payrollOn={payrollOn} />
+      {settleable && approved !== null && (
+        <SettleForm
+          claimId={claim.id}
+          amount={approved}
+          personName={person}
+          routes={routes.routes}
+          preselected={routes.preselected}
+          payroll={payrollOption}
+        />
       )}
 
       {claim.settlement && (
@@ -147,6 +214,7 @@ export default async function AdminExpenseClaimPage({
           title={`Settled ${claim.settlement.route === "OUTSIDE" ? "outside payroll" : "through payroll"} · ${formatAmount(Number(claim.settlement.amount))}`}
         >
           {claim.settlement.reference ?? ""} · {formatWhen(claim.settlement.settledAt, tz)}
+          {settledNote ? ` · ${settledNote}` : ""}
         </Alert>
       )}
 

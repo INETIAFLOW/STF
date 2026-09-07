@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { recordAdjustment } from "./adjustments";
 import { z } from "zod";
 import { getDb } from "@/lib/db";
 import { recordAuditEvent } from "@/lib/audit";
@@ -336,69 +337,20 @@ export async function addAdjustmentAction(
     return { ok: false, error: decision.message ?? "You don't have access to Payroll." };
   }
 
-  const db = getDb();
-  const line = await db.payrollLine.findFirst({
-    where: { id: parsed.data.lineId, tenantId: session.tenant.id },
-    include: { run: true, membership: { include: { user: true } } },
-  });
-  if (!line) return { ok: false, error: "That payroll line is no longer available." };
-
-  const adjustment = await db.payrollAdjustment.create({
-    data: {
-      tenantId: session.tenant.id,
-      lineId: line.id,
-      label: parsed.data.label,
-      amount: parsed.data.amount,
-      reason: parsed.data.reason,
-      createdById: session.user.id,
-    },
-  });
-
-  // Adjustments change net pay only; gross and deductions stand as
-  // calculated so the original figures remain visible.
-  const total = await db.payrollAdjustment.aggregate({
-    where: { lineId: line.id },
-    _sum: { amount: true },
-  });
-  const adjustmentTotal = Number(total._sum.amount ?? 0);
-  const net =
-    Number(line.gross) - Number(line.deductionTotal) + adjustmentTotal;
-
-  await db.payrollLine.update({
-    where: { id: line.id },
-    data: { adjustmentTotal, net },
-  });
-
-  const runTotals = await db.payrollLine.aggregate({
-    where: { runId: line.runId },
-    _sum: { net: true },
-  });
-  await db.payrollRun.update({
-    where: { id: line.runId },
-    data: { netTotal: Number(runTotals._sum.net ?? 0) },
-  });
-
-  await recordAuditEvent(session, {
-    action: "payroll.adjustment_added",
-    entityType: "payroll_line",
-    entityId: line.id,
-    reason: parsed.data.reason,
-    before: { net: Number(line.net) },
-    after: {
-      net,
-      adjustment: { label: parsed.data.label, amount: parsed.data.amount },
-      adjustmentId: adjustment.id,
-      runStatus: line.run.status,
-    },
-  });
+  // One transaction: the adjustment, the line, the run total and the audit
+  // event land together or not at all (src/lib/payroll/adjustments.ts).
+  const result = await getDb().$transaction((tx) =>
+    recordAdjustment(tx, session, parsed.data),
+  );
+  if (!result.ok) return result;
 
   revalidatePath("/admin/payroll");
 
   return {
     ok: true,
-    message: `Adjustment recorded for ${line.membership.user.displayName}.`,
+    message: `Adjustment recorded for ${result.employeeName}.`,
     detail:
-      line.run.status === "APPROVED"
+      result.runStatus === "APPROVED"
         ? "The approved run keeps its original figures; this is an auditable adjustment."
         : undefined,
   };

@@ -33,6 +33,8 @@ export interface TransitionInput {
     route: "OUTSIDE" | "PAYROLL";
     reference: string | null;
     payrollAdjustmentId?: string | null;
+    /** Whole rupees when the route is PAYROLL (§13); defaults to approvedAmount. */
+    amount?: number;
   };
 }
 
@@ -52,7 +54,15 @@ export interface LockedClaim {
 }
 
 export type TransitionResult =
-  | { ok: true; claim: LockedClaim; from: ClaimStatus; selfApproved: boolean; ref: string }
+  | {
+      ok: true;
+      claim: LockedClaim;
+      from: ClaimStatus;
+      selfApproved: boolean;
+      ref: string;
+      /** The amount on the settlement record, when this transition settled. */
+      settledAmount: number | null;
+    }
   | { ok: false; error: string; status?: ClaimStatus };
 
 const AUDIT_ACTION: Record<ClaimStatus, string> = {
@@ -113,16 +123,18 @@ export async function transitionClaim(input: TransitionInput): Promise<Transitio
   const ref = claimRef(claim.claimNumber);
 
   // 3. Settlement record first — the fact that makes SETTLED true.
+  let settledAmount: number | null = null;
   if (to === "SETTLED" && input.settlement) {
     if (claim.approvedAmount === null) {
       return { ok: false, error: "Nothing approved to settle.", status: from };
     }
+    settledAmount = input.settlement.amount ?? claim.approvedAmount;
     await tx.expenseSettlement.create({
       data: {
         tenantId,
         claimId: claim.id,
         route: input.settlement.route,
-        amount: claim.approvedAmount,
+        amount: settledAmount,
         reference: input.settlement.reference,
         payrollAdjustmentId: input.settlement.payrollAdjustmentId ?? null,
         settledById: session.user.id,
@@ -204,6 +216,7 @@ export async function transitionClaim(input: TransitionInput): Promise<Transitio
               route: input.settlement.route,
               reference: input.settlement.reference,
               payrollAdjustmentId: input.settlement.payrollAdjustmentId ?? null,
+              settledAmount,
             }
           : {}),
       },
@@ -211,5 +224,12 @@ export async function transitionClaim(input: TransitionInput): Promise<Transitio
     tx,
   );
 
-  return { ok: true, claim: { ...claim, status: to }, from, selfApproved: guard.selfApproved, ref };
+  return {
+    ok: true,
+    claim: { ...claim, status: to },
+    from,
+    selfApproved: guard.selfApproved,
+    ref,
+    settledAmount,
+  };
 }

@@ -28,7 +28,7 @@ const listSelect = {
   withdrawnAt: true,
   withdrawalReason: true,
   membership: { select: { id: true, user: { select: { displayName: true } } } },
-  settlement: { select: { route: true, reference: true, settledAt: true } },
+  settlement: { select: { route: true, reference: true, settledAt: true, amount: true } },
   _count: { select: { receipts: true } },
 } as const;
 
@@ -106,6 +106,30 @@ export async function loadClaimForViewer(session: AppSession, claimId: string) {
   for (const a of actors) actorNames[a.id] = a.displayName;
 
   return { claim, isOwn, actorNames };
+}
+
+/**
+ * Approved claims not yet settled — the payroll run screen pulls from
+ * this list (EXPENSES-MODULE.md §13 rule 8) and filters to the people on
+ * its run. Read-only; the write still goes through the seam.
+ */
+export async function listClaimsAwaitingPayroll(session: AppSession) {
+  return getDb().expenseClaim.findMany({
+    where: {
+      tenantId: session.tenant.id,
+      status: { in: ["APPROVED", "PARTIALLY_APPROVED"] },
+    },
+    select: {
+      id: true,
+      claimNumber: true,
+      categoryName: true,
+      approvedAmount: true,
+      decidedAt: true,
+      membershipId: true,
+      membership: { select: { user: { select: { displayName: true } } } },
+    },
+    orderBy: { decidedAt: "asc" },
+  });
 }
 
 export type ClaimListRow = Awaited<ReturnType<typeof listMyClaims>>[number];

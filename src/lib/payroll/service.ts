@@ -40,6 +40,18 @@ export interface PayrollPreview {
   grossTotal: number;
   deductionTotal: number;
   netTotal: number;
+  /**
+   * Adjustments sitting on lines this run will NOT pay — the person has no
+   * salary structure, or is no longer active. Money recorded but not
+   * payable (an expense settled through payroll, say) is surfaced as a
+   * warning rather than silently dropped from the totals.
+   */
+  adjustmentsOnExcludedLines: Array<{
+    membershipId: string;
+    name: string;
+    count: number;
+    total: number;
+  }>;
 }
 
 /** Start of a payroll month as a UTC date-only value. */
@@ -251,6 +263,21 @@ export async function buildPayrollPreview(
     });
   }
 
+  // Saved adjustments whose line this preview will not pay.
+  const draftByMembership = new Map(lines.map((l) => [l.membershipId, l]));
+  const adjustmentsOnExcludedLines = (existingRun?.lines ?? [])
+    .filter((saved) => saved.adjustments.length > 0)
+    .filter((saved) => {
+      const draft = draftByMembership.get(saved.membershipId);
+      return !draft || draft.status === "NO_SALARY_STRUCTURE";
+    })
+    .map((saved) => ({
+      membershipId: saved.membershipId,
+      name: draftByMembership.get(saved.membershipId)?.name ?? "A former employee",
+      count: saved.adjustments.length,
+      total: saved.adjustments.reduce((sum, a) => sum + Number(a.amount), 0),
+    }));
+
   const payable = lines.filter((l) => l.result);
   return {
     periodMonth,
@@ -258,6 +285,7 @@ export async function buildPayrollPreview(
     latePolicy,
     lines,
     unreviewedExceptions: unreviewed,
+    adjustmentsOnExcludedLines,
     grossTotal: payable.reduce((sum, l) => sum + (l.result?.gross ?? 0), 0),
     deductionTotal: payable.reduce(
       (sum, l) => sum + (l.result?.deductionTotal ?? 0),

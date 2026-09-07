@@ -11,6 +11,14 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { RECEIPT_BUCKET, RECEIPT_MAX_BYTES, RECEIPT_MAX_FILES, RECEIPT_MIME } from "./bucket";
 import { canViewOthersClaims, loadExpensesPolicy, todayIn } from "./access";
 import { formatAmount, toIsoDate } from "./format";
+import {
+  monthLabel,
+  offeredRoutes,
+  payrollRoundingNote,
+  seamFailureMessage,
+  settlementMonth,
+} from "./payroll-settlement";
+import { payrollAvailable, settleViaPayroll, type PayrollSettlementResult } from "./settle-payroll";
 import { claimRef, computeFlags, deriveDecision, validateSubmission } from "./state";
 import { transitionClaim } from "./transition";
 
@@ -389,21 +397,22 @@ export async function decideClaimAction(
 
 const settleSchema = z.object({
   claimId: z.string().uuid(),
-  reference: z.string().trim().min(3, "Say how it was paid — cash, UPI, bank — and when.").max(200),
+  route: z.enum(["OUTSIDE", "PAYROLL"]),
+  reference: z.string().trim().max(200).optional(),
 });
 
 /**
- * Settlement outside payroll (§12): a RECORD of how it was paid. STF moves
- * no money. The payroll route arrives in E2 through its own seam; in E1
- * this is the only route, whatever the tenant’s modules.
+ * Settlement (§12): a RECORD of how it was paid — STF moves no money.
+ * The routes offered are recomputed here, at write time, from the Payroll
+ * entitlement: a PAYROLL request while Payroll is off is refused with a
+ * plain message, never silently downgraded. OUTSIDE records free text;
+ * PAYROLL goes through the seam (§13, settle-payroll.ts).
  */
-export async function settleOutsideAction(
+export async function settleClaimAction(
   input: z.input<typeof settleSchema>,
 ): Promise<ActionResult> {
   const parsed = settleSchema.safeParse(input);
-  if (!parsed.success) {
-    return { ok: false, error: parsed.error.issues[0]?.message ?? "Check the settlement details." };
-  }
+  if (!parsed.success) return { ok: false, error: "Check the settlement details." };
 
   const { session, decision } = await checkAccess({
     module: "EXPENSES",
@@ -420,22 +429,46 @@ export async function settleOutsideAction(
     include: { membership: { include: { user: { select: { id: true, displayName: true } } } } },
   });
   if (!claim) return { ok: false, error: "That claim is not here." };
+  const person = claim.membership.user.displayName;
+  const ref = claimRef(claim.claimNumber);
 
-  let ref = "";
+  const published = await loadExpensesPolicy(tenantId);
+  const offered = offeredRoutes({
+    payrollOn: await payrollAvailable(session),
+    defaultRoute: published?.policy.defaultSettlementRoute ?? "OUTSIDE",
+  });
+  if (!offered.routes.includes(parsed.data.route)) {
+    return { ok: false, error: seamFailureMessage("PAYROLL_UNAVAILABLE", {}) };
+  }
+
+  if (parsed.data.route === "OUTSIDE") return settleOutside(session, claim.id, ref, person, claim.membership.user.id, parsed.data.reference ?? "");
+  return settleThroughPayroll(session, claim.id, ref, person, claim.membership.user.id, claim.decidedAt);
+}
+/** Outside payroll: free text, recorded and nothing else. */
+async function settleOutside(
+  session: Awaited<ReturnType<typeof checkAccess>>["session"],
+  claimId: string,
+  ref: string,
+  person: string,
+  userId: string,
+  reference: string,
+): Promise<ActionResult> {
+  if (reference.length < 3) {
+    return { ok: false, error: "Say how it was paid — cash, UPI, bank — and when." };
+  }
   let amount = 0;
   try {
-    await db.$transaction(async (tx) => {
+    await getDb().$transaction(async (tx) => {
       const result = await transitionClaim({
         tx,
         session,
-        claimId: claim.id,
+        claimId,
         to: "SETTLED",
         allowSelfApproval: false,
-        settlement: { route: "OUTSIDE", reference: parsed.data.reference },
+        settlement: { route: "OUTSIDE", reference },
       });
       if (!result.ok) throw new Error(result.error);
-      ref = result.ref;
-      amount = result.claim.approvedAmount ?? 0;
+      amount = result.settledAmount ?? 0;
     }, TX);
   } catch (error) {
     return fail(error, "That didn’t go through. Try again.");
@@ -443,16 +476,79 @@ export async function settleOutsideAction(
 
   await notify.expenseUpdate(
     session,
-    claim.membership.user.id,
+    userId,
     `Expense ${ref} settled: ${formatAmount(amount)}`,
-    `Outside payroll — ${parsed.data.reference}`,
-    `/expenses/${claim.id}`,
+    `Outside payroll — ${reference}`,
+    `/expenses/${claimId}`,
   );
-
-  refresh(claim.id);
+  refresh(claimId);
   return {
     ok: true,
-    message: `${ref} settled — ${formatAmount(amount)} to ${claim.membership.user.displayName}, recorded as paid outside payroll.`,
+    message: `${ref} settled — ${formatAmount(amount)} to ${person}, recorded as paid outside payroll.`,
+  };
+}
+
+/** Through payroll: the seam (§13), inside one transaction. */
+async function settleThroughPayroll(
+  session: Awaited<ReturnType<typeof checkAccess>>["session"],
+  claimId: string,
+  ref: string,
+  person: string,
+  userId: string,
+  decidedAt: Date | null,
+): Promise<ActionResult> {
+  let result: PayrollSettlementResult;
+  try {
+    result = await getDb().$transaction((tx) => settleViaPayroll({ tx, session, claimId }), TX);
+  } catch (error) {
+    return fail(error, "That didn’t go through. Try again.");
+  }
+
+  if (!result.ok) {
+    const tz = session.tenant.timezone;
+    switch (result.reason) {
+      case "PAYROLL_UNAVAILABLE":
+        return { ok: false, error: seamFailureMessage("PAYROLL_UNAVAILABLE", {}) };
+      case "NO_OPEN_RUN":
+        return {
+          ok: false,
+          error: seamFailureMessage("NO_OPEN_RUN", {
+            monthLabel: monthLabel(settlementMonth(decidedAt ?? new Date(), tz)),
+            earliestLockedLabel: result.earliestLockedMonth ? monthLabel(result.earliestLockedMonth) : null,
+          }),
+        };
+      case "NO_LINE_FOR_PERSON":
+        return {
+          ok: false,
+          error: seamFailureMessage("NO_LINE_FOR_PERSON", {
+            monthLabel: monthLabel(result.periodMonth),
+            personName: person,
+          }),
+        };
+      case "REFUSED":
+        return { ok: false, error: result.error };
+    }
+  }
+
+  const note = payrollRoundingNote(result.approvedAmount, result.amount);
+  if (!result.alreadySettled) {
+    await notify.expenseUpdate(
+      session,
+      userId,
+      `Expense ${ref}: ${formatAmount(result.amount)} in ${result.periodLabel} payroll`,
+      note ?? "It will show on your payslip as an adjustment.",
+      `/expenses/${claimId}`,
+    );
+  }
+
+  refresh(claimId);
+  revalidatePath("/admin/payroll");
+  return {
+    ok: true,
+    message: result.alreadySettled
+      ? `${ref} was already settled through ${result.periodLabel} payroll (${formatAmount(result.amount)}).`
+      : `${ref} added to ${result.periodLabel} payroll as ${formatAmount(result.amount)} for ${person}.`,
+    detail: note ?? undefined,
   };
 }
 

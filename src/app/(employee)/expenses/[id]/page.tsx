@@ -9,6 +9,7 @@ import { StatusChip } from "@/components/ui/StatusChip";
 import { ClaimTimeline } from "@/components/expenses/ClaimTimeline";
 import { ReceiptLink } from "@/components/expenses/ReceiptLink";
 import { formatAmount, formatExpenseDate, formatWhen } from "@/lib/expenses/format";
+import { payrollRoundingNote } from "@/lib/expenses/payroll-settlement";
 import { loadClaimForViewer } from "@/lib/expenses/queries";
 import { claimRef } from "@/lib/expenses/state";
 import { CLAIM_STATUS, flagMeanings, flagStatuses } from "@/lib/expenses/status-map";
@@ -40,6 +41,10 @@ export default async function ExpenseClaimPage({
   const approved = claim.approvedAmount === null ? null : Number(claim.approvedAmount);
   const tz = session.tenant.timezone;
   const flags = flagStatuses(claim);
+  const settledNote =
+    claim.settlement && approved !== null
+      ? payrollRoundingNote(approved, Number(claim.settlement.amount))
+      : null;
 
   return (
     <div className="flex flex-col gap-5">
@@ -105,6 +110,10 @@ export default async function ExpenseClaimPage({
           title={`Settled ${claim.settlement.route === "OUTSIDE" ? "outside payroll" : "through payroll"} · ${formatAmount(Number(claim.settlement.amount))}`}
         >
           {claim.settlement.reference ?? ""} · {formatWhen(claim.settlement.settledAt, tz)}
+          {settledNote ? ` · ${settledNote}` : ""}
+          {claim.settlement.route === "PAYROLL"
+            ? " It appears on that payslip as an adjustment with this claim’s reference."
+            : ""}
         </Alert>
       )}
 

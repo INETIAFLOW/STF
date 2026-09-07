@@ -1,6 +1,6 @@
 # Sudarshan Task Force — Expenses
 
-Version: 1.2  |  Date: 4 September 2026  |  Status: **Approved** (owner, 4 September 2026; v1.1 added employee withdrawal to E1) · **E1 built, verified and deployed** (4 September 2026; §19 records the three deviations the owner accepted at verification).
+Version: 1.3  |  Date: 8 September 2026  |  Status: **Approved** (owner, 4 September 2026; v1.1 added employee withdrawal to E1) · **E1 built, verified and deployed** (4 September 2026; §19 records the three deviations the owner accepted at verification) · **E2 built and verified** (8 September 2026; §13 carries the whole-rupee decision the owner took at the readiness review).
 
 MODULES.md admits Expenses in one clause: *"Expenses … may be enabled per tenant only when their detailed rules are approved."* The catalog carries the module already (`EXPENSES`, optional, sort order 110) with the placeholder description *"enabled only after its rules are approved."* This document is those rules.
 
@@ -382,9 +382,9 @@ The settling screen computes this at render *and* the action recomputes it at wr
 
 **`OUTSIDE`** — reference is free text, required, ≥ 3 characters (cash / UPI / bank, date, voucher). STF records it and nothing else happens. This is the whole of E1's settlement.
 
-**`PAYROLL`** — E2. Goes through the contract in §13; the adjustment id lands on the settlement row.
+**`PAYROLL`** — through the seam in §13; the adjustment id lands on the settlement row and the reference is the payroll month ("September 2026 payroll"). The claim page shows what payroll would do *before* the click — the target month and the rounded figure, or the typed refusal with its way out — and the payroll run screen offers the same settlement from its side (§13 rule 8).
 
-**Amount** settled is `approvedAmount`, always. A settlement for a different amount is refused (the partial-approval step is where amounts change).
+**Amount** settled is `approvedAmount` for `OUTSIDE`. For `PAYROLL` it is `approvedAmount` **rounded to whole rupees** (§13 rule 5) — the same figure on the payslip line and on the settlement record, with the approved paise kept on the claim and the rounding stated wherever the settlement is shown. A settlement for any other amount is refused (the partial-approval step is where amounts change).
 
 **History survives configuration.** The settlement row snapshots route and reference. Disabling Payroll later, or changing the default route, changes nothing that already happened.
 
@@ -409,13 +409,15 @@ Rules the seam enforces:
 1. **Entitlement first.** `evaluateAccess({ module: "PAYROLL" })` for the tenant; anything but allowed → `PAYROLL_UNAVAILABLE`. Returned, never thrown.
 2. **Never onto an approved run.** Today `addAdjustmentAction` permits adjustments on `APPROVED` runs (Constitution §6: post-lock changes are auditable adjustments). Expenses does *not* use that door: an adjustment after payslips are delivered changes a figure someone has already read. The target is the **earliest `DRAFT` run whose `periodMonth ≥` the month of `decidedAt`**.
 3. **Expenses never creates runs.** A run exists because Payroll calculated it, with an inputs snapshot. If no `DRAFT` run qualifies → `NO_OPEN_RUN`; the screen says "No payroll run is open for September yet — settle outside payroll, or come back once September is calculated." The claim stays `APPROVED`.
-4. **The person must be on the run.** No `PayrollLine` for the claimant on that run (joined mid-month, excluded, left) → `NO_LINE_FOR_PERSON`; same two choices offered.
-5. **Adjustment shape** — `label`: `Expense · {categoryName} · EXP-{claimNumber}`; `amount`: `+approvedAmount`; `reason`: `Expense claim EXP-{claimNumber}, approved {date} by {name}`; `createdById`: the settler. Line and run totals recomputed exactly as `addAdjustmentAction` does — the seam calls Payroll's own function rather than re-implementing it.
+4. **The person must be on the run with a payable line.** No `PayrollLine` for the claimant on that run (joined mid-month, left), or a line with `NO_SALARY_STRUCTURE` (excluded at approval, its adjustments dropped from the totals) → `NO_LINE_FOR_PERSON`; same two choices offered. A `BLOCKED` line (negative net) is on the run — a reimbursement only helps it.
+5. **Whole rupees, one figure on both sides** *(owner decision, 7 September 2026)*. Payroll works in whole rupees (`roundRupees`, half-up), so the seam writes `roundRupees(approvedAmount)` as the adjustment **and** as the settlement record’s `amount`; the claim keeps its approved paise, and every screen that shows the settlement states the rounding ("₹1,240.50 approved, rounded to ₹1,241.00 — payroll works in whole rupees"). Without this, the payslip and the expense record would carry two different truths for one payment. **Adjustment shape** — `label`: `Expense · {categoryName} · EXP-{claimNumber}`; `amount`: the rounded figure; `reason`: `Expense claim EXP-{claimNumber}, approved {date} by {name}`; `createdById`: the settler. Line and run totals are recomputed by Payroll’s own `recordAdjustment` (`src/lib/payroll/adjustments.ts`, extracted from `addAdjustmentAction` at E2 so it can run inside the settlement transaction) — the seam never re-implements payroll arithmetic.
 6. **One-to-one.** `ExpenseSettlement.payrollAdjustmentId` is unique; the seam is idempotent per claim (a retry after a network failure finds the existing settlement and returns it).
 7. **Payslip traceability** is the adjustment line itself: label and reason carry the claim number, so a payslip reader can find the claim and a claim reader can find the run. No new field on `PayrollAdjustment`.
 8. **Payroll pulls, too (E2).** The run screen lists `APPROVED` claims for people on the run, with one-tap settle into it. Both directions use the same seam.
 
-What is *not* in the contract: Expenses never reads salary, bank details or payslips; the seam receives a claim and returns an id. `payroll.view` is not required to settle — the settler learns nothing about pay.
+What is *not* in the contract: Expenses never reads salary, bank details or payslips; the seam receives a claim and returns an id. Neither `payroll.view` nor `payroll.edit` is required to settle — the settler learns nothing about pay, and `recordAdjustment` is deliberately permission-free so this boundary holds (its docblock says so; do not "fix" it).
+
+**A guard Payroll gained at E2.** The run preview now lists *adjustments on lines the run will not pay* — a person whose salary structure was removed, or who left, after a settlement landed on their line. The run screen shows them as a warning naming the person, count and amount, so a reimbursement can never silently vanish from every payslip.
 
 ---
 
@@ -467,7 +469,7 @@ The only import from `@/lib/payroll` anywhere under `src/lib/expenses/` is insid
 |---|---|---|
 | **E0** (this document) | model, schema, permissions, flags, policy, contracts, acceptance | any code |
 | **E1 — Core** | migration + RLS; enum, transition function, invariants, pure-logic tests; `expenses` policy + normaliser + settings editor with categories; `expenses.approve`/`expenses.view` in catalog + role templates + Amendment 3; submit (submit-only, no drafts) with receipt upload + validation + flags; employee history + detail; `EXPENSE_CLAIM` tile kind; decision card (approve / partial / reject); **employee withdrawal** (confirmation, optional reason, tile resolution); `OUTSIDE` settlement; transitions + audit; bell notifications; module-off behaviour; purge cascade | payroll route (E2), advances (E3), reports/export/retention sweep (E4), drafts, department-scoped `expenses.view` |
-| **E2 — Payroll integration** | `settle-payroll.ts` seam and all four results; run screen "approved claims waiting"; locked-period handling; payslip traceability; boundary test | anything that changes Payroll's own lifecycle |
+| **E2 — Payroll integration** *(built 8 Sept 2026)* | `settle-payroll.ts` seam and all four results; whole-rupee rounding at the seam; route-aware `settleClaimAction` recomputing offered routes at write time; claim-page preview of what payroll would do; run screen "claims waiting to settle into this run" with one-tap settle; excluded-line adjustment warning; payslip traceability via label and reason; import-boundary test; integration suite (refusals write nothing, rounded settlement, no payroll permission, idempotency, recalculation keeps the adjustment, approval preview includes it) | anything that changes Payroll’s own lifecycle |
 | **E3 — Advances** | `EXPENSES.advances` flag; advance issue (recorded, not paid); recovery schedule; outstanding balance on the claim and the person; recovery against claims; recovery through payroll via the §13 seam (negative adjustment); early settlement; the `PAYROLL.advances` collision decision | interest, salary advances |
 | **E4 — Reporting & retention** | expense / category / employee / decision reports; outstanding advances; Excel + PDF export (`reports.export`); per-tenant data export; **receipt retention sweep** honouring `receiptRetentionYears` with a `SYSTEM` audit event per deletion — the first concrete answer to ACCEPTANCE.md's "retention honoured" line; **receipt storage purge** on tenant deletion (empty the `{tenantId}/` prefix of `expense-receipts` from `purgeTenant` — the storage half §10 defers) | analytics, budgets |
 
@@ -556,6 +558,8 @@ Three places where the build differs from the E0 text. Each was reported at veri
 3. **No policy gate on enabling the module** (§7, §8). Optional modules are enabled by the platform contact, so a gate on tenant-published rules would deadlock. The equivalent protection lives in the screens: empty state, refused submission, publish-first alert.
 
 Also landed at E1, beyond this module: action tiles now carry their module for every kind, so a tile whose module is off is hidden and its decide action refuses — the enforcement §7 asked for, applied consistently.
+
+**E2 (8 September 2026).** No deviation from §13 as amended. Two things worth knowing that the contract did not spell out: the seam accepts a `BLOCKED` (negative-net) line as "on the run", refusing only `NO_SALARY_STRUCTURE` and absent lines (rule 4); and `addAdjustmentAction` now runs inside a transaction — same inputs, same messages, same audit event, one difference in failure mode (all-or-nothing).
 
 ---
 
