@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { ChakraMark } from "@/components/brand/ChakraMark";
+import { FlowHRMSLockup, FlowHRMSWordmark } from "@/components/brand/FlowHRMSWordmark";
 
 /**
  * The marketing header: fixed, translucent, shrinking on scroll, with a
@@ -65,14 +65,9 @@ export function MarketingNav() {
   return (
     <>
       <nav className="m-nav" data-scrolled={scrolled ? "true" : "false"} aria-label="Main">
-        <Link href="/" className="flex items-center gap-2.5 text-[color:var(--m-navy)]">
-          <ChakraMark size={28} />
-          <span className="font-[family-name:var(--m-font-head)] text-[19px] font-extrabold tracking-[0.02em]">
-            STF
-          </span>
-          <span className="hidden border-l border-[color:var(--m-border-strong)] pl-2.5 text-xs text-[color:var(--m-muted)] md:inline">
-            Sudarshan Task Force
-          </span>
+        <Link href="/" className="flex items-center" aria-label="FlowHRMS home">
+          <FlowHRMSWordmark height={28} className="md:hidden" />
+          <FlowHRMSLockup height={28} className="hidden md:inline-flex" />
         </Link>
 
         <div className="hidden items-center gap-7 md:flex">
@@ -134,15 +129,13 @@ export function MarketingNav() {
             className="fixed inset-y-0 right-0 z-[71] flex w-[min(320px,85vw)] flex-col gap-2 bg-[color:var(--m-navy)] p-6 text-[color:var(--m-cream)]"
           >
             <div className="mb-5 flex items-center justify-between">
-              <span className="font-[family-name:var(--m-font-head)] text-lg font-extrabold">
-                STF
-              </span>
+              <FlowHRMSWordmark height={24} tone="dark" />
               <button
                 ref={closeButton}
                 type="button"
                 onClick={close}
                 aria-label="Close menu"
-                className="size-11 rounded-[11px] border border-[rgba(251,248,242,.25)] text-lg text-[color:var(--m-cream)]"
+                className="size-11 rounded-[11px] border border-[rgba(245,245,245,.25)] text-lg text-[color:var(--m-cream)]"
               >
                 ✕
               </button>

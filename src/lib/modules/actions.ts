@@ -64,7 +64,7 @@ export async function setModuleEnabledAction(
     return {
       ok: false,
       error:
-        "Optional modules are enabled by your STF contact once their rules are approved.",
+        "Optional modules are enabled by your FlowHRMS contact once their rules are approved.",
     };
   }
 

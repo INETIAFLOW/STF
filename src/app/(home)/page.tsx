@@ -12,7 +12,7 @@ import { Ticker } from "@/components/marketing/Ticker";
 import { UseCases } from "@/components/marketing/UseCases";
 
 export const metadata: Metadata = {
-  title: "STF — Sudarshan Task Force",
+  title: "FlowHRMS by Flowacord",
   description:
     "Know who is working, what got done, and what you owe—from one phone-first system built for Indian SMEs.",
 };
@@ -33,7 +33,7 @@ export default async function LandingPage() {
     if (session.permissions.has("admin.access")) redirect("/admin");
     redirect("/home");
   }
-  // Authenticated with Supabase but no usable STF account — sign-in says
+  // Authenticated with Supabase but no usable FlowHRMS account — sign-in says
   // why, rather than dropping them on marketing with no explanation.
   if (await hasSupabaseUser()) redirect("/sign-in?error=no-access");
 
@@ -86,7 +86,7 @@ export default async function LandingPage() {
             Five things that decide your day
           </h2>
           <p className="m-section-lede">
-            Every morning starts with the same questions. STF answers them before the first chai.
+            Every morning starts with the same questions. FlowHRMS answers them before the first chai.
           </p>
         </Reveal>
         <Reveal delay={100}>
@@ -120,7 +120,7 @@ export default async function LandingPage() {
       {/* ----------------------------------------------------- use cases */}
       <section id="usecases" className="m-shell py-24" aria-labelledby="usecases-heading">
         <Reveal className="mb-11 max-w-[620px]">
-          <p className="m-eyebrow mb-3.5">WHO RUNS ON STF</p>
+          <p className="m-eyebrow mb-3.5">WHO RUNS ON FLOWHRMS</p>
           <h2 id="usecases-heading" className="m-h2 mb-3.5">
             Built for the way real teams work
           </h2>

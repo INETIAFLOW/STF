@@ -3,10 +3,10 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { getAppSession } from "@/lib/auth/session";
-import { ChakraLockup, ChakraMark } from "@/components/brand/ChakraMark";
 import { marketingFontVariables } from "../../marketing-fonts";
 import { SignInForm } from "./SignInForm";
 import "@/styles/marketing.css";
+import { FlowHRMSLockup } from "@/components/brand/FlowHRMSWordmark";
 
 export const metadata: Metadata = { title: "Sign in" };
 
@@ -24,7 +24,7 @@ export const metadata: Metadata = { title: "Sign in" };
  *
  * The "already signed in, go to your surface" redirect lives here rather
  * than in the proxy because it is only correct if the person actually has
- * an STF account, and only the database knows that.
+ * an FlowHRMS account, and only the database knows that.
  */
 export default async function SignInPage({
   searchParams,
@@ -44,8 +44,8 @@ export default async function SignInPage({
     >
       {/* ------------------------------------------- what's on the other side */}
       <aside className="relative hidden flex-col justify-between gap-10 overflow-hidden bg-[color:var(--m-navy)] px-12 py-10 md:flex">
-        <Link href="/" className="w-max" aria-label="Sudarshan Task Force home">
-          <ChakraLockup tone="dark" caption />
+        <Link href="/" className="w-max" aria-label="FlowHRMS home">
+          <FlowHRMSLockup height={30} tone="dark" />
         </Link>
 
         <div className="max-w-[460px]">
@@ -56,7 +56,7 @@ export default async function SignInPage({
             Attendance, tasks, leave and payroll inputs—waiting on the other side of this door.
           </p>
 
-          <div className="max-w-[380px] rounded-[14px] border border-[rgba(251,248,242,.12)] bg-[rgba(251,248,242,.05)] px-5 py-[18px]">
+          <div className="max-w-[380px] rounded-[14px] border border-[rgba(245,245,245,.12)] bg-[rgba(245,245,245,.05)] px-5 py-[18px]">
             <div className="mb-3.5 flex items-center justify-between">
               <span className="font-[family-name:var(--m-font-head)] text-[13.5px] font-bold text-[color:var(--m-cream)]">
                 Today · while you were away
@@ -86,17 +86,17 @@ export default async function SignInPage({
         </div>
 
         <div className="text-[12.5px] text-[color:var(--m-on-navy)]">
-          Made for Indian SMEs · Phone-first
+          <span className="block font-[family-name:var(--m-font-head)] text-[11px] font-semibold uppercase tracking-[0.18em] text-[color:var(--m-on-navy-2)]">
+            Align. Accelerate. Grow.
+          </span>
+          <span className="mt-1.5 block">Made for Indian SMEs · Phone-first · help@flowacord.com</span>
         </div>
       </aside>
 
       {/* --------------------------------------------------------- the form */}
       <main className="flex flex-col items-center justify-center px-7 py-10">
-        <Link href="/" className="mb-9 flex items-center gap-2.5 md:hidden" aria-label="Sudarshan Task Force home">
-          <ChakraMark size={26} />
-          <span className="font-[family-name:var(--m-font-head)] text-lg font-extrabold text-[color:var(--m-navy)]">
-            STF
-          </span>
+        <Link href="/" className="mb-9 md:hidden" aria-label="FlowHRMS home">
+          <FlowHRMSLockup height={28} />
         </Link>
 
         <div className="w-[min(400px,100%)]">
@@ -110,7 +110,7 @@ export default async function SignInPage({
               role="alert"
               className="mb-6 rounded-xl border border-[rgba(245,185,64,.5)] bg-[rgba(245,185,64,.12)] p-4 text-[13.5px] leading-[1.55] text-[color:var(--m-navy)]"
             >
-              <p className="mb-1.5 font-bold">That account can&apos;t open STF right now.</p>
+              <p className="mb-1.5 font-bold">That account can&apos;t open FlowHRMS right now.</p>
               <p>
                 Your password was accepted, so the account exists — but it has no active company
                 here. Usually that means it was deactivated, or the company was closed. Your admin
@@ -145,7 +145,7 @@ export default async function SignInPage({
           </Suspense>
 
           <p className="mt-3.5 text-[12.5px] leading-[1.55] text-[color:var(--m-muted-2)]">
-            Only your company can create your STF account. If you can&apos;t sign in, ask your admin
+            Only your company can create your FlowHRMS account. If you can&apos;t sign in, ask your admin
             or owner.
           </p>
         </div>

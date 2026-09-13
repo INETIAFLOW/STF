@@ -38,7 +38,7 @@ export function Drawer({ open, onClose, title, children, footer }: DrawerProps) 
       onCancel={onClose}
       onClose={() => open && onClose()}
       className={cn(
-        "m-0 w-full bg-surface-raised p-0 text-text-primary shadow-elevation-4 backdrop:bg-[var(--stf-color-surface-overlay)]",
+        "m-0 w-full bg-surface-raised p-0 text-text-primary shadow-elevation-4 backdrop:bg-[var(--fh-color-surface-overlay)]",
         // Mobile: bottom sheet at 90% height.
         "fixed inset-x-0 top-auto bottom-0 h-[90dvh] max-h-[90dvh] rounded-t-sheet",
         // md+: right panel, full height.

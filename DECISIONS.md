@@ -1,4 +1,4 @@
-# STF Decisions Log
+# FlowHRMS Decisions Log
 
 Append-only. Each entry: date, owner, decision, reason. Product-level
 decisions belong in the Pack 01 documents first (Constitution §8); this
@@ -18,8 +18,8 @@ driver-adapter API (`@prisma/adapter-pg`) and `prisma.config.ts`.
 `component-states.md` §2 specifies exact hover/active values that are not
 in `colors.json` (secondary button hover `#DDE3F9`, active `#D3DAF6`,
 switch off-track hover `#B7BFD6`). Added in `scripts/generate-tokens.mjs`
-as `--stf-color-brand-primary-subtle-hover/-active` and
-`--stf-color-border-strong-hover`, with dark values derived to match the
+as `--fh-color-brand-primary-subtle-hover/-active` and
+`--fh-color-border-strong-hover`, with dark values derived to match the
 dark ramp. Values come from the approved states matrix, not invention.
 *Needs design confirmation of the three dark-mode values.*
 
@@ -52,7 +52,7 @@ computation, affected counts and audit events (Constitution §5); shipping
 a toggle without that flow would violate the design contract, so it ships
 complete in a later phase.
 
-**D-P1-07 · 2026-08-07 · Dev preview session** — `STF_DEV_FAKE_SESSION`
+**D-P1-07 · 2026-08-07 · Dev preview session** — `FLOWHRMS_DEV_FAKE_SESSION`
 renders the shell with fixture data in development only (double-guarded by
 `NODE_ENV`). Exists so UI can be reviewed before Supabase/database
 credentials are available. Remove or gate before any shared deployment
@@ -97,7 +97,7 @@ Accuracy worse than 200 m is treated as "cannot confirm" and routed to the
 approval path, never a silent pass.
 
 **D-P2-04 · 2026-08-08 · Dev preview session reads the real database** —
-`STF_DEV_FAKE_SESSION` now resolves the demo tenant's real membership when
+`FLOWHRMS_DEV_FAKE_SESSION` now resolves the demo tenant's real membership when
 `DATABASE_URL` is set, falling back to static placeholders otherwise. Page
 code guards on `devFixtureOffline()` ("is there a database?") rather than
 "is this a preview session?". Still development-only and double-guarded.
@@ -125,7 +125,7 @@ as Enabled/Disabled rather than failing silently (user-flows.md §6).
 
 ## Phase 3 — Payroll and Reporting
 
-**D-P3-01 · 2026-08-08 · STF ships NO statutory formulas** — The payroll
+**D-P3-01 · 2026-08-08 · FlowHRMS ships NO statutory formulas** — The payroll
 engine contains no PF, ESI, professional tax or TDS calculation. Those are
 tenant-defined salary components whose amount or percentage the customer's
 accountant supplies, flagged `isStatutory` so every screen and payslip can
@@ -277,7 +277,7 @@ who works at a company.
 **D-P6-04 · 2026-08-09 · Missed check-out is a request, never an
 invention** — The employee proposes a time with a reason; it is stored as
 a pending exception and only becomes the record when a manager approves.
-STF never writes a check-out time nobody gave it (edge-cases.md).
+FlowHRMS never writes a check-out time nobody gave it (edge-cases.md).
 
 **D-P6-05 · 2026-08-09 · Company logo upload deliberately not built** —
 The screen says why: where tenant files are stored and how long they are
@@ -354,18 +354,18 @@ next person on the phone must not inherit it. So sign-out names what would
 be lost and offers to send it, rather than clearing quietly.
 
 **D-P7-08 · 2026-08-09 · Admin work is never queued** — Approvals, payroll
-and configuration require a connection; the admin bar says so. STF will
+and configuration require a connection; the admin bar says so. FlowHRMS will
 not accept a decision it cannot guarantee (implementation guide §7).
 
 ---
 
 ## Phase 8 — Employee onboarding and the action queue
 
-**D-P8-01 · 2026-08-10 · STF owns the invitation; Supabase owns the
+**D-P8-01 · 2026-08-10 · FlowHRMS owns the invitation; Supabase owns the
 password** — Supabase's own invite email would have been less code, but the
 state we need (Pending / Accepted / Expired / Revoked, resend counts,
 cooldown, a copyable link) would live in a system we cannot query, and the
-message would be branded Supabase rather than the employer. So STF issues
+message would be branded Supabase rather than the employer. So FlowHRMS issues
 its own token and sends its own email; only the auth account is Supabase's.
 
 **D-P8-02 · 2026-08-10 · Only the hash of a token is stored** — 32 CSPRNG

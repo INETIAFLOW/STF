@@ -66,7 +66,7 @@ export default async function EmployeeLayout({
         >
           Skip to content
         </a>
-        <Sidebar {...nav} label="Your STF" />
+        <Sidebar {...nav} label="Your FlowHRMS" />
         <OfflineProvider>
           <ActionQueueProvider enabled={session.source === "supabase"}>
             <div className="flex min-w-0 flex-1 flex-col">
@@ -79,7 +79,7 @@ export default async function EmployeeLayout({
               <OfflineBar />
               <main
                 id="main"
-                className="mx-auto w-full max-w-[640px] flex-1 px-4 pt-4 pb-[calc(var(--stf-layout-bottom-nav-height)+env(safe-area-inset-bottom)+var(--stf-space-6))] sm:px-5 md:pb-6"
+                className="mx-auto w-full max-w-[640px] flex-1 px-4 pt-4 pb-[calc(var(--fh-layout-bottom-nav-height)+env(safe-area-inset-bottom)+var(--fh-space-6))] sm:px-5 md:pb-6"
               >
                 {children}
               </main>

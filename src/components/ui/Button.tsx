@@ -86,13 +86,13 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         aria-describedby={showReason ? reasonId : undefined}
         className={cn(
           "relative inline-flex items-center justify-center gap-2 font-heading font-semibold whitespace-nowrap select-none",
-          "transition-colors duration-[var(--stf-motion-duration-fast)]",
+          "transition-colors duration-[var(--fh-motion-duration-fast)]",
           sizeClasses[size],
           isDisabled
             ? "bg-surface-disabled text-text-disabled cursor-not-allowed shadow-none"
             : variantClasses[variant],
           variant === "danger" &&
-            "focus-visible:[box-shadow:var(--stf-shadow-focus-ring-danger)]",
+            "focus-visible:[box-shadow:var(--fh-shadow-focus-ring-danger)]",
           className,
         )}
         {...rest}

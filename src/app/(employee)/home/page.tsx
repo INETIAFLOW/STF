@@ -91,7 +91,7 @@ export default async function EmployeeHomePage() {
           <Link href="/performance" className="block">
             <Card className="transition-shadow hover:shadow-elevation-2">
               {performance.boost && (
-                <p className="mb-3 rounded-input bg-[color:var(--stf-color-status-warning-bg)] px-3 py-2 text-caption font-semibold text-status-warning-fg">
+                <p className="mb-3 rounded-input bg-[color:var(--fh-color-status-warning-bg)] px-3 py-2 text-caption font-semibold text-status-warning-fg">
                   ×{performance.boost.multiplier} points — {performance.boost.name}
                 </p>
               )}

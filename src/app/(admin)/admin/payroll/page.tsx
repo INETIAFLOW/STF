@@ -136,7 +136,7 @@ export default async function AdminPayrollPage({
       <div className="flex flex-col gap-5">
         <h1 className="font-heading text-h1 text-text-primary">Payroll</h1>
         <Alert variant="info" title="Set salaries first">
-          Tell STF what each person is paid per month. Payroll is calculated
+          Tell FlowHRMS what each person is paid per month. Payroll is calculated
           from that, your attendance records and approved leave.
         </Alert>
         <Card flush>
@@ -399,7 +399,7 @@ export default async function AdminPayrollPage({
       </section>
 
       <p className="text-caption text-text-secondary">
-        Statutory calculations must be checked by your accountant. STF does
+        Statutory calculations must be checked by your accountant. FlowHRMS does
         not certify compliance.
       </p>
     </div>

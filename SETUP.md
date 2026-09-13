@@ -1,4 +1,4 @@
-# STF — Local Setup
+# FlowHRMS — Local Setup
 
 ## Prerequisites
 
@@ -22,7 +22,7 @@ Copy `.env.example` to `.env.local` and fill in:
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Supabase → Settings → API → publishable key | Auth (safe for the browser) |
 | `DATABASE_URL` | Supabase → Settings → Database (pooled, port 6543, or direct 5432) | App runtime (Prisma) |
 | `DIRECT_URL` | Supabase → Settings → Database (direct, port 5432) | Migrations + seed (CLI) |
-| `STF_DEV_FAKE_SESSION` | dev only — see SECURITY-NOTES.md | Preview without auth/DB |
+| `FLOWHRMS_DEV_FAKE_SESSION` | dev only — see SECURITY-NOTES.md | Preview without auth/DB |
 
 ## 3. Database
 
@@ -63,7 +63,7 @@ npm run dev
 For UI review only, set in `.env.local`:
 
 ```
-STF_DEV_FAKE_SESSION=owner   # or employee | admin | hr | manager
+FLOWHRMS_DEV_FAKE_SESSION=owner   # or employee | admin | hr | manager
 ```
 
 The shell renders with fixture data (clearly-labelled placeholders), all

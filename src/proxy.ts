@@ -65,7 +65,7 @@ async function withTimeout<T>(
 function devFixtureActive(): boolean {
   return (
     process.env.NODE_ENV === "development" &&
-    Boolean(process.env.STF_DEV_FAKE_SESSION?.trim())
+    Boolean(process.env.FLOWHRMS_DEV_FAKE_SESSION?.trim())
   );
 }
 
@@ -137,7 +137,7 @@ export default async function proxy(request: NextRequest) {
 
   // Deliberately NOT redirecting an authenticated visitor away from
   // /sign-in. This layer only knows that Supabase recognises someone; it
-  // cannot know whether they still have a usable STF account, and the two
+  // cannot know whether they still have a usable FlowHRMS account, and the two
   // come apart routinely — a deactivated employee, a membership removed, a
   // tenant closed, an invited user not yet linked. For all of those,
   // getAppSession() is null while getUser() is not.

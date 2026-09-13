@@ -2,6 +2,13 @@ import { ImageResponse } from "next/og";
 import { checkAccess } from "@/lib/authz/guard";
 import { getDb } from "@/lib/db";
 import { BADGES } from "@/lib/performance/badges";
+import {
+  FLOWACORD,
+  MARK_ARROW,
+  MARK_DOTS,
+  MARK_RADIUS,
+  MARK_VIEWBOX,
+} from "@/components/brand/FlowacordMark";
 
 export const dynamic = "force-dynamic";
 
@@ -21,10 +28,8 @@ export const dynamic = "force-dynamic";
  * dependency, no binary assets, brand colours inline.
  */
 
-const NAVY = "#10253F";
-const CREAM = "#FBF8F2";
-const VERMILION = "#F04E30";
-const AMBER = "#F5B940";
+const NAVY = FLOWACORD.ground;
+const CREAM = FLOWACORD.paper;
 
 export async function GET(
   _request: Request,
@@ -79,39 +84,18 @@ export async function GET(
           fontFamily: "sans-serif",
         }}
       >
-        {/* the chakra, as rings satori understands */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            width: 120,
-            height: 120,
-            borderRadius: 60,
-            border: `7px solid ${CREAM}`,
-          }}
+        {/* the Flowacord mark — the official geometry, as the app icon draws it */}
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width={124}
+          height={127}
+          viewBox={MARK_VIEWBOX}
         >
-          <div
-            style={{
-              width: 64,
-              height: 64,
-              borderRadius: 32,
-              border: `7px solid ${VERMILION}`,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <div
-              style={{
-                width: 20,
-                height: 20,
-                borderRadius: 10,
-                backgroundColor: AMBER,
-              }}
-            />
-          </div>
-        </div>
+          {MARK_DOTS.map(([cx, cy, fill]) => (
+            <circle key={`${cx},${cy}`} cx={cx} cy={cy} r={MARK_RADIUS} fill={fill} />
+          ))}
+          <path d={MARK_ARROW} fill={FLOWACORD.lavender} />
+        </svg>
 
         <div style={{ display: "flex", fontSize: 26, marginTop: 36, opacity: 0.75 }}>
           Badge earned
@@ -127,7 +111,7 @@ export async function GET(
         >
           {badge.name}
         </div>
-        <div style={{ display: "flex", fontSize: 28, marginTop: 14, color: AMBER }}>
+        <div style={{ display: "flex", fontSize: 28, marginTop: 14, color: FLOWACORD.lavenderLight }}>
           {firstName} · {session.tenant.name}
         </div>
         <div style={{ display: "flex", fontSize: 22, marginTop: 8, opacity: 0.6 }}>
@@ -142,7 +126,7 @@ export async function GET(
             letterSpacing: 2,
           }}
         >
-          STF · Sudarshan Task Force
+          FlowHRMS · by Flowacord
         </div>
       </div>
     ),

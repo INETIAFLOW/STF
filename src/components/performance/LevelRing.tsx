@@ -30,7 +30,7 @@ export function LevelRing({
           cy={size / 2}
           r={r}
           fill="none"
-          stroke="var(--stf-color-border-subtle)"
+          stroke="var(--fh-color-border-subtle)"
           strokeWidth={stroke}
         />
         <circle
@@ -38,7 +38,7 @@ export function LevelRing({
           cy={size / 2}
           r={r}
           fill="none"
-          stroke="var(--stf-color-brand-primary)"
+          stroke="var(--fh-color-brand-primary)"
           strokeWidth={stroke}
           strokeLinecap="round"
           strokeDasharray={`${sweep} ${circumference}`}

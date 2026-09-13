@@ -1,8 +1,8 @@
 import Link from "next/link";
-import { ChakraMark } from "@/components/brand/ChakraMark";
 import { MarketingNav } from "@/components/marketing/MarketingNav";
 import { marketingFontVariables } from "../marketing-fonts";
 import "@/styles/marketing.css";
+import { FlowHRMSLockup } from "@/components/brand/FlowHRMSWordmark";
 
 /**
  * The homepage shell.
@@ -34,10 +34,10 @@ export default function HomeLayout({ children }: { children: React.ReactNode }) 
 
       <footer className="bg-[color:var(--m-navy-deep)] px-7 py-9 text-[color:var(--m-on-navy)]">
         <div className="mx-auto flex max-w-[1240px] flex-wrap items-center justify-between gap-5 text-[13px]">
-          <div className="flex items-center gap-2.5 text-[color:var(--m-on-navy-2)]">
-            <ChakraMark size={20} tone="dark" />
-            <span className="font-[family-name:var(--m-font-head)] font-bold">
-              Sudarshan Task Force
+          <div className="flex flex-col gap-2">
+            <FlowHRMSLockup height={22} tone="dark" />
+            <span className="font-[family-name:var(--m-font-head)] text-[11px] font-semibold uppercase tracking-[0.18em] text-[color:var(--m-on-navy-2)]">
+              Align. Accelerate. Grow.
             </span>
           </div>
           <div className="flex flex-wrap gap-6">
@@ -57,7 +57,18 @@ export default function HomeLayout({ children }: { children: React.ReactNode }) 
               Request a demo
             </Link>
           </div>
-          <div>Made for Indian SMEs · Phone-first</div>
+          <div className="flex flex-col gap-1 text-[color:var(--m-on-navy-2)] sm:text-right">
+            <span>© Flowacord · Made for Indian SMEs · Phone-first</span>
+            <span>
+              <a href="mailto:help@flowacord.com" className="hover:text-[color:var(--m-cream)]">
+                help@flowacord.com
+              </a>
+              {" · "}
+              <a href="tel:+918908888880" className="hover:text-[color:var(--m-cream)]">
+                +91 89088 88880
+              </a>
+            </span>
+          </div>
         </div>
       </footer>
     </div>

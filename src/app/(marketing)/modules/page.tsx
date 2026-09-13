@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 
 /**
  * Module overview (screen M4). States dependencies and the V1 exclusions
- * plainly — a customer should know what STF does not do before buying.
+ * plainly — a customer should know what FlowHRMS does not do before buying.
  */
 export default function ModulesPage() {
   const core = Object.values(MODULES).filter((m) => m.category !== "OPTIONAL");

@@ -1,7 +1,7 @@
 /**
  * Grant or revoke Platform Super Admin.
  *
- * This is the only privilege in STF that crosses company boundaries, and
+ * This is the only privilege in FlowHRMS that crosses company boundaries, and
  * nothing inside the product can hand it out — no role, no permission, no
  * screen. It is set here, deliberately, so that granting it is a decision
  * someone makes at a terminal with the database in front of them rather
@@ -54,7 +54,7 @@ async function main() {
 
   const user = await db.user.findUnique({ where: { email } });
   if (!user) {
-    console.error(`No user with that email. They must sign in to STF first.`);
+    console.error(`No user with that email. They must sign in to FlowHRMS first.`);
     process.exit(1);
   }
   if (user.isPlatformAdmin === !revoke) {

@@ -22,10 +22,10 @@ export interface ErrorStateProps {
 function ErrorIllustration() {
   return (
     <svg aria-hidden="true" width="96" height="96" viewBox="0 0 96 96" className="mb-4">
-      <circle cx="48" cy="48" r="44" fill="var(--stf-color-status-error-bg)" />
-      <rect x="22" y="30" width="34" height="12" rx="6" fill="var(--stf-color-status-error-fg)" opacity="0.35" />
-      <rect x="34" y="46" width="40" height="12" rx="6" fill="var(--stf-color-status-error-fg)" opacity="0.65" />
-      <rect x="46" y="62" width="30" height="12" rx="6" fill="var(--stf-color-status-error-fg)" />
+      <circle cx="48" cy="48" r="44" fill="var(--fh-color-status-error-bg)" />
+      <rect x="22" y="30" width="34" height="12" rx="6" fill="var(--fh-color-status-error-fg)" opacity="0.35" />
+      <rect x="34" y="46" width="40" height="12" rx="6" fill="var(--fh-color-status-error-fg)" opacity="0.65" />
+      <rect x="46" y="62" width="30" height="12" rx="6" fill="var(--fh-color-status-error-fg)" />
     </svg>
   );
 }

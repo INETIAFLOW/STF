@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { requirePlatformAdmin } from "@/lib/authz/guard";
 import { ToastProvider } from "@/components/ui/Toast";
+import { FlowHRMSWordmark } from "@/components/brand/FlowHRMSWordmark";
 
 /**
- * The operator's surface — the only one in STF that shows more than one
+ * The operator's surface — the only one in FlowHRMS that shows more than one
  * company at a time.
  *
  * It deliberately does NOT reuse the admin shell. That shell puts a single
@@ -29,7 +30,7 @@ export default async function PlatformLayout({
           Skip to content
         </a>
 
-        {/* Not decoration. Every other screen in STF belongs to exactly one
+        {/* Not decoration. Every other screen in FlowHRMS belongs to exactly one
             company; this one does not, and it should be impossible to
             forget that. */}
         <div className="bg-text-primary px-5 py-2 text-center lg:px-8">
@@ -41,7 +42,7 @@ export default async function PlatformLayout({
 
         <header className="border-b border-border-default bg-surface-default">
           <div className="mx-auto flex max-w-[1200px] flex-wrap items-center gap-x-6 gap-y-2 px-5 py-3 lg:px-8">
-            <span className="font-heading text-h3 text-text-primary">STF</span>
+            <FlowHRMSWordmark height={24} />
             <nav aria-label="Platform" className="flex flex-wrap gap-1">
               <Link
                 href="/platform"

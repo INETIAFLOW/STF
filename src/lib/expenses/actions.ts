@@ -402,7 +402,7 @@ const settleSchema = z.object({
 });
 
 /**
- * Settlement (§12): a RECORD of how it was paid — STF moves no money.
+ * Settlement (§12): a RECORD of how it was paid — FlowHRMS moves no money.
  * The routes offered are recomputed here, at write time, from the Payroll
  * entitlement: a PAYROLL request while Payroll is off is refused with a
  * plain message, never silently downgraded. OUTSIDE records free text;

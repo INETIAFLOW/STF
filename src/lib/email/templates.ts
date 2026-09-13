@@ -4,7 +4,7 @@
  *
  * Written to voice-and-microcopy.md: plain, specific, no marketing, no
  * urgency theatre. The recipient is a warehouse supervisor or a delivery
- * driver, and this may be the first they have heard of STF — so the first
+ * driver, and this may be the first they have heard of FlowHRMS — so the first
  * line says who it is from and why, and the deadline is a date rather than
  * "act now".
  *
@@ -51,11 +51,11 @@ export function inviteEmail(input: InviteEmailInput): {
 
   const subject = input.isResend
     ? `Your ${input.companyName} sign-in link (sent again)`
-    : `${input.companyName} has set up your STF account`;
+    : `${input.companyName} has set up your FlowHRMS account`;
 
   const opening = input.isResend
     ? `Here is your sign-in link again, in case the first one didn't reach you.`
-    : `${input.invitedByName} has set up an account for you on Sudarshan Task Force, which ${input.companyName} uses for attendance, leave and daily work.`;
+    : `${input.invitedByName} has set up an account for you on FlowHRMS, which ${input.companyName} uses for attendance, leave and daily work.`;
 
   const lines = [
     `Hello ${firstName},`,

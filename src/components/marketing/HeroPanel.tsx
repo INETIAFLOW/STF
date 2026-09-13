@@ -184,7 +184,7 @@ export function HeroPanel() {
 
       <div className="absolute -left-1.5 -bottom-6 z-[2] w-[190px] rounded-[20px] border border-[color:var(--m-border)] bg-white p-4 shadow-[0_20px_48px_rgba(16,37,63,.18)]">
         <div className="mb-3 flex justify-between text-[10.5px] font-semibold text-[color:var(--m-muted-2)]">
-          <span>STF · Field</span>
+          <span>FlowHRMS · Field</span>
           <span className="m-num">09:12</span>
         </div>
         <div className="mb-0.5 font-[family-name:var(--m-font-head)] text-[15px] font-bold">

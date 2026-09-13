@@ -1,6 +1,6 @@
 /**
  * Private bucket for employee documents (ID and address proofs — the most
- * sensitive files STF holds). Provisioned by scripts/setup-storage.ts;
+ * sensitive files FlowHRMS holds). Provisioned by scripts/setup-storage.ts;
  * reads are signed-URL only, after a permission check, and audited.
  */
 export const DOCUMENT_BUCKET = "employee-documents";

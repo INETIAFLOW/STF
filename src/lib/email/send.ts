@@ -5,7 +5,7 @@ import nodemailer from "nodemailer";
 /**
  * Outbound email.
  *
- * STF sends its own invitations rather than borrowing Supabase's auth
+ * FlowHRMS sends its own invitations rather than borrowing Supabase's auth
  * templates, for one reason that matters on a shop floor: an invitation is
  * a message from a person's *employer*, and it should say the company's
  * name and the admin's name, not "Supabase". The same SMTP credentials
@@ -49,7 +49,7 @@ export function emailConfigured(): boolean {
 }
 
 export const EMAIL_NOT_CONFIGURED =
-  "Email isn't set up yet, so nothing was sent. Copy the link below and send it to them yourself, or ask whoever set up STF to configure email (DEPLOY.md, step 6).";
+  "Email isn't set up yet, so nothing was sent. Copy the link below and send it to them yourself, or ask whoever set up FlowHRMS to configure email (DEPLOY.md, step 6).";
 
 export async function sendMail(input: {
   to: string;

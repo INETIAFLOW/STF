@@ -16,7 +16,7 @@ import type { AppSession } from "./types";
  * Cached per request via React cache().
  */
 /**
- * Does Supabase recognise this visitor, regardless of STF access?
+ * Does Supabase recognise this visitor, regardless of FlowHRMS access?
  *
  * The gap between this and `getAppSession()` is the whole point: someone
  * can hold a perfectly valid auth cookie and still have no usable account

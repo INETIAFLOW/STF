@@ -12,7 +12,7 @@ import type { QueuedAction } from "./queue";
  *
  * No dependency: the surface we need is small enough to wrap by hand.
  */
-const DB_NAME = "stf-offline";
+const DB_NAME = "flowhrms-offline";
 const DB_VERSION = 1;
 const STORE = "queue";
 

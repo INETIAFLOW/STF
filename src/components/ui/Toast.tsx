@@ -105,7 +105,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       <div
         className={cn(
           "pointer-events-none fixed inset-x-0 z-50 flex flex-col items-center gap-2 px-5",
-          "bottom-[calc(var(--stf-layout-bottom-nav-height)+var(--stf-space-3)+env(safe-area-inset-bottom))]",
+          "bottom-[calc(var(--fh-layout-bottom-nav-height)+var(--fh-space-3)+env(safe-area-inset-bottom))]",
           "md:inset-x-auto md:right-6 md:bottom-6 md:items-end",
         )}
       >

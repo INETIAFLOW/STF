@@ -42,7 +42,7 @@ async function main() {
     include: { user: true },
   });
 
-  // --- components defined by the tenant (never shipped by STF)
+  // --- components defined by the tenant (never shipped by FlowHRMS)
   const basic = await db.salaryComponent.upsert({
     where: { tenantId_key: { tenantId: tenant.id, key: "smoke_basic" } },
     update: {},
@@ -71,7 +71,7 @@ async function main() {
     },
   });
   check("tenant-defined components created", Boolean(basic.id && pf.id));
-  check("statutory component is flagged, not computed by STF", pf.isStatutory);
+  check("statutory component is flagged, not computed by FlowHRMS", pf.isStatutory);
 
   // --- salary structure
   const structure = await db.salaryStructure.upsert({

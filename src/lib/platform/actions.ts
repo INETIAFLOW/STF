@@ -20,7 +20,7 @@ type Result =
 /**
  * Submit an enquiry from the marketing site.
  *
- * UNAUTHENTICATED — the only action in STF that is. It therefore assumes
+ * UNAUTHENTICATED — the only action in FlowHRMS that is. It therefore assumes
  * nothing: it validates server-side (the client checks are a courtesy),
  * stores only the fields the form asks for, and refuses once the site has
  * taken more enquiries in an hour than a real business ever would.
@@ -80,7 +80,7 @@ export async function submitDemoRequestAction(
       ].filter(Boolean);
       await sendMail({
         to,
-        subject: `STF enquiry — ${request.company}`,
+        subject: `FlowHRMS enquiry — ${request.company}`,
         text: lines.join("\n"),
         html: `<pre style="font:14px ui-monospace,monospace">${lines
           .join("\n")
@@ -111,7 +111,7 @@ export async function createTenantAction(input: {
 
   const origin =
     process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ??
-    "https://stf.inetiaflow.com";
+    "https://hrms.flowacord.com";
 
   const result = await provisionTenant(db, {
     name: input.name,

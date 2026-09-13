@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 
 /**
- * The web manifest — what makes STF installable and lets it open without
+ * The web manifest — what makes FlowHRMS installable and lets it open without
  * browser chrome.
  *
  * `start_url: "/"` is deliberate. `src/app/page.tsx` already sends people to
@@ -14,15 +14,15 @@ import type { MetadataRoute } from "next";
 export default function manifest(): MetadataRoute.Manifest {
   return {
     id: "/",
-    name: "Sudarshan Task Force",
-    short_name: "STF",
+    name: "FlowHRMS",
+    short_name: "FlowHRMS",
     description:
-      "Workforce, tasks, attendance and payroll inputs in one phone-first system.",
+      "FlowHRMS by Flowacord — workforce, tasks, attendance and payroll inputs in one phone-first system.",
     start_url: "/",
     scope: "/",
     display: "standalone",
-    background_color: "#10253F",
-    theme_color: "#10253F",
+    background_color: "#010123",
+    theme_color: "#010123",
     lang: "en",
     dir: "ltr",
     categories: ["business", "productivity"],

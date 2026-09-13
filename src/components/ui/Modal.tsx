@@ -67,7 +67,7 @@ export function Modal({
       onCancel={handleCancel}
       onClose={() => open && onClose()}
       className={cn(
-        "m-0 w-full bg-surface-raised p-0 text-text-primary shadow-elevation-4 backdrop:bg-[var(--stf-color-surface-overlay)]",
+        "m-0 w-full bg-surface-raised p-0 text-text-primary shadow-elevation-4 backdrop:bg-[var(--fh-color-surface-overlay)]",
         // Mobile: bottom sheet.
         "fixed inset-x-0 top-auto bottom-0 max-h-[90dvh] rounded-t-sheet",
         // md+: centred dialog.

@@ -22,7 +22,7 @@ const MIME = ["image/jpeg", "image/png", "image/heic", "image/webp", "applicatio
 
 /**
  * Both buckets are private and insert-only. Employee documents are ID and
- * address proofs — the most sensitive files STF holds — so they get the
+ * address proofs — the most sensitive files FlowHRMS holds — so they get the
  * same treatment as proof, never a public path (Constitution §7).
  */
 const BUCKETS = ["task-proof", "employee-documents", "expense-receipts"];

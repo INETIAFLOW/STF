@@ -1,6 +1,6 @@
 # Going live
 
-A runbook for putting STF on the internet for a real company. Ordered so
+A runbook for putting FlowHRMS on the internet for a real company. Ordered so
 that each step unblocks the next. Times are honest estimates for someone
 doing it the first time.
 
@@ -142,7 +142,7 @@ No answer confirms direct will not work from an IPv4-only host.
 ## 3. Deploy to Vercel (20 min)
 
 1. [vercel.com](https://vercel.com) → sign in **with GitHub**
-2. **Add New → Project** → import `INETIAFLOW/STF`
+2. **Add New → Project** → import `INETIAFLOW/FlowHRMS`
 3. Framework preset: **Next.js** (auto-detected). Leave the build and
    output settings alone — the repo already runs `prisma generate` as part
    of its build.
@@ -170,13 +170,13 @@ NEXT_PUBLIC_SITE_URL=https://yourdomain.com
    password: never in a commit, never in a client component, rotated if
    exposed.
 
-   Do **not** set `STF_DEV_FAKE_SESSION`. It is ignored outside
+   Do **not** set `FLOWHRMS_DEV_FAKE_SESSION`. It is ignored outside
    development, but there is no reason for it to exist in production.
 
 5. **Deploy.** First build is ~3 minutes.
 6. Settings → Functions → **Region**: set it to match your Supabase region.
 
-You now have a URL like `stf-xyz.vercel.app`. It will load the marketing
+You now have a URL like `flowhrms-xyz.vercel.app`. It will load the marketing
 pages. Sign-in will not work correctly until step 5.
 
 ---
@@ -226,9 +226,9 @@ supervisor.
 
 ---
 
-Point Supabase's SMTP settings and STF's `SMTP_*` variables at the **same
+Point Supabase's SMTP settings and FlowHRMS's `SMTP_*` variables at the **same
 provider account** — one set of credentials, two consumers (Supabase sends
-password resets, STF sends invitations).
+password resets, FlowHRMS sends invitations).
 
 ## 7. Create the customer's company (10 min)
 
@@ -237,14 +237,14 @@ password resets, STF sends invitations).
 Companies are created from **`/platform`**, which is reachable only by a
 Platform Super Admin. That is a single flag on your user record, and
 nothing inside the product can grant it — no role, no permission, no
-screen. Sign in to STF once so your user exists, then:
+screen. Sign in to FlowHRMS once so your user exists, then:
 
 ```bash
 npx tsx scripts/grant-platform-admin.ts --email you@yourcompany.com
 ```
 
 `--list` shows who has it, `--revoke` takes it away. Keep the number of
-people holding it small: it is the only privilege in STF that sees across
+people holding it small: it is the only privilege in FlowHRMS that sees across
 companies.
 
 ### Every customer after that
@@ -306,9 +306,9 @@ typed twice on purpose — this removes a company and everything in it.
 
 ---
 
-## Putting STF on the home screen
+## Putting FlowHRMS on the home screen
 
-STF installs like an app — a real icon, and no address bar taking up the
+FlowHRMS installs like an app — a real icon, and no address bar taking up the
 top of the screen. There is nothing to publish and no app store involved;
 it is a one-time thing each person does on their own phone.
 
@@ -339,7 +339,7 @@ Two things to know before you start:
 - **Without `SUPABASE_SECRET_KEY` (step 3) nobody can sign in.** People are
   still added and their attendance still records — but no sign-in account
   is created, and the invitation page says so plainly. Set the key first.
-- **Without SMTP (step 6) no invitation is emailed.** STF does not pretend
+- **Without SMTP (step 6) no invitation is emailed.** FlowHRMS does not pretend
   otherwise: it shows you a copyable link to send by WhatsApp instead. That
   link is also the answer for staff who have no email address at all.
 
@@ -359,7 +359,7 @@ Three things that are genuinely not optional:
    from sign-in. It must say what is collected, why, and for how long.
 2. **A written agreement with the customer** covering who owns the data
    and what happens to it if they leave.
-3. **Retention windows.** STF does not delete anything today, and there is
+3. **Retention windows.** FlowHRMS does not delete anything today, and there is
    no self-service export or deletion — see `ACCEPTANCE.md` §G. Decide the
    windows with the customer and write them down, even if the deletion is
    manual at first.
@@ -367,7 +367,7 @@ Three things that are genuinely not optional:
 Two further items from `ACCEPTANCE.md` that are still open, so you are not
 surprised by them later: **no assistive-technology testing has been done**,
 and **the payroll rules have not been reviewed by a qualified
-professional**. STF makes no compliance claim and computes no statutory
+professional**. FlowHRMS makes no compliance claim and computes no statutory
 amount — but the customer should hear that from you before their first
 payroll, not after.
 

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import { ResetPasswordForm } from "./ResetPasswordForm";
+import { FlowHRMSLockup } from "@/components/brand/FlowHRMSWordmark";
 
 export const metadata: Metadata = { title: "Set a new password" };
 
@@ -11,13 +11,7 @@ export default function ResetPasswordPage() {
       data-surface="employee"
       className="mx-auto flex min-h-dvh w-full max-w-[480px] flex-col px-5 pb-10 pt-14"
     >
-      <Image
-        src="/brand/STF-logo-primary.svg"
-        alt="Sudarshan Task Force"
-        width={150}
-        height={28}
-        priority
-      />
+      <FlowHRMSLockup height={28} />
       <h1 className="mt-6 font-heading text-h1 text-text-primary">
         Set a new password
       </h1>

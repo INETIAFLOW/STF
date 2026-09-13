@@ -6,7 +6,7 @@ import { iconArt } from "@/lib/brand/icon-art";
  *
  * Safari ignores the manifest's icons and reads `apple-touch-icon`, and it
  * will not accept an SVG — which is all the repo shipped, so an installed
- * STF showed a grey screenshot instead of the mark.
+ * FlowHRMS showed a grey screenshot instead of the mark.
  */
 
 export const size = { width: 180, height: 180 };

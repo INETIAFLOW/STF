@@ -1,30 +1,30 @@
 {
-  "$schema": "STF colour tokens v1.0 — light is primary theme, dark values provided",
+  "$schema": "FlowHRMS colour tokens v1.0 — light is primary theme, dark values provided",
   "color": {
     "brand": {
       "primary": {
-        "value": "#2F45C4",
-        "dark": "#8B97E8"
+        "value": "#7166F3",
+        "dark": "#9F8EF4"
       },
       "primaryHover": {
-        "value": "#263AA8",
-        "dark": "#9FA9EC"
+        "value": "#5E53E8",
+        "dark": "#B3A5F7"
       },
       "primaryActive": {
-        "value": "#1E2F8C",
-        "dark": "#B9C2F2"
+        "value": "#4D43D6",
+        "dark": "#CEB4F5"
       },
       "primarySubtle": {
-        "value": "#E9EDFB",
-        "dark": "#232A5C"
+        "value": "#EEEBFE",
+        "dark": "#262462"
       },
       "navy": {
-        "value": "#12172E",
-        "dark": "#F1F2F8"
+        "value": "#34327F",
+        "dark": "#F1F0FA"
       },
       "navyDeep": {
-        "value": "#0E1230",
-        "dark": "#0A0D22"
+        "value": "#010123",
+        "dark": "#010123"
       }
     },
     "accent": {
@@ -59,7 +59,7 @@
     "surface": {
       "canvas": {
         "value": "#F7F8FC",
-        "dark": "#0E1230"
+        "dark": "#07062A"
       },
       "canvasWarm": {
         "value": "#FAF8F5",
@@ -78,7 +78,7 @@
         "dark": "#1E2450"
       },
       "inverse": {
-        "value": "#12172E",
+        "value": "#17163E",
         "dark": "#F1F2F8"
       },
       "disabled": {
@@ -92,7 +92,7 @@
     },
     "text": {
       "primary": {
-        "value": "#12172E",
+        "value": "#17163E",
         "dark": "#F1F2F8"
       },
       "secondary": {
@@ -109,19 +109,19 @@
       },
       "inverse": {
         "value": "#FFFFFF",
-        "dark": "#12172E"
+        "dark": "#17163E"
       },
       "onPrimary": {
         "value": "#FFFFFF",
-        "dark": "#0E1230"
+        "dark": "#07062A"
       },
       "onWarm": {
         "value": "#FFFFFF",
         "dark": "#26150E"
       },
       "link": {
-        "value": "#2F45C4",
-        "dark": "#8B97E8"
+        "value": "#7166F3",
+        "dark": "#9F8EF4"
       }
     },
     "border": {
@@ -138,8 +138,8 @@
         "dark": "#3A4270"
       },
       "focus": {
-        "value": "#2F45C4",
-        "dark": "#8B97E8"
+        "value": "#7166F3",
+        "dark": "#9F8EF4"
       },
       "warm": {
         "value": "#EDD9CC",
@@ -240,7 +240,7 @@
     },
     "chart": {
       "series1": {
-        "value": "#2F45C4"
+        "value": "#7166F3"
       },
       "series2": {
         "value": "#5265D6"

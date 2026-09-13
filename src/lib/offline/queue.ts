@@ -151,7 +151,7 @@ export function describeQueue(count: number): string | null {
 
 /**
  * Whether a kind may be queued at all. Admin work — approvals, payroll,
- * configuration — is deliberately NOT queued: STF will not accept a
+ * configuration — is deliberately NOT queued: FlowHRMS will not accept a
  * decision it cannot guarantee (implementation guide §7).
  */
 export function isQueueable(kind: string): kind is QueuedKind {

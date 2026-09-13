@@ -21,7 +21,7 @@ export function BadgeWall({
           key={badge.key}
           className="flex flex-col items-center gap-2 rounded-surface-card border border-border-default bg-surface-default p-4 text-center"
         >
-          <span className="flex size-12 items-center justify-center rounded-full bg-[color:var(--stf-color-brand-primary-subtle)]">
+          <span className="flex size-12 items-center justify-center rounded-full bg-[color:var(--fh-color-brand-primary-subtle)]">
             <Award aria-hidden="true" className="size-6 text-brand-primary" />
           </span>
           <p className="font-heading text-label text-text-primary">{badge.name}</p>

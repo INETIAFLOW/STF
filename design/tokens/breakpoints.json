@@ -1,5 +1,5 @@
 {
-  "$schema": "STF breakpoint tokens v1.0 — mobile-first, min-width queries only",
+  "$schema": "FlowHRMS breakpoint tokens v1.0 — mobile-first, min-width queries only",
   "breakpoint": {
     "xs": "360px",
     "sm": "480px",

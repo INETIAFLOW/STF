@@ -1,4 +1,6 @@
-# STF — Sudarshan Task Force
+# FlowHRMS — by Flowacord
+
+**FlowHRMS** is Flowacord’s HRMS product — *Align. Accelerate. Grow.*
 
 Mobile-first, multi-tenant SaaS for practical workforce operations:
 attendance, leave, payroll inputs, tasks, daily reporting and
@@ -13,12 +15,12 @@ documents; public marketing pages; multiple work locations.
 honestly what is and is not verified. Accessibility testing, data
 retention, and the offline queue are the open items.
 
-**On payroll:** STF contains **no statutory formulas**. It does not
+**On payroll:** FlowHRMS contains **no statutory formulas**. It does not
 calculate PF, ESI, professional tax or TDS. A company defines its own
-salary components with the figures its accountant supplies; STF turns
+salary components with the figures its accountant supplies; FlowHRMS turns
 approved attendance and leave into a payslip whose every line shows how it
 was reached. Approval requires an explicit accountant acknowledgement.
-**STF does not certify statutory compliance** — a qualified local
+**FlowHRMS does not certify statutory compliance** — a qualified local
 professional must review the rules before real salary processing
 (ROADMAP.md decision gates).
 
@@ -29,10 +31,10 @@ follows them, never the other way round:
 
 | Location | Contents |
 |---|---|
-| `docs/STF-Pack-01-v0.1/` | Product Bible, Constitution, Vision, Modules, Feature Flags, Architecture, Roles, Roadmap |
-| `docs/STF-Design-Handoff-v1/` | Brand, design tokens, components, screen designs, user flows, accessibility, copy deck |
+| `docs/FlowHRMS-Pack-01-v0.1/` | Product Bible, Constitution, Vision, Modules, Feature Flags, Architecture, Roles, Roadmap |
+| `docs/FlowHRMS-Design-Handoff-v1/` | Brand, design tokens, components, screen designs, user flows, accessibility, copy deck |
 
-Start with `docs/STF-Design-Handoff-v1/08-claude-code-handoff/README-FOR-CLAUDE-CODE.md`.
+Start with `docs/FlowHRMS-Design-Handoff-v1/08-claude-code-handoff/README-FOR-CLAUDE-CODE.md`.
 When product behaviour, a wireframe and code disagree, the latest approved
 document wins. Material changes are logged in `DECISIONS.md`.
 

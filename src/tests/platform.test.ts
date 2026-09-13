@@ -9,7 +9,7 @@ import { slugify } from "@/lib/platform/slug";
 import { platformCrossLinks } from "@/lib/shell/nav";
 
 /**
- * The enquiry form is the only thing in STF that takes input from someone
+ * The enquiry form is the only thing in FlowHRMS that takes input from someone
  * with no account, no tenant and no session. Everything asserted here is
  * about that: refuse rubbish, keep a real customer's number, and never let
  * the honeypot explain itself to whatever tripped it.

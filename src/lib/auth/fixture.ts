@@ -24,7 +24,7 @@ import type { AppSession, TenantEntitlements } from "./types";
  */
 export function devFixtureRole(): string | null {
   if (process.env.NODE_ENV !== "development") return null;
-  const value = process.env.STF_DEV_FAKE_SESSION?.trim().toUpperCase();
+  const value = process.env.FLOWHRMS_DEV_FAKE_SESSION?.trim().toUpperCase();
   if (!value) return null;
   const allowed = ROLE_TEMPLATES.map((r) => r.key);
   return allowed.includes(value) ? value : "EMPLOYEE";

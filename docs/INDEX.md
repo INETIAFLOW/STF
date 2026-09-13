@@ -1,10 +1,10 @@
-# STF Pack 01 - Foundation
+# FlowHRMS Pack 01 - Foundation
 
 Version 0.1 | 07 August 2026
 
 ## Contents
 
-- README: STF Pack 01 - Foundation
+- README: FlowHRMS Pack 01 - Foundation
 - PRODUCT-BIBLE: Product Bible
 - PRODUCT-CONSTITUTION: Product Constitution
 - PRODUCT-VISION: Product Vision

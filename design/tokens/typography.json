@@ -1,9 +1,9 @@
 {
-  "$schema": "STF typography tokens v1.0",
+  "$schema": "FlowHRMS typography tokens v1.0",
   "font": {
     "family": {
       "heading": {
-        "value": "\"Schibsted Grotesk\", \"Helvetica Neue\", Helvetica, Arial, sans-serif"
+        "value": "\"Poppins\", \"Helvetica Neue\", Helvetica, Arial, sans-serif"
       },
       "body": {
         "value": "\"Wix Madefor Text\", \"Helvetica Neue\", Helvetica, Arial, sans-serif"

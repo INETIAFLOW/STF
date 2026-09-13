@@ -104,7 +104,7 @@ export function NotificationMatrix({
                       </span>
                       <input
                         type="checkbox"
-                        className="size-5 shrink-0 accent-[var(--stf-color-brand-primary)] disabled:cursor-not-allowed"
+                        className="size-5 shrink-0 accent-[var(--fh-color-brand-primary)] disabled:cursor-not-allowed"
                         checked={isOn(event.key, channel.key)}
                         disabled={locked}
                         aria-label={`${event.label} by ${channel.label}`}
@@ -167,7 +167,7 @@ export function NotificationMatrix({
                       <td key={channel.key} className="px-2 py-2.5 text-center">
                         <input
                           type="checkbox"
-                          className="size-5 accent-[var(--stf-color-brand-primary)] disabled:cursor-not-allowed"
+                          className="size-5 accent-[var(--fh-color-brand-primary)] disabled:cursor-not-allowed"
                           checked={isOn(event.key, channel.key)}
                           disabled={locked}
                           aria-label={`${event.label} by ${channel.label}${

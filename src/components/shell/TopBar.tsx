@@ -1,8 +1,8 @@
-import Image from "next/image";
 import { cn } from "@/lib/cn";
 import { NotificationBell } from "@/components/actions/NotificationBell";
 import { MobileNav } from "./MobileNav";
 import type { NavItem } from "@/lib/shell/nav";
+import { FlowacordMark } from "@/components/brand/FlowacordMark";
 
 /**
  * Top bars (component-specifications.md §17).
@@ -34,7 +34,7 @@ export function AdminTopBar({
   return (
     <header
       className={cn(
-        "sticky top-0 z-30 flex h-[var(--stf-layout-top-bar-height-desktop)] items-center justify-between gap-4",
+        "sticky top-0 z-30 flex h-[var(--fh-layout-top-bar-height-desktop)] items-center justify-between gap-4",
         "border-b border-border-default bg-surface-default px-5 lg:px-8",
       )}
     >
@@ -63,19 +63,12 @@ export function EmployeeTopBar({
   return (
     <header
       className={cn(
-        "sticky top-0 z-30 flex h-[var(--stf-layout-top-bar-height-mobile)] items-center gap-2",
+        "sticky top-0 z-30 flex h-[var(--fh-layout-top-bar-height-mobile)] items-center gap-2",
         "border-b border-border-default bg-surface-default px-5",
       )}
     >
       <MobileNav {...nav} />
-      <Image
-        src="/brand/STF-favicon.svg"
-        alt=""
-        width={24}
-        height={24}
-        aria-hidden="true"
-        className="md:hidden"
-      />
+      <FlowacordMark size={24} className="md:hidden" />
       <span className="min-w-0 flex-1 truncate text-label text-text-primary">
         {title}
       </span>

@@ -77,21 +77,21 @@ export function CelebrationOverlay({ celebrations }: { celebrations: Celebration
                 top: "-3%",
                 background:
                   i % 3 === 0
-                    ? "var(--stf-color-brand-primary)"
+                    ? "var(--fh-color-brand-primary)"
                     : i % 3 === 1
-                      ? "var(--stf-color-status-warning-fg)"
-                      : "var(--stf-color-status-success-fg)",
-                animation: `stf-confetti 2.6s cubic-bezier(.2,.6,.6,1) ${(i % 8) * 0.18}s both`,
+                      ? "var(--fh-color-status-warning-fg)"
+                      : "var(--fh-color-status-success-fg)",
+                animation: `fh-confetti 2.6s cubic-bezier(.2,.6,.6,1) ${(i % 8) * 0.18}s both`,
                 rotate: `${(i * 47) % 360}deg`,
               }}
             />
           ))}
-          <style>{`@keyframes stf-confetti { to { transform: translateY(108vh) rotate(540deg); opacity: .7; } }`}</style>
+          <style>{`@keyframes fh-confetti { to { transform: translateY(108vh) rotate(540deg); opacity: .7; } }`}</style>
         </div>
       )}
 
       <div className="relative w-full max-w-[360px] rounded-surface-card bg-surface-default p-8 text-center shadow-elevation-3">
-        <span className="mx-auto flex size-16 items-center justify-center rounded-full bg-[color:var(--stf-color-brand-primary-subtle)]">
+        <span className="mx-auto flex size-16 items-center justify-center rounded-full bg-[color:var(--fh-color-brand-primary-subtle)]">
           {current.kind === "level" ? (
             <Sparkles aria-hidden="true" className="size-8 text-brand-primary" />
           ) : (

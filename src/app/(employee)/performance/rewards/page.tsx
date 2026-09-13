@@ -138,7 +138,7 @@ export default async function RewardsPage() {
                   <Card className="flex h-full flex-col gap-2">
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex items-center gap-2.5">
-                        <span className="flex size-10 items-center justify-center rounded-full bg-[color:var(--stf-color-brand-primary-subtle)]">
+                        <span className="flex size-10 items-center justify-center rounded-full bg-[color:var(--fh-color-brand-primary-subtle)]">
                           <Gift aria-hidden="true" className="size-5 text-brand-primary" />
                         </span>
                         <div>

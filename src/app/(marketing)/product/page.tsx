@@ -59,7 +59,7 @@ export default function ProductPage() {
             Know who is working, what got done, and what you owe.
           </h1>
           <p className="mt-4 max-w-[60ch] text-body-lg text-text-secondary">
-            Sudarshan Task Force runs attendance, tasks, leave and payroll
+            FlowHRMS runs attendance, tasks, leave and payroll
             inputs from one phone-first system — so your day stops running
             on calls, registers and memory.
           </p>
@@ -146,7 +146,7 @@ export default function ProductPage() {
           <h2 className="font-heading text-h1 text-text-inverse text-balance">
             See it with your own team&apos;s day
           </h2>
-          <p className="mt-3 max-w-[60ch] text-body-lg text-[color:var(--stf-color-brand-primary-subtle)]">
+          <p className="mt-3 max-w-[60ch] text-body-lg text-[color:var(--fh-color-brand-primary-subtle)]">
             A 30-minute walkthrough using your shifts, branches and one real
             week of work.
           </p>

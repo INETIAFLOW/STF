@@ -85,7 +85,7 @@ export function Table<Row>({
               {rows.map((row) => (
                 <tr
                   key={rowKey(row)}
-                  className="h-13 border-t border-border-subtle transition-colors duration-[var(--stf-motion-duration-fast)] hover:bg-surface-sunken"
+                  className="h-13 border-t border-border-subtle transition-colors duration-[var(--fh-motion-duration-fast)] hover:bg-surface-sunken"
                 >
                   {columns.map((col) =>
                     col.rowHeader ? (

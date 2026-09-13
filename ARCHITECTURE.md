@@ -1,6 +1,6 @@
-# STF Architecture — Phase 1
+# FlowHRMS Architecture — Phase 1
 
-Follows `docs/STF-Pack-01-v0.1/md/SYSTEM-ARCHITECTURE.md`: a well-structured
+Follows `docs/FlowHRMS-Pack-01-v0.1/md/SYSTEM-ARCHITECTURE.md`: a well-structured
 **modular monolith** with clear domain boundaries. Services are split only
 when scale or ownership proves the need.
 
@@ -125,7 +125,7 @@ Employee (no session)
    └─ acceptInviteAction    → set password via admin API, ACTIVE, sign in
 ```
 
-**Why the token and not Supabase's own invite email.** STF owns the
+**Why the token and not Supabase's own invite email.** FlowHRMS owns the
 invitation state (Pending / Accepted / Expired / Revoked, resend counts,
 cooldown, a copyable link for staff with no email). Borrowing Supabase's
 auth emails would put that state in a system we cannot query and would

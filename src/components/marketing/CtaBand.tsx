@@ -31,7 +31,7 @@ export function CtaBand() {
         {CELLS.map((cell, i) => (
           <span
             key={i}
-            className="border border-[rgba(251,248,242,.04)] bg-[color:var(--m-amber)] opacity-0"
+            className="border border-[rgba(245,245,245,.04)] bg-[color:var(--m-amber)] opacity-0"
             style={
               cell.glow
                 ? { animation: `m-cell-glow 13s ease-in-out ${cell.delay}s infinite` }

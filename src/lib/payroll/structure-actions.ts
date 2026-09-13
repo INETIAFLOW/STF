@@ -26,7 +26,7 @@ import {
  * (setMonthlySalaryAction, bulkSetSalariesAction) turns one typed number
  * into the structures the engine already understands. The component
  * vocabulary survives as the advanced path for companies that need it.
- * STF supplies no statutory formulas either way (D-P3-01).
+ * FlowHRMS supplies no statutory formulas either way (D-P3-01).
  */
 
 export type ActionResult =

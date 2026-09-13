@@ -57,7 +57,7 @@ export interface StarterPack {
 
 /**
  * The packs. Deliberately NO provident fund, ESI, professional tax or TDS:
- * STF ships no statutory items (D-P3-01), and a pack that included one
+ * FlowHRMS ships no statutory items (D-P3-01), and a pack that included one
  * would be read as advice about the law.
  */
 export const STARTER_PACKS: readonly StarterPack[] = [

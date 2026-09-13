@@ -51,7 +51,7 @@ export default async function NotificationSettingsPage() {
       </div>
 
       <Alert variant="info" title="In-app notifications are always on">
-        Everyone sees updates inside STF. Push, email, WhatsApp and SMS need
+        Everyone sees updates inside FlowHRMS. Push, email, WhatsApp and SMS need
         a provider before they can be switched on — an unconfigured channel
         is shown as off and is never silently failed.
       </Alert>

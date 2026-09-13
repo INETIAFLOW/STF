@@ -135,7 +135,7 @@ export function ExpensesEditor({
             suffix="years after settlement"
             value={retention}
             onChange={(event) => setRetention(event.target.value)}
-            helper={`At least ${RECEIPT_RETENTION_FLOOR_YEARS} years. Your accountant confirms the legal minimum for your entity; STF does not certify it.`}
+            helper={`At least ${RECEIPT_RETENTION_FLOOR_YEARS} years. Your accountant confirms the legal minimum for your entity; FlowHRMS does not certify it.`}
             error={retentionOk ? undefined : `At least ${RECEIPT_RETENTION_FLOOR_YEARS} years.`}
           />
         </div>

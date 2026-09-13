@@ -2,10 +2,10 @@
  * Payroll calculation engine — pure functions, no I/O, no database.
  *
  * WHAT THIS DOES NOT DO (deliberately, per Product Bible boundaries and
- * design decision D-019): it contains **no statutory formulas**. STF does
+ * design decision D-019): it contains **no statutory formulas**. FlowHRMS does
  * not compute PF, ESI, professional tax, TDS or any other legal deduction.
  * Those are tenant-configured salary components whose amounts or
- * percentages the customer's accountant supplies. STF never certifies
+ * percentages the customer's accountant supplies. FlowHRMS never certifies
  * statutory compliance.
  *
  * What it does: turn approved inputs — attendance, approved leave, the

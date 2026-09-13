@@ -219,7 +219,7 @@ export async function exportReportAction(
   const scopeSuffix = branch
     ? `-${branch.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`
     : "";
-  const filename = `stf-${parsed.data.type}${scopeSuffix}-${parsed.data.from}-to-${parsed.data.to}.csv`;
+  const filename = `flowhrms-${parsed.data.type}${scopeSuffix}-${parsed.data.from}-to-${parsed.data.to}.csv`;
 
   // Exports are recorded — who exported what, over what scope, and when
   // (Constitution §7).

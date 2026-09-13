@@ -33,7 +33,7 @@ export function ActionTiles() {
 
   return (
     <div
-      className="pointer-events-none fixed inset-x-0 bottom-[calc(var(--stf-layout-bottom-nav-height,64px)+12px)] z-40 flex justify-center px-4 lg:bottom-6 lg:right-6 lg:left-auto lg:justify-end lg:px-0"
+      className="pointer-events-none fixed inset-x-0 bottom-[calc(var(--fh-layout-bottom-nav-height,64px)+12px)] z-40 flex justify-center px-4 lg:bottom-6 lg:right-6 lg:left-auto lg:justify-end lg:px-0"
       role="region"
       aria-label="Decisions waiting for you"
     >

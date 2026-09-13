@@ -271,7 +271,7 @@ export function PayrollControls({
           <Checkbox
             checked={acknowledged}
             onChange={(e) => setAcknowledged(e.target.checked)}
-            label="I have checked these figures with our accountant. STF does not certify statutory compliance."
+            label="I have checked these figures with our accountant. FlowHRMS does not certify statutory compliance."
           />
 
           <p className="micro-label text-text-tertiary">

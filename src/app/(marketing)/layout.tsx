@@ -1,5 +1,5 @@
-import Image from "next/image";
 import Link from "next/link";
+import { FlowHRMSLockup, FlowHRMSWordmark } from "@/components/brand/FlowHRMSWordmark";
 
 /**
  * Marketing shell (screens M1–M6).
@@ -33,14 +33,9 @@ export default function MarketingLayout({
 
       <header className="border-b border-border-default bg-surface-default">
         <div className="mx-auto flex h-16 max-w-[1200px] items-center justify-between gap-4 px-5 lg:px-8">
-          <Link href="/" aria-label="Sudarshan Task Force home">
-            <Image
-              src="/brand/STF-logo-primary.svg"
-              alt="Sudarshan Task Force"
-              width={150}
-              height={28}
-              priority
-            />
+          <Link href="/" aria-label="FlowHRMS home" className="flex items-center">
+            <FlowHRMSWordmark height={26} className="md:hidden" />
+            <FlowHRMSLockup height={28} className="hidden md:inline-flex" />
           </Link>
           <nav aria-label="Marketing" className="flex items-center gap-1">
             <Link

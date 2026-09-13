@@ -95,7 +95,7 @@ export function OfflineBar() {
 
 /**
  * The admin counterpart. Approvals, payroll and configuration are
- * deliberately NOT queued — STF will not accept a decision it cannot
+ * deliberately NOT queued — FlowHRMS will not accept a decision it cannot
  * guarantee — so the admin shell says so plainly instead.
  */
 export function AdminOfflineBar() {

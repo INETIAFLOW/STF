@@ -323,7 +323,7 @@ export function AttendanceActionCard({ context, firstName }: Props) {
       <div
         className={cn(
           "rounded-surface-card border border-warm-border bg-warm-subtle p-5",
-          "motion-safe:animate-[stf-confirm-pulse_var(--stf-motion-duration-slow)_var(--stf-motion-easing-spring-subtle)]",
+          "motion-safe:animate-[fh-confirm-pulse_var(--fh-motion-duration-slow)_var(--fh-motion-easing-spring-subtle)]",
         )}
       >
         <p role="status" className="text-h2 font-heading text-warm-text">

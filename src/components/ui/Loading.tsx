@@ -62,7 +62,7 @@ export function Spinner({
       role="status"
       className={cn(
         "inline-flex items-center gap-2 opacity-0",
-        "animate-[stf-spinner-appear_1ms_linear_400ms_forwards]",
+        "animate-[fh-spinner-appear_1ms_linear_400ms_forwards]",
         className,
       )}
     >

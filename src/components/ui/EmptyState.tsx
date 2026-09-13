@@ -24,11 +24,11 @@ function GeometricIllustration({ warm }: { warm: boolean }) {
   // brand.primarySubtle/brand.primary (admin) or
   // warm.subtle/warm.accentSoft (employee) — spec §22.
   const circle = warm
-    ? "var(--stf-color-warm-subtle)"
-    : "var(--stf-color-brand-primary-subtle)";
+    ? "var(--fh-color-warm-subtle)"
+    : "var(--fh-color-brand-primary-subtle)";
   const bar = warm
-    ? "var(--stf-color-warm-accent-soft)"
-    : "var(--stf-color-brand-primary)";
+    ? "var(--fh-color-warm-accent-soft)"
+    : "var(--fh-color-brand-primary)";
   return (
     <svg
       aria-hidden="true"

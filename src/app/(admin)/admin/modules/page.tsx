@@ -140,7 +140,7 @@ export default async function ModuleManagementPage() {
 
                   {optionalUnavailable ? (
                     <p className="text-secondary text-text-secondary">
-                      Ask your STF contact to enable this after its rules are
+                      Ask your Flowacord contact to enable this after its rules are
                       approved.
                     </p>
                   ) : (

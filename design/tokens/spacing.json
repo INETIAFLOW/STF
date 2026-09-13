@@ -1,5 +1,5 @@
 {
-  "$schema": "STF spacing tokens v1.0 — 4px base",
+  "$schema": "FlowHRMS spacing tokens v1.0 — 4px base",
   "space": {
     "0": "0px",
     "1": "4px",

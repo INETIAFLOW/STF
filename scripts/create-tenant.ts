@@ -39,7 +39,7 @@ const timezone = arg("timezone") ?? "Asia/Kolkata";
 const origin =
   arg("origin") ??
   process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ??
-  "https://stf.inetiaflow.com";
+  "https://hrms.flowacord.com";
 
 if (!name || !ownerEmail || !ownerName) {
   console.error(

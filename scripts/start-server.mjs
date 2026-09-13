@@ -23,7 +23,7 @@ import { createRequire } from "node:module";
 const require = createRequire(import.meta.url);
 
 function log(message) {
-  process.stdout.write(`[stf] ${message}\n`);
+  process.stdout.write(`[flowhrms] ${message}\n`);
 }
 
 const startedAt = Date.now();
@@ -49,7 +49,7 @@ const child = spawn(
 child.stderr.setEncoding("utf8");
 child.stderr.on("data", (chunk) => {
   for (const line of chunk.split(/\r?\n/)) {
-    if (line.trim()) process.stdout.write(`[stf:stderr] ${line}\n`);
+    if (line.trim()) process.stdout.write(`[flowhrms:stderr] ${line}\n`);
   }
 });
 

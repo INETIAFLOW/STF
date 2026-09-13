@@ -23,7 +23,7 @@ const outPath =
     ? process.argv[process.argv.indexOf("--out") + 1]
     : ".env.hostinger";
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://stf.inetiaflow.com";
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://hrms.flowacord.com";
 
 /** Everything the deployed app reads. Optional ones are skipped if unset. */
 const SPEC: Array<{ key: string; required: boolean; value?: string }> = [
@@ -79,7 +79,7 @@ if (placeholders.length) problems.push(`still placeholder text: ${placeholders.j
 if (suspicious.length) problems.push(`quotes or line breaks: ${suspicious.join(", ")}`);
 
 const smtp = ["SMTP_HOST", "SMTP_USER", "SMTP_PASSWORD"].every((k) => process.env[k]);
-console.log(`\nInvitation emails: ${smtp ? "configured" : "NOT configured — STF will show a copyable link instead"}`);
+console.log(`\nInvitation emails: ${smtp ? "configured" : "NOT configured — FlowHRMS will show a copyable link instead"}`);
 
 if (problems.length) {
   console.error(`\nNOT WRITTEN:\n  - ${problems.join("\n  - ")}`);

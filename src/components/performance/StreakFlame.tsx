@@ -19,7 +19,7 @@ export function StreakFlame({
       <span
         className={
         lit
-            ? "flex size-9 items-center justify-center rounded-full bg-[color:var(--stf-color-status-warning-bg)]"
+            ? "flex size-9 items-center justify-center rounded-full bg-[color:var(--fh-color-status-warning-bg)]"
             : "flex size-9 items-center justify-center rounded-full bg-surface-sunken"
         }
       >

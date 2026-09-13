@@ -1,5 +1,5 @@
 {
-  "$schema": "STF shadow tokens v1.0 — navy-tinted, never neutral black",
+  "$schema": "FlowHRMS shadow tokens v1.0 — navy-tinted, never neutral black",
   "shadow": {
     "elevation.0": {
       "value": "none"

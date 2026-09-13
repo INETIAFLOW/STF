@@ -2,7 +2,7 @@
  * The kinds of decision that can raise an action tile.
  *
  * A deliberate boundary: **this queue routes and chases decisions that
- * already exist.** Every kind here maps to an approval surface STF already
+ * already exist.** Every kind here maps to an approval surface FlowHRMS already
  * had — attendance exceptions, leave, task proof. Nothing in this file
  * invents a new gate that work has to pass through.
  *
@@ -38,7 +38,7 @@ export type ActionKind = (typeof ACTION_KINDS)[number];
  * Only where approving needs no further input. Leave is the instructive
  * exception: approving it requires choosing paid or unpaid, which changes
  * what someone is paid — so a one-tap Approve would be a decision made
- * without its consequence on screen, which is the one thing STF does not
+ * without its consequence on screen, which is the one thing FlowHRMS does not
  * do (integrity pattern 1). Those open the full approval card instead.
  *
  * Rejecting is never inline: a rejection always needs a reason, and the

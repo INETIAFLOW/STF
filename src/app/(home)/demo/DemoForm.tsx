@@ -214,7 +214,7 @@ export function DemoForm() {
 
       <p className="mt-3.5 text-[12.5px] leading-[1.6] text-[color:var(--m-muted-2)]">
         We keep your name, company, phone number and anything you write here, so we can call you
-        back about STF. Nothing else is collected. We do not share it, and we will not add you to a
+        back about FlowHRMS. Nothing else is collected. We do not share it, and we will not add you to a
         mailing list. Ask us and we will delete it.
       </p>
     </form>

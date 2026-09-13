@@ -1,13 +1,13 @@
 # Design System → Code Mapping
 
-How the approved design files (`docs/STF-Design-Handoff-v1/`) map into this
+How the approved design files (`docs/FlowHRMS-Design-Handoff-v1/`) map into this
 codebase. The design documents are authoritative; this file explains where
 each contract lives in code.
 
 ## Token pipeline (single source)
 
 ```
-docs/STF-Design-Handoff-v1/02-design-tokens/*.json   (approved source)
+docs/FlowHRMS-Design-Handoff-v1/02-design-tokens/*.json   (approved source)
         │  copied verbatim
         ▼
 design/tokens/*.json
@@ -21,14 +21,14 @@ Tailwind v4 utilities (via the @theme block inside tokens.css)
 
 Generated exactly as the handoff specifies (README §3, design-tokens.md):
 
-- `:root` carries every token as `--stf-*` custom properties (light theme).
+- `:root` carries every token as `--fh-*` custom properties (light theme).
 - `[data-theme="dark"]` overrides the **colour block only**.
 - One `@media (min-width: 1024px)` block overrides **typography sizes only**.
 - Mapping is mechanical: dots → hyphens, camelCase → kebab-case
-  (`color.surface.canvasWarm` → `--stf-color-surface-canvas-warm`).
+  (`color.surface.canvasWarm` → `--fh-color-surface-canvas-warm`).
 - The `@theme inline` block wipes Tailwind's default colour/radius/shadow/
   type/breakpoint scales (`--color-*: initial` …) and rebuilds them from
-  STF tokens, so **no off-token utility exists** (`bg-red-500` does not
+  FlowHRMS tokens, so **no off-token utility exists** (`bg-red-500` does not
   compile to anything).
 - Three derived state colours from `component-states.md` §2 were added in
   the generator (not the JSONs) — see DECISIONS.md D-P1-02.
@@ -44,9 +44,9 @@ Generated exactly as the handoff specifies (README §3, design-tokens.md):
 | `radius.card` / `radius.cardEmployee` | `rounded-card` / `rounded-card-employee`, or `rounded-surface-card` (context-aware) |
 | `shadow.elevation.2` | `shadow-elevation-2` |
 | `space.*` (4px base) | numeric utilities (`p-4` = 16px, `gap-5` = 20px) |
-| `layout.*` / `touchTarget.*` | `var(--stf-layout-*)` / `var(--stf-touch-*)` |
+| `layout.*` / `touchTarget.*` | `var(--fh-layout-*)` / `var(--fh-touch-*)` |
 | Breakpoints 360/480/768/1024/1280/1536 | `xs: sm: md: lg: xl: 2xl:` |
-| `motion.*` | duration utilities via `var(--stf-motion-duration-…)`, easings as `ease-standard` … |
+| `motion.*` | duration utilities via `var(--fh-motion-duration-…)`, easings as `ease-standard` … |
 
 ## The dual-surface model
 
@@ -57,7 +57,7 @@ README §1 — never as a component prop.
 - Canvas: employee `#FAF8F5` (warm) / admin `#F7F8FC` (cool) — from
   `globals.css` base layer.
 - Card radius: `rounded-surface-card` resolves 16px under employee, 12px
-  under admin via the `--stf-card-radius` context variable.
+  under admin via the `--fh-card-radius` context variable.
 - Warm tokens (`warm-*`): employee positive moments only, max one element
   per screen. Forbidden on all admin surfaces.
 
@@ -97,7 +97,7 @@ Sans Mono 400/500/600 (all numerals; `tabular-nums` enforced globally in
 | 24 Error state | `ErrorState.tsx` (what happened + what next + REF id) |
 | 25 File upload | `FileUpload.tsx` (Take Photo/Choose File, dropzone, limits up front) |
 
-STF-specific composites (§26–30: attendance action card, metric card,
+FlowHRMS-specific composites (§26–30: attendance action card, metric card,
 employee row, task card, approval card) ship with their business modules —
 their contracts (consequence object, approval anatomy) are documented in
 ARCHITECTURE.md and the handoff.

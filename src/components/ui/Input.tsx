@@ -80,13 +80,13 @@ const fieldClasses = (error?: string) =>
     "w-full rounded-input border-[1.5px] bg-surface-default text-body text-text-primary",
     "placeholder:text-text-tertiary",
     "px-4 py-3 lg:px-3 lg:py-2",
-    "transition-colors duration-[var(--stf-motion-duration-fast)]",
+    "transition-colors duration-[var(--fh-motion-duration-fast)]",
     "read-only:border-0 read-only:bg-surface-sunken",
     "disabled:bg-surface-disabled disabled:text-text-disabled disabled:cursor-not-allowed",
     error
       ? "border-status-error-fg"
       : "border-border-default hover:border-border-strong",
-    "focus:border-border-focus focus:outline-none focus:[box-shadow:var(--stf-shadow-focus-ring)]",
+    "focus:border-border-focus focus:outline-none focus:[box-shadow:var(--fh-shadow-focus-ring)]",
   );
 
 export interface InputProps

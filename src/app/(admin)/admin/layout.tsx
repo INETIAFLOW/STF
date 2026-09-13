@@ -83,7 +83,7 @@ export default async function AdminLayout({
               <AdminOfflineBar />
               <main
                 id="main"
-                className="mx-auto w-full max-w-[var(--stf-layout-content-max-width)] flex-1 px-4 py-5 sm:px-5 lg:px-8"
+                className="mx-auto w-full max-w-[var(--fh-layout-content-max-width)] flex-1 px-4 py-5 sm:px-5 lg:px-8"
               >
                 {children}
               </main>

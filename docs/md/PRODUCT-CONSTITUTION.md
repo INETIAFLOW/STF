@@ -1,4 +1,4 @@
-# Sudarshan Task Force - Product Constitution
+# FlowHRMS - Product Constitution
 
 Version: 0.1  |  Date: 07 August 2026  |  Status: Draft for approval
 

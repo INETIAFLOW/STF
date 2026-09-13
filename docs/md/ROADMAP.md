@@ -1,4 +1,4 @@
-# Sudarshan Task Force - Product Roadmap
+# FlowHRMS - Product Roadmap
 
 Version: 0.1  |  Date: 07 August 2026  |  Status: Draft for approval
 

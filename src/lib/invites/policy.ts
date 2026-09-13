@@ -219,7 +219,7 @@ export function describeClash(input: ClashInput): string | null {
  * Whether an employee record can actually become a login.
  *
  * Being honest about this is the whole point: an SME hires people who have
- * no email address, and STF should still hold their attendance and pay.
+ * no email address, and FlowHRMS should still hold their attendance and pay.
  * What it must NOT do is imply they can sign in when no invitation can
  * reach them (phone sign-in is still blocked on D-P1-05).
  */

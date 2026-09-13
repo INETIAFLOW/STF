@@ -37,10 +37,10 @@ export function WeekBars({
                 rx={5}
                 fill={
                   bar.isToday
-                    ? "var(--stf-color-brand-primary)"
+                    ? "var(--fh-color-brand-primary)"
                     : bar.points > 0
-                      ? "var(--stf-color-brand-primary-subtle)"
-                      : "var(--stf-color-surface-sunken)"
+                      ? "var(--fh-color-brand-primary-subtle)"
+                      : "var(--fh-color-surface-sunken)"
                 }
                 className="motion-safe:[transition:height_.6s_cubic-bezier(.2,.8,.2,1),y_.6s_cubic-bezier(.2,.8,.2,1)]"
               />
@@ -52,8 +52,8 @@ export function WeekBars({
                 fontWeight={bar.isToday ? 700 : 500}
                 fill={
                   bar.isToday
-                    ? "var(--stf-color-brand-primary)"
-                    : "var(--stf-color-text-tertiary)"
+                    ? "var(--fh-color-brand-primary)"
+                    : "var(--fh-color-text-tertiary)"
                 }
               >
                 {bar.day}

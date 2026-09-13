@@ -1,5 +1,5 @@
 ﻿/**
- * STF platform catalog — the single definition of modules, features,
+ * FlowHRMS platform catalog — the single definition of modules, features,
  * permissions and role templates. Seeded into the database and referenced
  * by navigation, guards and the flag evaluator.
  *

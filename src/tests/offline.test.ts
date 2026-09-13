@@ -185,7 +185,7 @@ describe("what may be queued", () => {
   });
 
   it("never queues an approval, payroll or configuration change", () => {
-    // STF must not accept a decision it cannot guarantee.
+    // FlowHRMS must not accept a decision it cannot guarantee.
     expect(isQueueable("approveException")).toBe(false);
     expect(isQueueable("approvePayroll")).toBe(false);
     expect(isQueueable("disableModule")).toBe(false);

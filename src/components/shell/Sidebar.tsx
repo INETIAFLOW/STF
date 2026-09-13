@@ -1,12 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { LogOut } from "lucide-react";
 import { isActiveNav, type NavItem } from "@/lib/shell/nav";
 import { NAV_ICONS } from "./nav-icons";
 import { cn } from "@/lib/cn";
+import { FlowHRMSWordmark } from "@/components/brand/FlowHRMSWordmark";
+import { FlowacordMark } from "@/components/brand/FlowacordMark";
 
 /**
  * Left navigation (component-specifications.md §16).
@@ -28,7 +29,7 @@ export interface SidebarProps {
   configLabel?: string;
   userName: string;
   roleName: string;
-  /** Names the landmark, e.g. "Modules" or "Your STF". */
+  /** Names the landmark, e.g. "Modules" or "Your FlowHRMS". */
   label?: string;
 }
 
@@ -75,21 +76,14 @@ export function Sidebar({
       aria-label={label}
       className={cn(
         "hidden h-dvh shrink-0 flex-col border-r border-border-default bg-surface-default",
-        "md:sticky md:top-0 md:flex md:w-[var(--stf-layout-sidebar-width-collapsed)]",
-        "lg:w-[var(--stf-layout-sidebar-width)]",
+        "md:sticky md:top-0 md:flex md:w-[var(--fh-layout-sidebar-width-collapsed)]",
+        "lg:w-[var(--fh-layout-sidebar-width)]",
       )}
     >
-      <div className="flex h-16 items-center gap-2.5 px-4">
-        <Image
-          src="/brand/STF-favicon.svg"
-          alt=""
-          width={26}
-          height={26}
-          aria-hidden="true"
-        />
-        <span className="font-heading text-h3 text-text-primary md:hidden lg:inline">
-          STF
-        </span>
+      <div className="flex h-16 items-center px-4">
+        {/* Full wordmark where there is room; the mark alone when collapsed. */}
+        <FlowHRMSWordmark height={26} className="md:hidden lg:block" />
+        <FlowacordMark size={26} className="hidden md:block lg:hidden" />
       </div>
 
       <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto px-3 py-2">

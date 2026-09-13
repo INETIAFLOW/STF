@@ -118,7 +118,7 @@ export default async function LeaderboardPage({
                         {entry.points.toLocaleString("en-IN")}
                       </p>
                       <div
-                        className={`w-full rounded-t-input bg-[color:var(--stf-color-brand-primary-subtle)] ${heights[slot]} flex items-start justify-center pt-2`}
+                        className={`w-full rounded-t-input bg-[color:var(--fh-color-brand-primary-subtle)] ${heights[slot]} flex items-start justify-center pt-2`}
                       >
                         <span className="font-heading text-h2 text-brand-primary">#{entry.rank}</span>
                       </div>

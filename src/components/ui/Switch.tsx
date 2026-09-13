@@ -102,7 +102,7 @@ export function Switch({
             if (!inert) onChange?.(!checked);
           }}
           className={cn(
-            "relative inline-flex h-[26px] w-11 items-center rounded-pill transition-colors duration-[var(--stf-motion-duration-fast)] lg:h-6 lg:w-10",
+            "relative inline-flex h-[26px] w-11 items-center rounded-pill transition-colors duration-[var(--fh-motion-duration-fast)] lg:h-6 lg:w-10",
             checked ? "bg-brand-primary" : "bg-border-strong",
             !inert && !checked && "hover:bg-border-strong-hover",
             inert && "cursor-not-allowed",
@@ -115,7 +115,7 @@ export function Switch({
           <span
             aria-hidden="true"
             className={cn(
-              "absolute flex size-[22px] items-center justify-center rounded-pill bg-white shadow-elevation-1 transition-transform duration-[var(--stf-motion-duration-fast)] lg:size-5",
+              "absolute flex size-[22px] items-center justify-center rounded-pill bg-white shadow-elevation-1 transition-transform duration-[var(--fh-motion-duration-fast)] lg:size-5",
               checked
                 ? "translate-x-[20px] lg:translate-x-[18px]"
                 : "translate-x-0.5",

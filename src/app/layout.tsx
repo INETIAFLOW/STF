@@ -4,13 +4,13 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: {
-    default: "STF — Sudarshan Task Force",
-    template: "%s · STF",
+    default: "FlowHRMS by Flowacord",
+    template: "%s · FlowHRMS",
   },
   description:
     "Workforce, tasks, attendance and payroll inputs in one phone-first system.",
   icons: {
-    icon: "/brand/STF-favicon.svg",
+    icon: "/brand/flowhrms-favicon.svg",
     // Points at src/app/apple-icon.tsx, which renders a real PNG — Safari
     // will not take the SVG that used to be named here. Declared rather
     // than left to the file convention: naming `icons` at all disables
@@ -18,10 +18,10 @@ export const metadata: Metadata = {
     apple: [{ url: "/apple-icon", sizes: "180x180", type: "image/png" }],
   },
   // iOS ignores the manifest's `display` and keys off this instead. Without
-  // it an installed STF still opens inside Safari, address bar and all.
+  // it an installed FlowHRMS still opens inside Safari, address bar and all.
   appleWebApp: {
     capable: true,
-    title: "STF",
+    title: "FlowHRMS",
     // "default" keeps the status bar legible over our own header rather
     // than letting the page run underneath it.
     statusBarStyle: "default",
@@ -38,10 +38,10 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#10253F",
+  themeColor: "#010123",
   // Lets the page reach the edges of a notched screen — and, less obviously,
   // is what makes `env(safe-area-inset-*)` report anything but 0. The
-  // employee layout and --stf-layout-bottom-nav-safe-area already consume
+  // employee layout and --fh-layout-bottom-nav-safe-area already consume
   // those, so this is what finally engages padding we had already written.
   viewportFit: "cover",
 };

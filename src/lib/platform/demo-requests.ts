@@ -4,7 +4,7 @@ import type { Status } from "@/lib/status";
  * Rules for the enquiry form on the marketing site — pure, so they can be
  * asserted rather than eyeballed.
  *
- * This is the one place in STF that takes input from someone with no
+ * This is the one place in FlowHRMS that takes input from someone with no
  * account, no tenant and no session. That shapes every decision here:
  * refuse rubbish early, keep only what was asked for, and bound how much a
  * stranger can write to the database.

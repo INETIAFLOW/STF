@@ -1,5 +1,5 @@
 /**
- * A whole working company, invented from nothing, so every screen in STF
+ * A whole working company, invented from nothing, so every screen in FlowHRMS
  * can be seen with something real-shaped in it.
  *
  * This creates its OWN tenant — "Sunrise Traders (sample)" — and touches
@@ -248,7 +248,7 @@ async function main() {
     where: { id: owner.id },
     data: {
       designation: "Proprietor",
-      employeeCode: "STF-001",
+      employeeCode: "EMP-001",
       branchId: branches[0].id,
       shiftId: shifts[0].id,
       joinedOn: dayAgo(1_200),
@@ -295,7 +295,7 @@ async function main() {
         userId: user.id,
         roleId: isHead ? headRoleId : employeeRoleId,
         status: "ACTIVE",
-        employeeCode: `STF-${String(index + 2).padStart(3, "0")}`,
+        employeeCode: `EMP-${String(index + 2).padStart(3, "0")}`,
         branchId: branch.id,
         shiftId: shifts[shiftIndex].id,
         departmentId: dept.id,
@@ -481,7 +481,7 @@ async function main() {
         continue;
       }
       if (!chance(m.reliability + 0.05)) {
-        // Absent: no record at all, which is exactly what STF would hold.
+        // Absent: no record at all, which is exactly what FlowHRMS would hold.
         standing.unshift("leave");
         continue;
       }

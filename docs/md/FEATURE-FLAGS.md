@@ -1,12 +1,12 @@
-# Sudarshan Task Force - Feature Flag Manual
+# FlowHRMS - Feature Flag Manual
 
 Version: 0.1  |  Date: 07 August 2026  |  Status: Draft for approval
 
 ## Purpose
-Feature flags make STF configurable without separate customer builds. They control entitlement, rollout, policy choice, and safe release. They never replace permissions or tenant data isolation.
+Feature flags make FlowHRMS configurable without separate customer builds. They control entitlement, rollout, policy choice, and safe release. They never replace permissions or tenant data isolation.
 
 ## Flag scopes
-Platform scope enables a capability for STF. Tenant scope decides whether a company has it. User scope allows an approved exception for a selected person. Role scope sets default eligibility for a job function. Policy scope stores a tenant's business choice, such as grace minutes or geofence radius; it is not a simple on/off flag.
+Platform scope enables a capability for FlowHRMS. Tenant scope decides whether a company has it. User scope allows an approved exception for a selected person. Role scope sets default eligibility for a job function. Policy scope stores a tenant's business choice, such as grace minutes or geofence radius; it is not a simple on/off flag.
 
 ## Required enforcement
 Each request evaluates tenant, module, feature, role, user exception, and policy. The same decision must be used by navigation, UI actions, API authorization, background jobs, notifications, reports, and mobile offline sync. Server-side denial is mandatory.

@@ -38,7 +38,7 @@ export default function DemoPage() {
         <div className="m-card p-6">
           <h2 className="m-h3 mb-2">Already have an account?</h2>
           <p className="text-[14px] leading-[1.55] text-[color:var(--m-muted)]">
-            STF accounts are created by your company, never by us.
+            FlowHRMS accounts are created by your company, never by us.
           </p>
           <Link href="/sign-in" className="m-btn-primary mt-4 px-6 py-3 text-[15px]">
             Sign in
@@ -48,7 +48,7 @@ export default function DemoPage() {
         <div className="m-card p-6">
           <h2 className="m-h3 mb-2">Can&apos;t sign in?</h2>
           <p className="text-[14px] leading-[1.55] text-[color:var(--m-muted)]">
-            Ask your company&apos;s admin or owner to check your details and role. STF support
+            Ask your company&apos;s admin or owner to check your details and role. FlowHRMS support (help@flowacord.com)
             cannot open your company&apos;s data without a logged, time-bound request from your
             owner.
           </p>

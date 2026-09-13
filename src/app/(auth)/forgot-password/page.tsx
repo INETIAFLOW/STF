@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { ForgotPasswordForm } from "./ForgotPasswordForm";
+import { FlowHRMSLockup } from "@/components/brand/FlowHRMSWordmark";
 
 export const metadata: Metadata = { title: "Reset password" };
 
@@ -19,13 +19,7 @@ export default function ForgotPasswordPage() {
       data-surface="employee"
       className="mx-auto flex min-h-dvh w-full max-w-[480px] flex-col px-5 pb-10 pt-14"
     >
-      <Image
-        src="/brand/STF-logo-primary.svg"
-        alt="Sudarshan Task Force"
-        width={150}
-        height={28}
-        priority
-      />
+      <FlowHRMSLockup height={28} />
 
       <h1 className="mt-6 font-heading text-h1 text-text-primary">
         Reset password
@@ -50,7 +44,7 @@ export default function ForgotPasswordPage() {
       <div className="mt-auto rounded-surface-card border border-border-default bg-surface-default p-4">
         <p className="text-caption text-text-secondary">
           Can&apos;t sign in? Ask your company&apos;s admin or owner to check
-          your details. STF support cannot open your company&apos;s data
+          your details. FlowHRMS support (help@flowacord.com) cannot open your company&apos;s data
           without a logged, time-bound request from your owner.
         </p>
       </div>

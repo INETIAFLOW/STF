@@ -1,9 +1,9 @@
-# Sudarshan Task Force - System Architecture
+# FlowHRMS - System Architecture
 
 Version: 0.1  |  Date: 07 August 2026  |  Status: Draft for approval
 
 ## Architecture summary
-STF is a modular, multi-tenant SaaS with a mobile-first web application and an administrative web experience. Start as a well-structured modular monolith with clear boundaries; split services only when scale, reliability, or team ownership proves the need.
+FlowHRMS is a modular, multi-tenant SaaS with a mobile-first web application and an administrative web experience. Start as a well-structured modular monolith with clear boundaries; split services only when scale, reliability, or team ownership proves the need.
 
 ## Logical layers
 Client layer: responsive web/PWA, accessible design system, offline queue for approved attendance cases, and secure session handling. Application layer: identity, authorization, module/flag evaluation, domain modules, approval workflows, and reporting. Data layer: relational database with tenant scoping, object storage for documents/proof, audit store, cache/queue, and search only when justified. Integration layer: notification providers and future accounting/biometric connectors behind adapters.

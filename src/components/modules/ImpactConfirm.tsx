@@ -7,7 +7,7 @@ import { Input, TextArea } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
 
 /**
- * Impact confirm modal (component-specifications.md §18, the STF
+ * Impact confirm modal (component-specifications.md §18, the FlowHRMS
  * signature). Content order is fixed:
  *   1) plain consequence sentence
  *   2) what stops working

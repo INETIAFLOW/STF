@@ -96,7 +96,7 @@ async function create() {
   console.log(`route:   ${describeRoute(connectionString!)}`);
   console.log(`tenant:  ${tenant.name}`);
   console.log(`expect:  Welcome, Verify`);
-  console.log(`URL:     https://stf.inetiaflow.com/invite/${token}`);
+  console.log(`URL:     ${process.env.NEXT_PUBLIC_SITE_URL ?? "https://hrms.flowacord.com"}/invite/${token}`);
 }
 
 async function check() {

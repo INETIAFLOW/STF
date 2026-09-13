@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { previewInviteAction } from "@/lib/invites/accept";
 import { Alert } from "@/components/ui/Alert";
 import { AcceptInviteForm } from "./AcceptInviteForm";
+import { FlowHRMSLockup } from "@/components/brand/FlowHRMSWordmark";
 
 export const metadata: Metadata = {
   title: "Set up your account",
@@ -33,13 +33,7 @@ export default async function AcceptInvitePage({
       data-surface="employee"
       className="mx-auto flex min-h-dvh w-full max-w-[480px] flex-col px-5 pb-10 pt-14"
     >
-      <Image
-        src="/brand/STF-logo-primary.svg"
-        alt="Sudarshan Task Force"
-        width={150}
-        height={28}
-        priority
-      />
+      <FlowHRMSLockup height={28} />
 
       {preview.ok ? (
         <>

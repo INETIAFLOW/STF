@@ -73,8 +73,8 @@ describe("invite tokens", () => {
   });
 
   it("builds a link without doubling the slash", () => {
-    expect(inviteUrl("https://stf.example.com/", "abc")).toBe(
-      "https://stf.example.com/invite/abc",
+    expect(inviteUrl("https://flowhrms.example.com/", "abc")).toBe(
+      "https://flowhrms.example.com/invite/abc",
     );
   });
 
@@ -274,7 +274,7 @@ describe("other identifiers", () => {
   });
 
   it("folds employee-code spacing and case", () => {
-    expect(normaliseEmployeeCode(" stf 001 ")).toBe("STF001");
+    expect(normaliseEmployeeCode(" emp 001 ")).toBe("EMP001");
     expect(normaliseEmployeeCode("STF001")).toBe("STF001");
   });
 });

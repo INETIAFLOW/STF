@@ -1,6 +1,6 @@
-# STF Operations
+# FlowHRMS Operations
 
-Practical procedures for running STF. Written for whoever is on the hook
+Practical procedures for running FlowHRMS. Written for whoever is on the hook
 when something breaks — not as a compliance artefact.
 
 ## Environments
@@ -31,13 +31,13 @@ Backups).
 Manual backup (works on any plan):
 
 ```bash
-pg_dump "$DIRECT_URL" --no-owner --no-privileges -Fc -f stf-backup.dump
+pg_dump "$DIRECT_URL" --no-owner --no-privileges -Fc -f flowhrms-backup.dump
 ```
 
 Restore into a scratch project to rehearse:
 
 ```bash
-pg_restore --no-owner --no-privileges -d "$SCRATCH_DIRECT_URL" stf-backup.dump
+pg_restore --no-owner --no-privileges -d "$SCRATCH_DIRECT_URL" flowhrms-backup.dump
 ```
 
 **Rehearse the restore before the pilot.** A backup nobody has restored is

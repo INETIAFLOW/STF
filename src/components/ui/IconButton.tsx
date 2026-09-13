@@ -46,7 +46,7 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
           aria-label={label}
           className={cn(
             "inline-flex items-center justify-center rounded-md",
-            "transition-colors duration-[var(--stf-motion-duration-fast)]",
+            "transition-colors duration-[var(--fh-motion-duration-fast)]",
             sizeClasses[size],
             variantClasses[variant],
             "disabled:bg-surface-disabled disabled:text-text-disabled disabled:cursor-not-allowed",
@@ -65,7 +65,7 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
             "pointer-events-none absolute -top-9 left-1/2 z-50 -translate-x-1/2 whitespace-nowrap",
             "max-w-[60vw] overflow-hidden text-ellipsis",
             "rounded-md bg-surface-inverse px-2 py-1 text-caption text-text-inverse shadow-elevation-3",
-            "opacity-0 transition-opacity duration-[var(--stf-motion-duration-fast)]",
+            "opacity-0 transition-opacity duration-[var(--fh-motion-duration-fast)]",
             "group-hover/icon-button:opacity-100 group-focus-within/icon-button:opacity-100",
           )}
         >

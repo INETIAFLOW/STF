@@ -210,7 +210,7 @@ export async function approvePayrollAction(
     return {
       ok: false,
       error:
-        "Confirm you have checked these figures with your accountant. STF does not certify statutory compliance.",
+        "Confirm you have checked these figures with your accountant. FlowHRMS does not certify statutory compliance.",
     };
   }
 

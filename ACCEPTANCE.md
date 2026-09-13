@@ -1,7 +1,7 @@
 # Acceptance checklist — recorded result
 
 A pass over
-`docs/STF-Design-Handoff-v1/08-claude-code-handoff/acceptance-checklist.md`,
+`docs/FlowHRMS-Design-Handoff-v1/08-claude-code-handoff/acceptance-checklist.md`,
 sections A–K. **An honest record, not a compliance claim.** Where
 something has not been verified the way the checklist asks, it says so
 rather than being ticked.
@@ -175,7 +175,7 @@ Legend: **Met** · **Partly met** · **Not met** · **N/A**
 2. **Retention and data rights** — windows agreed, export and deletion
    workflows built (Constitution §7).
 3. **Support access** — build the audited support session, or agree in
-   writing that nobody at STF opens customer data.
+   writing that nobody at FlowHRMS opens customer data.
 4. **Backup restore rehearsal** (OPERATIONS.md).
 5. **Payroll rules reviewed** by a qualified local professional.
 

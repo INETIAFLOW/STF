@@ -66,7 +66,7 @@ export function BoostManager({ boosts }: { boosts: BoostRow[] }) {
                 <p className="text-body font-semibold text-text-primary">
                   ×2 — {boost.name}
                   {boost.active && (
-                    <span className="ml-2 rounded-pill bg-[color:var(--stf-color-status-warning-bg)] px-2 py-0.5 text-caption font-semibold text-status-warning-fg">
+                    <span className="ml-2 rounded-pill bg-[color:var(--fh-color-status-warning-bg)] px-2 py-0.5 text-caption font-semibold text-status-warning-fg">
                       live now
                     </span>
                   )}

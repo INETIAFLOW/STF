@@ -88,7 +88,7 @@ export function Pricing() {
 
               <div
                 className="mb-[18px] mt-[22px] border-t"
-                style={{ borderColor: dark ? "rgba(251,248,242,.15)" : "var(--m-border-inner)" }}
+                style={{ borderColor: dark ? "rgba(245,245,245,.15)" : "var(--m-border-inner)" }}
               />
 
               <ul className="flex flex-1 flex-col gap-[11px]">

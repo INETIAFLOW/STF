@@ -1,4 +1,4 @@
-# Sudarshan Task Force - User Roles and Access Model
+# FlowHRMS - User Roles and Access Model
 
 Version: 0.1  |  Date: 07 August 2026  |  Status: Draft for approval
 
@@ -6,7 +6,7 @@ Version: 0.1  |  Date: 07 August 2026  |  Status: Draft for approval
 Access is the intersection of tenant membership, active module/feature, role permission, reporting scope, and record ownership. Roles are templates; granular permissions are the enforcement unit. Tenant Owners may delegate access but cannot bypass platform controls.
 
 ## Platform Super Admin
-Operates STF across tenants: tenant lifecycle, plans, module catalog, support access policy, platform analytics, and controlled impersonation/support with audit. Cannot casually browse payroll or employee files; exceptional access must be justified, time-bound, and logged.
+Operates FlowHRMS across tenants: tenant lifecycle, plans, module catalog, support access policy, platform analytics, and controlled impersonation/support with audit. Cannot casually browse payroll or employee files; exceptional access must be justified, time-bound, and logged.
 
 ## Tenant Owner
 Full company control: company settings, admins, modules within plan, policies, payroll approval, reports, and retention choices. May appoint Super Admins inside the tenant.

@@ -31,7 +31,7 @@ export function BottomNav({ items }: { items: NavItem[] }) {
       )}
     >
       <ul
-        className="grid h-[var(--stf-layout-bottom-nav-height)]"
+        className="grid h-[var(--fh-layout-bottom-nav-height)]"
         style={{ gridTemplateColumns: `repeat(${items.length}, 1fr)` }}
       >
         {items.map((item) => {

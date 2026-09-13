@@ -42,7 +42,7 @@ function formatEffectiveFrom(date: Date): string {
  *
  * Most companies see one question per person: the monthly amount. The
  * component vocabulary (pay items, percentages, per-day amounts) exists
- * only in the custom setup, reached through the picker below. STF ships
+ * only in the custom setup, reached through the picker below. FlowHRMS ships
  * no statutory formulas either way (D-P3-01); the approval flow's
  * accountant acknowledgement (D-019) is unchanged by any of this.
  */
@@ -154,7 +154,7 @@ export default async function SalariesPage() {
 
         <p className="max-w-[70ch] text-secondary text-text-secondary">
           What each person is paid per month. Amounts here are what your
-          company chooses to pay — STF calculates payslips only from what
+          company chooses to pay — FlowHRMS calculates payslips only from what
           you enter, your attendance records and approved leave.
         </p>
 
@@ -203,7 +203,7 @@ export default async function SalariesPage() {
 
       <p className="max-w-[70ch] text-secondary text-text-secondary">
         This company uses custom pay items. Amounts here are what your
-        company chooses to pay — STF calculates payslips only from what you
+        company chooses to pay — FlowHRMS calculates payslips only from what you
         enter.
       </p>
 

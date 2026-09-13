@@ -51,4 +51,4 @@ export function getSupabaseAdmin(): SupabaseClient | null {
 }
 
 export const ADMIN_KEY_MISSING =
-  "Sign-in accounts aren't connected yet. Ask whoever set up STF to add the Supabase secret key (DEPLOY.md, step 3).";
+  "Sign-in accounts aren't connected yet. Ask whoever set up FlowHRMS to add the Supabase secret key (DEPLOY.md, step 3).";

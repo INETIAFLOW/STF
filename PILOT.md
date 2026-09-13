@@ -1,6 +1,6 @@
-# Running an STF pilot
+# Running an FlowHRMS pilot
 
-Notes for the first company to use STF for real. Written to be handed to
+Notes for the first company to use FlowHRMS for real. Written to be handed to
 the owner or admin, not kept internal.
 
 ## Before day one
@@ -43,19 +43,19 @@ deleted and you can turn it back on.
 
 ## Payroll — read this properly
 
-STF does **not** calculate statutory amounts. It does not know your PF,
+FlowHRMS does **not** calculate statutory amounts. It does not know your PF,
 ESI, professional tax or TDS rates and will never invent them.
 
 What you do: define your own salary components (Payroll → Salary
 structures) using the figures **your accountant gives you**, and mark
-those as accountant-defined. STF then turns attendance and approved leave
+those as accountant-defined. FlowHRMS then turns attendance and approved leave
 into a payslip where every line shows how it was reached.
 
 Approving a month **locks** it. After that, money changes only through a
 recorded adjustment — nothing is quietly overwritten. You must confirm you
 have checked the figures with your accountant before you can approve.
 
-**STF does not certify statutory compliance.** Have a qualified local
+**FlowHRMS does not certify statutory compliance.** Have a qualified local
 professional review your rules before you pay anyone from it.
 
 ## What to watch for in week one
@@ -75,7 +75,7 @@ earned-leave balances. These were excluded on purpose, not forgotten.
 
 ## Working without signal
 
-Warehouses and delivery routes lose signal. STF is built for that:
+Warehouses and delivery routes lose signal. FlowHRMS is built for that:
 
 - Checking in, checking out, requesting leave and sending task proof all
   work with no connection. A bar at the top says "No internet — working
@@ -95,7 +95,7 @@ have its check-in refused with a message explaining why, and **signing out
 with unsent work** will warn them first — they should send it before
 signing out.
 
-Approvals, payroll and settings deliberately need a connection. STF will
+Approvals, payroll and settings deliberately need a connection. FlowHRMS will
 not accept a decision it cannot guarantee.
 
 ## Not ready yet
@@ -104,10 +104,10 @@ not accept a decision it cannot guarantee.
 - Phone sign-in with an OTP (needs an SMS provider; today it is email).
 - Company logo upload.
 - Support access to your data — there is no impersonation feature, so
-  nobody at STF can open your company's records from the product.
+  nobody at FlowHRMS can open your company's records from the product.
 
 ## Getting help
 
-Tell your STF contact what you saw, what you expected, and the time it
+Tell your FlowHRMS contact what you saw, what you expected, and the time it
 happened. Every approval and configuration change is in Activity log with
 who did it and why, which usually answers the question quickly.

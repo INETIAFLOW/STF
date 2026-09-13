@@ -7,7 +7,7 @@
 @source not "../../**/*.md";
 
 /* ------------------------------------------------------------------------
- * STF base layer.
+ * FlowHRMS base layer.
  * Light is the primary theme; [data-theme="dark"] swaps the colour block
  * only (see tokens.css). The two surface families are a layout-level
  * attribute — data-surface="employee" | "admin" — never a component prop
@@ -16,9 +16,9 @@
 
 @layer base {
   html {
-    font-family: var(--stf-font-family-body);
-    color: var(--stf-color-text-primary);
-    background: var(--stf-color-surface-canvas);
+    font-family: var(--fh-font-family-body);
+    color: var(--fh-color-text-primary);
+    background: var(--fh-color-surface-canvas);
     text-size-adjust: 100%;
     /* Overlays (tooltips, toasts) are positioned over the page and must
        never create a horizontal scrollbar — the 320px reflow rule
@@ -28,8 +28,8 @@
   }
 
   body {
-    font-size: var(--stf-font-size-body);
-    line-height: var(--stf-line-height-body);
+    font-size: var(--fh-font-size-body);
+    line-height: var(--fh-line-height-body);
     -webkit-font-smoothing: antialiased;
     /* `viewport-fit: cover` lets the page reach the physical edges, which
        is what a home-screen app should do — but in landscape on a notched
@@ -42,22 +42,22 @@
   /* Surface families: canvas + contextual card radius. */
   :root,
   [data-surface="admin"] {
-    --stf-card-radius: var(--stf-radius-card);
+    --fh-card-radius: var(--fh-radius-card);
   }
   [data-surface="admin"] {
-    background: var(--stf-color-surface-canvas);
+    background: var(--fh-color-surface-canvas);
   }
   [data-surface="employee"] {
-    --stf-card-radius: var(--stf-radius-card-employee);
-    background: var(--stf-color-surface-canvas-warm);
+    --fh-card-radius: var(--fh-radius-card-employee);
+    background: var(--fh-color-surface-canvas-warm);
   }
 
   /* Focus is always visible: 2px border.focus outline + focus ring shadow,
      2px offset, on every interactive element (accessibility.md §1.5). */
   :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
-    outline: 2px solid var(--stf-color-border-focus);
+    outline: 2px solid var(--fh-color-border-focus);
     outline-offset: 2px;
-    box-shadow: var(--stf-shadow-focus-ring);
+    box-shadow: var(--fh-shadow-focus-ring);
   }
 
   /* Numerals: Spline Sans Mono always tabular; numerals in tables too
@@ -87,22 +87,22 @@
 
 /* Card radius follows the active surface family. */
 @utility rounded-surface-card {
-  border-radius: var(--stf-card-radius);
+  border-radius: var(--fh-card-radius);
 }
 
 /* Uppercase micro-label (12px, +0.08em) — table headers, audit stamps only. */
 @utility micro-label {
-  font-family: var(--stf-font-family-mono);
-  font-size: var(--stf-font-size-mono);
-  line-height: var(--stf-line-height-mono);
+  font-family: var(--fh-font-family-mono);
+  font-size: var(--fh-font-size-mono);
+  line-height: var(--fh-line-height-mono);
   font-weight: 500;
-  letter-spacing: var(--stf-tracking-micro);
+  letter-spacing: var(--fh-tracking-micro);
   text-transform: uppercase;
 }
 
 /* Skeleton shimmer (duration.skeleton); static tint under reduced motion. */
 @utility skeleton {
-  background: var(--stf-color-surface-sunken);
+  background: var(--fh-color-surface-sunken);
   position: relative;
   overflow: hidden;
 
@@ -116,7 +116,7 @@
       rgba(255, 255, 255, 0.55),
       transparent
     );
-    animation: stf-shimmer var(--stf-motion-duration-skeleton) linear infinite;
+    animation: fh-shimmer var(--fh-motion-duration-skeleton) linear infinite;
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -128,13 +128,13 @@
 }
 
 /* Spinner appears only after 400ms of waiting (motion.json rules). */
-@keyframes stf-spinner-appear {
+@keyframes fh-spinner-appear {
   to {
     opacity: 1;
   }
 }
 
-@keyframes stf-shimmer {
+@keyframes fh-shimmer {
   from {
     transform: translateX(-100%);
   }
@@ -145,7 +145,7 @@
 
 /* Check-in confirmation pulse: single 1 → 1.03 → 1, no confetti
    (motion.json usage.checkInSuccess). Defined now for Phase 2 use. */
-@keyframes stf-confirm-pulse {
+@keyframes fh-confirm-pulse {
   0% {
     transform: scale(1);
   }

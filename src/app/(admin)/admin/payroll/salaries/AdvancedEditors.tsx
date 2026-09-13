@@ -21,7 +21,7 @@ import {
  * an item here is what moves a tenant into the custom setup.
  */
 
-/** Add or update a pay item (tenant-defined, never shipped by STF). */
+/** Add or update a pay item (tenant-defined, never shipped by FlowHRMS). */
 export function ComponentEditor() {
   const router = useRouter();
   const { show } = useToast();

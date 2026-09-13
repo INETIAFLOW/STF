@@ -1,4 +1,4 @@
-import { Archivo, IBM_Plex_Sans } from "next/font/google";
+import { IBM_Plex_Sans, Poppins } from "next/font/google";
 
 /**
  * Fonts for the marketing and sign-in surfaces only.
@@ -14,12 +14,12 @@ import { Archivo, IBM_Plex_Sans } from "next/font/google";
  * serves them from our origin, so no request reaches the Google CDN at
  * runtime (the design bundle links fonts.googleapis.com; we do not).
  */
-export const archivo = Archivo({
+export const poppinsDisplay = Poppins({
   subsets: ["latin", "latin-ext"],
-  weight: ["500", "600", "700", "800", "900"],
-  variable: "--font-archivo",
+  weight: ["500", "600", "700"],
+  style: ["normal", "italic"],
+  variable: "--font-poppins-display",
   display: "swap",
-  preload: true,
 });
 
 export const ibmPlexSans = IBM_Plex_Sans({
@@ -30,4 +30,4 @@ export const ibmPlexSans = IBM_Plex_Sans({
   preload: true,
 });
 
-export const marketingFontVariables = `${archivo.variable} ${ibmPlexSans.variable}`;
+export const marketingFontVariables = `${poppinsDisplay.variable} ${ibmPlexSans.variable}`;

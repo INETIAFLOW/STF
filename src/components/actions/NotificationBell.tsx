@@ -81,7 +81,7 @@ export function NotificationBell({
         aria-current={onNotifications ? "page" : undefined}
         className={cn(
           "relative inline-flex size-11 items-center justify-center rounded-button",
-          "focus-visible:outline-none focus-visible:[box-shadow:var(--stf-shadow-focus-ring)]",
+          "focus-visible:outline-none focus-visible:[box-shadow:var(--fh-shadow-focus-ring)]",
           onNotifications
             ? "bg-brand-primary-subtle text-brand-primary"
             : "text-text-secondary hover:bg-surface-sunken",

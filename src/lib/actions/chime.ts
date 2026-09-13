@@ -20,7 +20,7 @@
  * — this asks for attention, it does not demand it.
  */
 
-const STORAGE_KEY = "stf-action-sound";
+const STORAGE_KEY = "flowhrms-action-sound";
 
 type AudioContextCtor = typeof AudioContext;
 

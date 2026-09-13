@@ -13,25 +13,25 @@
  * ------------------------------------------------------------------- */
 
 [data-surface="marketing"] {
-  /* Cream */
-  --m-cream: #fbf8f2;
-  --m-cream-inset: #f1ebde;
-  --m-grid: #f6f1e6;
+  /* Paper */
+  --m-cream: #f5f5f5;
+  --m-cream-inset: #ecebf3;
+  --m-grid: #f0eff8;
   --m-white: #ffffff;
 
   /* Navy */
-  --m-navy: #10253f;
-  --m-navy-deep: #0b1b2f;
+  --m-navy: #34327f;
+  --m-navy-deep: #010123;
 
-  /* Vermilion */
-  --m-red: #f04e30;
-  --m-red-hover: #d8401f;
-  --m-red-on-dark: #ff5f3f;
-  --m-red-deep: #b4451f;
+  /* Brand purple (kept under the --m-red name so no rule changes) */
+  --m-red: #7166f3;
+  --m-red-hover: #5e53e8;
+  --m-red-on-dark: #9f8ef4;
+  --m-red-deep: #4d43d6;
 
-  /* Amber */
-  --m-amber: #f5b940;
-  --m-amber-text: #8a6210;
+  /* Lavender-light accent (kept under the --m-amber name) */
+  --m-amber: #ceb4f5;
+  --m-amber-text: #4d43d6;
 
   /* Green */
   --m-green: #2f9e6f;
@@ -39,23 +39,23 @@
   --m-green-on-dark: #7bd3a8;
 
   /* Text */
-  --m-muted: #4a5b70;
-  --m-muted-2: #8a96a5;
-  --m-on-navy: #5e7189;
-  --m-on-navy-2: #9fb0c4;
+  --m-muted: #55547a;
+  --m-muted-2: #8f8eab;
+  --m-on-navy: #9f8ef4;
+  --m-on-navy-2: #c9c3f0;
 
   /* Borders */
-  --m-border: #e7e0d3;
-  --m-border-inner: #ede6d8;
-  --m-border-strong: #dcd3c2;
+  --m-border: #e2e0ee;
+  --m-border-inner: #e9e7f3;
+  --m-border-strong: #cfcbe6;
 
   /* Shadows */
-  --m-shadow-card: 0 1px 2px rgba(16, 37, 63, 0.05), 0 18px 44px rgba(16, 37, 63, 0.12);
-  --m-shadow-panel: 0 1px 2px rgba(16, 37, 63, 0.05), 0 14px 36px rgba(16, 37, 63, 0.09);
-  --m-shadow-primary: 0 3px 10px rgba(240, 78, 48, 0.32);
-  --m-shadow-lift: 0 18px 40px rgba(16, 37, 63, 0.13);
+  --m-shadow-card: 0 1px 2px rgba(1, 1, 35, 0.05), 0 18px 44px rgba(1, 1, 35, 0.12);
+  --m-shadow-panel: 0 1px 2px rgba(1, 1, 35, 0.05), 0 14px 36px rgba(1, 1, 35, 0.09);
+  --m-shadow-primary: 0 3px 10px rgba(113, 102, 243, 0.32);
+  --m-shadow-lift: 0 18px 40px rgba(1, 1, 35, 0.13);
 
-  --m-font-head: var(--font-archivo), "Archivo", system-ui, sans-serif;
+  --m-font-head: var(--font-poppins-display), "Poppins", system-ui, sans-serif;
   --m-font-body: var(--font-ibm-plex-sans), "IBM Plex Sans", system-ui, sans-serif;
 
   background: var(--m-cream);
@@ -246,7 +246,7 @@
 }
 .m-nav[data-scrolled="true"] {
   padding: 10px 28px;
-  box-shadow: 0 8px 24px rgba(16, 37, 63, 0.12);
+  box-shadow: 0 8px 24px rgba(1, 1, 35, 0.12);
   background: rgba(251, 248, 242, 0.88);
 }
 .m-nav-link {
@@ -278,7 +278,7 @@
   padding: 14px;
   transition: box-shadow 0.2s ease;
 }
-.m-tile:hover { box-shadow: 0 6px 18px rgba(16, 37, 63, 0.1); }
+.m-tile:hover { box-shadow: 0 6px 18px rgba(1, 1, 35, 0.1); }
 .m-stat {
   font-family: var(--m-font-head);
   font-weight: 800;
@@ -452,17 +452,17 @@
   padding: 30px 28px;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 1px 2px rgba(16, 37, 63, 0.05);
+  box-shadow: 0 1px 2px rgba(1, 1, 35, 0.05);
   transition: transform 0.25s ease, box-shadow 0.25s ease;
 }
 .m-plan:hover {
   transform: translateY(-4px);
-  box-shadow: 0 18px 40px rgba(16, 37, 63, 0.16);
+  box-shadow: 0 18px 40px rgba(1, 1, 35, 0.16);
 }
 .m-plan[data-flagship="true"] {
   background: var(--m-navy);
   border-color: var(--m-navy);
-  box-shadow: 0 14px 36px rgba(16, 37, 63, 0.25);
+  box-shadow: 0 14px 36px rgba(1, 1, 35, 0.25);
 }
 .m-plan-price {
   font-family: var(--m-font-head);

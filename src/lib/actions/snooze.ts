@@ -2,7 +2,7 @@
  * Snooze options for an action tile.
  *
  * Snooze exists because the alternative is worse: without it people dismiss
- * a decision they meant to make, and STF forgets. With it, the promise is
+ * a decision they meant to make, and FlowHRMS forgets. With it, the promise is
  * explicit — "ask me again at 6" — and survives a restart because it is a
  * stored timestamp, not a bit of component state.
  *

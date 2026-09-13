@@ -1,4 +1,4 @@
-# STF Security Notes — Phase 1
+# FlowHRMS Security Notes — Phase 1
 
 Constraints come from the Product Constitution (§2 tenant isolation,
 §3 explicit authority, §5 flag enforcement, §7 privacy). This file records
@@ -44,7 +44,7 @@ created by the company). Before production: disable Supabase public
 sign-ups so arbitrary people cannot create accounts, and move to an
 explicit invite flow with tokens.
 
-## Dev preview session (`STF_DEV_FAKE_SESSION`)
+## Dev preview session (`FLOWHRMS_DEV_FAKE_SESSION`)
 
 - Purpose: render the shell for UI review without Supabase or a database.
 - Double-guarded: the flag AND `NODE_ENV === "development"`. Production

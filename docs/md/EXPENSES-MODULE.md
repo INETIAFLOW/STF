@@ -1,17 +1,17 @@
-# Sudarshan Task Force — Expenses
+# FlowHRMS — Expenses
 
 Version: 1.3  |  Date: 8 September 2026  |  Status: **Approved** (owner, 4 September 2026; v1.1 added employee withdrawal to E1) · **E1 built, verified and deployed** (4 September 2026; §19 records the three deviations the owner accepted at verification) · **E2 built and verified** (8 September 2026; §13 carries the whole-rupee decision the owner took at the readiness review).
 
 MODULES.md admits Expenses in one clause: *"Expenses … may be enabled per tenant only when their detailed rules are approved."* The catalog carries the module already (`EXPENSES`, optional, sort order 110) with the placeholder description *"enabled only after its rules are approved."* This document is those rules.
 
-The owner's architectural direction, which everything below obeys: **STF stays practical and SaaS-configurable rather than accumulating hard-coded business rules.** Every number, threshold and preference in this module is tenant policy. The code enforces the shape; the tenant supplies the values.
+The owner's architectural direction, which everything below obeys: **FlowHRMS stays practical and SaaS-configurable rather than accumulating hard-coded business rules.** Every number, threshold and preference in this module is tenant policy. The code enforces the shape; the tenant supplies the values.
 
 ---
 
 ## 1. Principles
 
 1. **Expenses does not depend on Payroll.** A tenant with `EXPENSES = ON` and `PAYROLL = OFF` can submit, approve and settle claims. Payroll is a settlement *route* the module offers when — and only when — the Payroll module is enabled for that tenant. It is a runtime capability, never an import-time dependency.
-2. **STF records money; it never moves it.** Settlement is a recorded fact ("paid by cash on 12 Sept, voucher 118" or "adjustment on September payroll"), not a transfer. No bank integration, no payment execution — the same boundary Payroll already holds (D-019).
+2. **FlowHRMS records money; it never moves it.** Settlement is a recorded fact ("paid by cash on 12 Sept, voucher 118" or "adjustment on September payroll"), not a transfer. No bank integration, no payment execution — the same boundary Payroll already holds (D-019).
 3. **The state machine is the only way status changes.** No screen, action or script sets a claim's status directly. One transition function owns every change, refuses anything not on the diagram, and writes the transition record before the status.
 4. **Every transition is recorded**: who, when, previous state, new state, reason. Reasons are mandatory for rejection and partial approval, and the employee reads them word for word (Constitution §4).
 5. **Warnings inform, they never decide.** A late claim, an over-cap claim, a probable duplicate — each is a fact placed in front of the approver. Nothing auto-rejects. Same reason Attendance confirms exceptions rather than punishing them.
@@ -150,7 +150,7 @@ Grants beyond the template use the role/permission machinery that already exists
 
 **Module off.** Pages redirect (existing shell behaviour); actions refuse via `checkAccess`; `EXPENSE_CLAIM` tiles are not shown and their decide actions refuse; data is retained untouched. The disable confirmation shows the count of `SUBMITTED` claims waiting, in the existing impact-confirm pattern.
 
-**Enabling (intentional platform behaviour).** Expenses is an OPTIONAL module: like every optional module it is switched on for a tenant by the STF platform contact, not by the tenant’s own admin (`setModuleEnabledAction` refuses optional modules by design). The order is therefore *enable first, then the tenant publishes its rules*. There is deliberately no policy gate on enabling — it would deadlock, since the rules editor needs the module on. Until rules are published, employees see an empty state, submission is refused with a plain message, and approvers see a publish-first alert; the tile queue and the claim counter are never touched.
+**Enabling (intentional platform behaviour).** Expenses is an OPTIONAL module: like every optional module it is switched on for a tenant by the FlowHRMS platform contact, not by the tenant’s own admin (`setModuleEnabledAction` refuses optional modules by design). The order is therefore *enable first, then the tenant publishes its rules*. There is deliberately no policy gate on enabling — it would deadlock, since the rules editor needs the module on. Until rules are published, employees see an empty state, submission is refused with a plain message, and approvers see a publish-first alert; the tile queue and the claim counter are never touched.
 
 ---
 
@@ -182,7 +182,7 @@ type ExpensesPolicy = {
 
 **Seed defaults offered on first enable** (editable, not imposed): Local travel (receipt optional) · Fuel (required) · Customer meals (required) · Site material (required) · Phone / data (optional) · Other (required).
 
-**Retention floor.** `RECEIPT_RETENTION_FLOOR_YEARS = 7` is a platform constant. A tenant may set retention longer, never shorter. The settings screen states, in D-019's register, that the tenant's accountant confirms the legal minimum for their entity; STF does not certify it. The sweep that acts on this window is E4 — E0–E3 only store and display the value.
+**Retention floor.** `RECEIPT_RETENTION_FLOOR_YEARS = 7` is a platform constant. A tenant may set retention longer, never shorter. The settings screen states, in D-019's register, that the tenant's accountant confirms the legal minimum for their entity; FlowHRMS does not certify it. The sweep that acts on this window is E4 — E0–E3 only store and display the value.
 
 ---
 
@@ -380,7 +380,7 @@ Settlement is the transition `APPROVED | PARTIALLY_APPROVED → SETTLED`, and it
 
 The settling screen computes this at render *and* the action recomputes it at write. A `PAYROLL` route requested while Payroll is disabled is refused with a plain message, never silently downgraded.
 
-**`OUTSIDE`** — reference is free text, required, ≥ 3 characters (cash / UPI / bank, date, voucher). STF records it and nothing else happens. This is the whole of E1's settlement.
+**`OUTSIDE`** — reference is free text, required, ≥ 3 characters (cash / UPI / bank, date, voucher). FlowHRMS records it and nothing else happens. This is the whole of E1's settlement.
 
 **`PAYROLL`** — through the seam in §13; the adjustment id lands on the settlement row and the reference is the payroll month ("September 2026 payroll"). The claim page shows what payroll would do *before* the click — the target month and the rounded figure, or the typed refusal with its way out — and the payroll run screen offers the same settlement from its side (§13 rule 8).
 
@@ -577,4 +577,4 @@ To be appended to MODULES.md on approval of this document, in the form Amendment
 
 *After* the owner approves this document:
 
-> Project: Sudarshan Task Force. Build **Expenses E1 — Core** exactly as EXPENSES-MODULE.md §16 lists it. Start with the migration, RLS entries, the state machine as a pure module with the 49-pair test, and the policy normaliser; then the submit path; then employee withdrawal; then the decision card; then `OUTSIDE` settlement. No payroll route, no advances, no reports. Land Amendment 3 in MODULES.md and cite it in the catalog header. Same verification as every phase: tests, typecheck, lint, build, browser at 360 and 1280, commit, deploy — then stop and report.
+> Project: FlowHRMS. Build **Expenses E1 — Core** exactly as EXPENSES-MODULE.md §16 lists it. Start with the migration, RLS entries, the state machine as a pure module with the 49-pair test, and the policy normaliser; then the submit path; then employee withdrawal; then the decision card; then `OUTSIDE` settlement. No payroll route, no advances, no reports. Land Amendment 3 in MODULES.md and cite it in the catalog header. Same verification as every phase: tests, typecheck, lint, build, browser at 360 and 1280, commit, deploy — then stop and report.

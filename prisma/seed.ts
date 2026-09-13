@@ -1,5 +1,5 @@
 /**
- * STF seed — platform catalog + one fictional demo tenant for local
+ * FlowHRMS seed — platform catalog + one fictional demo tenant for local
  * development. Every name here is a placeholder; no real company or
  * employee may ever be hardcoded (Phase 1 brief).
  *

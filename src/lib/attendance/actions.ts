@@ -708,7 +708,7 @@ export async function checkOutAction(
 /**
  * Missed check-out correction (edge-cases.md → "Missed check-out").
  *
- * STF never invents a check-out time. The employee proposes one with a
+ * FlowHRMS never invents a check-out time. The employee proposes one with a
  * reason; the manager sees the hours it would record before approving.
  */
 const correctionSchema = z.object({

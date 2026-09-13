@@ -14,7 +14,7 @@ import { setTenantStatusAction } from "@/lib/platform/actions";
  *
  * Suspending is the sharpest thing on this screen — it stops every person
  * at that company signing in — so it follows the impact-confirm order the
- * rest of STF uses: name the consequence, say how many people it lands on,
+ * rest of FlowHRMS uses: name the consequence, say how many people it lands on,
  * require a reason, and only then offer the button. Restoring is the same
  * control in reverse and needs the same reason, because "why were they off
  * for three days" is a question someone will eventually ask.

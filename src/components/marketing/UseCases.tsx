@@ -4,9 +4,9 @@ import Image from "next/image";
 import { useRef, useState } from "react";
 
 /**
- * "Who runs on STF" — a snap-scrolling rail of five settings.
+ * "Who runs on FlowHRMS" — a snap-scrolling rail of five settings.
  *
- * The photographs are generated, not stock: five settings STF is actually
+ * The photographs are generated, not stock: five settings FlowHRMS is actually
  * built for, shot documentary-style. They are stored as WebP at 1280 wide,
  * which is four times the card's CSS width and gives next/image room to
  * resize down per breakpoint.

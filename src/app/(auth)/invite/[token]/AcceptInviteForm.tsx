@@ -94,7 +94,7 @@ export function AcceptInviteForm({
 
       <p className="text-caption text-text-tertiary">
         By continuing you agree that your employer can see your attendance,
-        leave and task records in STF.
+        leave and task records in FlowHRMS.
       </p>
     </form>
   );

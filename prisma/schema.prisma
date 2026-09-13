@@ -1,4 +1,4 @@
-// STF — multi-tenant data foundation (Phase 1).
+// FlowHRMS — multi-tenant data foundation (Phase 1).
 //
 // Boundaries follow SYSTEM-ARCHITECTURE.md: a modular monolith with clear
 // domains. Phase 1 ships only the Platform + Shared foundation: identity,
@@ -156,7 +156,7 @@ enum MembershipStatus {
 }
 
 /// How someone is engaged. Recorded for the employee record and reports;
-/// STF attaches NO statutory meaning to these — payroll components are
+/// FlowHRMS attaches NO statutory meaning to these — payroll components are
 /// tenant-defined (PRODUCT-CONSTITUTION §6).
 enum EmploymentType {
   FULL_TIME
@@ -697,9 +697,9 @@ enum ComponentCalculation {
 }
 
 /// A salary component defined BY THE TENANT (Constitution §1: configuration
-/// before custom code). STF ships no statutory formulas: PF, ESI, PT, TDS
+/// before custom code). FlowHRMS ships no statutory formulas: PF, ESI, PT, TDS
 /// and similar are configured here by the customer's accountant and marked
-/// `isStatutory` so the UI can say so plainly. STF never certifies them.
+/// `isStatutory` so the UI can say so plainly. FlowHRMS never certifies them.
 model SalaryComponent {
   id          String               @id @default(uuid()) @db.Uuid
   tenantId    String               @db.Uuid
@@ -782,7 +782,7 @@ model PayrollRun {
   approvedAt     DateTime?
   approvalReason String?
   /// Required acknowledgement: figures checked with the tenant's
-  /// accountant. STF does not certify statutory compliance (D-019).
+  /// accountant. FlowHRMS does not certify statutory compliance (D-019).
   accountantAcknowledged Boolean @default(false)
   grossTotal     Decimal   @default(0) @db.Decimal(14, 2)
   deductionTotal Decimal   @default(0) @db.Decimal(14, 2)
@@ -1297,7 +1297,7 @@ model PerformanceBoost {
 }
 
 /// Something points can be redeemed for. Defined by the tenant; never
-/// money inside STF (D-P3-01) — cash goes through payroll adjustments.
+/// money inside FlowHRMS (D-P3-01) — cash goes through payroll adjustments.
 model Reward {
   id          String  @id @default(uuid()) @db.Uuid
   tenantId    String  @db.Uuid

@@ -17,7 +17,6 @@ const eslintConfig = defineConfig([
     // Design handoff bundles. These are vendor prototypes shipped as
     // reference (their own README says support.js must never ship), and
     // linting someone else's prototype runtime tells us nothing.
-    "Inetiaflow design fixes/**",
     // Generated Prisma client.
     "src/generated/**",
   ]),

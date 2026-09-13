@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
  * The proxy must never redirect anyone away from /sign-in.
  *
  * It knows only that Supabase recognises a visitor. Whether they have a
- * usable STF account is a database question — and the two come apart
+ * usable FlowHRMS account is a database question — and the two come apart
  * routinely: a deactivated employee, a membership removed, a tenant
  * closed, an invited user whose record is not yet linked. Every one of
  * those has a valid auth cookie and a null app session.
@@ -29,7 +29,7 @@ vi.mock("@supabase/ssr", () => ({
 const { default: proxy } = await import("@/proxy");
 
 function request(path: string) {
-  return new NextRequest(new URL(path, "https://stf.example.com"));
+  return new NextRequest(new URL(path, "https://flowhrms.example.com"));
 }
 
 /** What the proxy does with a request: pass it through, or send it away. */
@@ -42,7 +42,7 @@ beforeEach(() => {
   vi.unstubAllEnvs();
   vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://project.supabase.co");
   vi.stubEnv("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY", "publishable-key");
-  vi.stubEnv("STF_DEV_FAKE_SESSION", "");
+  vi.stubEnv("FLOWHRMS_DEV_FAKE_SESSION", "");
   getUser.mockReset();
 });
 

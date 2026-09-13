@@ -71,7 +71,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
               error
                 ? "border-status-error-fg"
                 : "border-border-default hover:border-border-strong",
-              "focus:border-border-focus focus:outline-none focus:[box-shadow:var(--stf-shadow-focus-ring)]",
+              "focus:border-border-focus focus:outline-none focus:[box-shadow:var(--fh-shadow-focus-ring)]",
               className,
             )}
             {...rest}

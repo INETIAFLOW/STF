@@ -1,8 +1,8 @@
 /**
- * STF design-token generator.
+ * FlowHRMS design-token generator.
  *
  * Reads the approved token JSONs in design/tokens/ (copied verbatim from
- * STF-Design-Handoff-v1/02-design-tokens/) and emits src/styles/tokens.css:
+ * FlowHRMS-Design-Handoff-v1/02-design-tokens/) and emits src/styles/tokens.css:
  *
  *   1. `:root` custom properties (light theme — the designed theme)
  *   2. `[data-theme="dark"]` overrides — colour block ONLY
@@ -45,7 +45,7 @@ const darkColors = [];
 function walkColors(node, path) {
   for (const [key, value] of Object.entries(node)) {
     if (value && typeof value === "object" && "value" in value) {
-      const name = `--stf-color-${path.concat(key).map(kebab).join("-")}`;
+      const name = `--fh-color-${path.concat(key).map(kebab).join("-")}`;
       lightColors.push([name, value.value]);
       if ("dark" in value) darkColors.push([name, value.dark]);
     } else if (value && typeof value === "object") {
@@ -59,9 +59,9 @@ walkColors(colors, []);
 // (exact values from the approved matrix; missing from colors.json).
 // Logged in DECISIONS.md entry D-P1-02.
 const derived = [
-  ["--stf-color-brand-primary-subtle-hover", "#DDE3F9", "#2A3268"],
-  ["--stf-color-brand-primary-subtle-active", "#D3DAF6", "#323B78"],
-  ["--stf-color-border-strong-hover", "#B7BFD6", "#4A5280"],
+  ["--fh-color-brand-primary-subtle-hover", "#E3DEFC", "#2F2C74"],
+  ["--fh-color-brand-primary-subtle-active", "#D8D2FA", "#38348A"],
+  ["--fh-color-border-strong-hover", "#B7BFD6", "#4A5280"],
 ];
 for (const [name, light, dark] of derived) {
   lightColors.push([name, light]);
@@ -74,19 +74,19 @@ const fontVars = [];
 // Family stacks: next/font exposes CSS variables; the token stack is the
 // metric-tolerant fallback required by 01-brand/typography.md §1.
 fontVars.push([
-  "--stf-font-family-heading",
-  `var(--font-schibsted-grotesk), ${typography.family.heading.value.replace('"Schibsted Grotesk", ', "")}`,
+  "--fh-font-family-heading",
+  `var(--font-poppins), ${typography.family.heading.value.replace('"Poppins", ', "")}`,
 ]);
 fontVars.push([
-  "--stf-font-family-body",
+  "--fh-font-family-body",
   `var(--font-wix-madefor-text), ${typography.family.body.value.replace('"Wix Madefor Text", ', "")}`,
 ]);
 fontVars.push([
-  "--stf-font-family-mono",
+  "--fh-font-family-mono",
   `var(--font-spline-sans-mono), ${typography.family.mono.value.replace('"Spline Sans Mono", ', "")}`,
 ]);
 for (const [key, value] of Object.entries(typography.weight)) {
-  fontVars.push([`--stf-font-weight-${kebab(key)}`, String(value.value)]);
+  fontVars.push([`--fh-font-weight-${kebab(key)}`, String(value.value)]);
 }
 
 const sizeMobile = [];
@@ -94,10 +94,10 @@ const sizeDesktop = [];
 const sizeMeta = {}; // name → { weight, family, letterSpacing }
 for (const [key, def] of Object.entries(typography.size)) {
   const name = kebab(key);
-  sizeMobile.push([`--stf-font-size-${name}`, def.mobile]);
-  sizeMobile.push([`--stf-line-height-${name}`, def.lineHeight.mobile]);
-  sizeDesktop.push([`--stf-font-size-${name}`, def.desktop]);
-  sizeDesktop.push([`--stf-line-height-${name}`, def.lineHeight.desktop]);
+  sizeMobile.push([`--fh-font-size-${name}`, def.mobile]);
+  sizeMobile.push([`--fh-line-height-${name}`, def.lineHeight.mobile]);
+  sizeDesktop.push([`--fh-font-size-${name}`, def.desktop]);
+  sizeDesktop.push([`--fh-line-height-${name}`, def.lineHeight.desktop]);
   sizeMeta[name] = {
     weight: def.weight,
     family: def.family,
@@ -106,51 +106,51 @@ for (const [key, def] of Object.entries(typography.size)) {
 }
 
 const trackingVars = Object.entries(typography.letterSpacing).map(
-  ([key, def]) => [`--stf-tracking-${kebab(key)}`, def.value],
+  ([key, def]) => [`--fh-tracking-${kebab(key)}`, def.value],
 );
 
 /* ------------------------------------------------- spacing / layout / touch */
 
 const spaceVars = Object.entries(spacing.space).map(([step, px]) => [
-  `--stf-space-${step}`,
+  `--fh-space-${step}`,
   px,
 ]);
 
 /** Layout values may reference space steps ("space.5") — resolve to var(). */
 const resolveSpaceRef = (v) =>
-  /^space\.\d+$/.test(v) ? `var(--stf-space-${v.split(".")[1]})` : v;
+  /^space\.\d+$/.test(v) ? `var(--fh-space-${v.split(".")[1]})` : v;
 
 const layoutVars = Object.entries(spacing.layout).map(([key, v]) => [
-  `--stf-layout-${kebab(key)}`,
+  `--fh-layout-${kebab(key)}`,
   resolveSpaceRef(v),
 ]);
 const touchVars = Object.entries(spacing.touchTarget).map(([key, v]) => [
-  `--stf-touch-${kebab(key)}`,
+  `--fh-touch-${kebab(key)}`,
   v,
 ]);
 
 /* ------------------------------------------------------------ radius etc. */
 
 const radiusVars = Object.entries(radius).map(([key, v]) => [
-  `--stf-radius-${kebab(key)}`,
+  `--fh-radius-${kebab(key)}`,
   v,
 ]);
 
 const shadowVars = Object.entries(shadows)
   .filter(([, def]) => def && typeof def === "object" && "value" in def)
-  .map(([key, def]) => [`--stf-shadow-${kebab(key)}`, def.value]);
+  .map(([key, def]) => [`--fh-shadow-${kebab(key)}`, def.value]);
 
 const durationVars = Object.entries(motion.duration).map(([key, v]) => [
-  `--stf-motion-duration-${kebab(key)}`,
+  `--fh-motion-duration-${kebab(key)}`,
   v,
 ]);
 const easingVars = Object.entries(motion.easing).map(([key, v]) => [
-  `--stf-motion-easing-${kebab(key)}`,
+  `--fh-motion-easing-${kebab(key)}`,
   v,
 ]);
 
 const breakpointVars = Object.entries(breakpoints).map(([key, v]) => [
-  `--stf-breakpoint-${key}`,
+  `--fh-breakpoint-${key}`,
   v,
 ]);
 
@@ -160,14 +160,14 @@ const decl = (pairs, indent = "  ") =>
   pairs.map(([k, v]) => `${indent}${k}: ${v};`).join("\n");
 
 const themeColorMap = lightColors
-  .map(([name]) => `  ${name.replace("--stf-color-", "--color-")}: var(${name});`)
+  .map(([name]) => `  ${name.replace("--fh-color-", "--color-")}: var(${name});`)
   .join("\n");
 
 const themeTextMap = Object.entries(sizeMeta)
   .map(([name, meta]) => {
     const lines = [
-      `  --text-${name}: var(--stf-font-size-${name});`,
-      `  --text-${name}--line-height: var(--stf-line-height-${name});`,
+      `  --text-${name}: var(--fh-font-size-${name});`,
+      `  --text-${name}--line-height: var(--fh-line-height-${name});`,
       `  --text-${name}--font-weight: ${meta.weight};`,
     ];
     if (meta.letterSpacing) {
@@ -178,23 +178,23 @@ const themeTextMap = Object.entries(sizeMeta)
   .join("\n");
 
 const themeRadiusMap = radiusVars
-  .map(([name]) => `  ${name.replace("--stf-radius-", "--radius-")}: var(${name});`)
+  .map(([name]) => `  ${name.replace("--fh-radius-", "--radius-")}: var(${name});`)
   .join("\n");
 
 const themeShadowMap = shadowVars
-  .map(([name]) => `  ${name.replace("--stf-shadow-", "--shadow-")}: var(${name});`)
+  .map(([name]) => `  ${name.replace("--fh-shadow-", "--shadow-")}: var(${name});`)
   .join("\n");
 
 const themeBreakpointMap = breakpointVars
-  .map(([name, v]) => `  ${name.replace("--stf-breakpoint-", "--breakpoint-")}: ${v};`)
+  .map(([name, v]) => `  ${name.replace("--fh-breakpoint-", "--breakpoint-")}: ${v};`)
   .join("\n");
 
 const themeEaseMap = easingVars
-  .map(([name]) => `  ${name.replace("--stf-motion-easing-", "--ease-")}: var(${name});`)
+  .map(([name]) => `  ${name.replace("--fh-motion-easing-", "--ease-")}: var(${name});`)
   .join("\n");
 
 const css = `/* AUTO-GENERATED by scripts/generate-tokens.mjs — do not edit.
- * Source of truth: design/tokens/*.json (STF-Design-Handoff-v1).
+ * Source of truth: design/tokens/*.json (FlowHRMS-Design-Handoff-v1).
  * Regenerate with: npm run tokens
  */
 
@@ -243,7 +243,7 @@ ${decl(sizeDesktop, "    ")}
 /* ------------------------------------------------------------------------
  * Tailwind v4 theme mapping.
  * Wipes the default palette/radius/shadow/type scales so the only
- * utilities that exist come from STF tokens (no arbitrary design values).
+ * utilities that exist come from FlowHRMS tokens (no arbitrary design values).
  * --------------------------------------------------------------------- */
 @theme inline {
   --color-*: initial;
@@ -253,17 +253,17 @@ ${themeColorMap}
   --color-white: #ffffff;
 
   --font-*: initial;
-  --font-heading: var(--stf-font-family-heading);
-  --font-body: var(--stf-font-family-body);
-  --font-mono: var(--stf-font-family-mono);
+  --font-heading: var(--fh-font-family-heading);
+  --font-body: var(--fh-font-family-body);
+  --font-mono: var(--fh-font-family-mono);
 
   --text-*: initial;
 ${themeTextMap}
 
   --tracking-*: initial;
-  --tracking-tight: var(--stf-tracking-tight);
-  --tracking-normal: var(--stf-tracking-normal);
-  --tracking-micro: var(--stf-tracking-micro);
+  --tracking-tight: var(--fh-tracking-tight);
+  --tracking-normal: var(--fh-tracking-normal);
+  --tracking-micro: var(--fh-tracking-micro);
 
   --radius-*: initial;
 ${themeRadiusMap}

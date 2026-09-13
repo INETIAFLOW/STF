@@ -1,4 +1,4 @@
-# Sudarshan Task Force — Performance & Leaderboards
+# FlowHRMS — Performance & Leaderboards
 
 Version: 1.1  |  Date: 18 August 2026  |  Status: **Approved** (owner, 18 Aug 2026) · **All five phases built** (23 Aug 2026; P5 approved with the owner's complete-the-module directive)
 
@@ -30,7 +30,7 @@ motivation, built to look and feel alive.
    Companies differ; the module bends, the principles don't.
 4. **Rewards, never fines.** Absence and lateness already have real
    consequences in payroll. Points only go up; a bad day earns nothing.
-5. **Points are never money inside STF.** Rewards record fulfilment;
+5. **Points are never money inside FlowHRMS.** Rewards record fulfilment;
    cash goes through the existing audited payroll adjustment. This keeps
    the module outside statutory payroll territory (D-P3-01, D-019).
 6. **Only verified events score.** A check-in pending review scores when
@@ -42,7 +42,7 @@ motivation, built to look and feel alive.
 8. **Approved leave pauses a streak, never breaks it.**
 9. **Every screen follows the design system.** Warm employee surface,
    status as text plus colour, `motion-safe` animation only, no animating
-   money figures (D-017), sound off by default, inline SVG on STF tokens
+   money figures (D-017), sound off by default, inline SVG on FlowHRMS tokens
    — no third-party chart or gamification libraries.
 
 ---
@@ -168,8 +168,8 @@ announcements tie-in.
 
 - No points from opinions or manual entries. No point deductions, no
   naming the worst performer.
-- No points-to-cash conversion inside STF; no statutory entanglement.
-- No continuous tracking; scoring uses exactly the events STF already
+- No points-to-cash conversion inside FlowHRMS; no statutory entanglement.
+- No continuous tracking; scoring uses exactly the events FlowHRMS already
   records.
 - No third-party gamification/chart libraries.
 
