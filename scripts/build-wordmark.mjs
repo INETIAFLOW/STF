@@ -65,11 +65,11 @@ const FILL = {
 const FLOW_INK = { light: FLOWACORD.navy, dark: FLOWACORD.paper } as const;
 
 /** Right edge of the "w" is 334; capitals need a little air that lowercase "acord" did not. */
-const HRMS_X = 342;
+const HRMS_X = 352;
 const BASELINE = 98.71;
 /** Poppins cap height is 0.70 em; the "F" stands 57.3 units tall. */
 const HRMS_SIZE = 82;
-const VIEW_W = 600;
+const VIEW_W = 612;
 const VIEW_H = 113.84;
 
 const FONT = "var(--font-poppins-display, var(--font-poppins, Poppins, sans-serif))";
